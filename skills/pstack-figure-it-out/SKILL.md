@@ -15,26 +15,26 @@ Open a checklist whose first item is to read the summary section of `pstack` (th
 
 Ground first, then commit. Do not start the run until you can state:
 
-- The definition of done as a falsifiable predicate (`references/principles.md#prove-it-works`).
+- The definition of done as a falsifiable predicate ([prove-it-works](../pstack/references/principles.md#prove-it-works)).
 - Scope, quantified: rough units and effort, plus the blockers that grounding surfaced.
 - The rigor level, biased high. One-way doors and high blast radius get more. Reversible low-stakes steps get less. Rigor means gates and artifacts, not "try harder".
 
-Present the framing and the tradeoffs before committing to a long run. Reversible work proceeds (`references/principles.md#never-block-on-the-human`), but a multi-hour run earns one checkpoint.
+Present the framing and the tradeoffs before committing to a long run. Reversible work proceeds ([never-block-on-the-human](../pstack/references/principles.md#never-block-on-the-human)), but a multi-hour run earns one checkpoint.
 
 ## Phase B. Design the workflow
 
-Decompose into atomic, independently landable units. Sequence the riskiest unknown first. Scaffold and verification come before features (`references/principles.md#foundational-thinking`).
+Decompose into atomic, independently landable units. Sequence the riskiest unknown first. Scaffold and verification come before features ([foundational-thinking](../pstack/references/principles.md#foundational-thinking)).
 
 - Build the verification harness before the work, with the baseline captured from the pre-change state, so the check reads as "old value versus new value".
-- For one-way-door design decisions, run `pstack-architect`, which runs `pstack-arena`. Skip it for mechanical work whose shape is already concrete. A second arena over a settled design is over-engineering (`references/principles.md#laziness-protocol`).
-- Decide what fans out. Parallelize only across seams, and give each writer its own worktree or branch (`references/principles.md#separate-before-serializing-shared-state`). Do not over-fan.
+- For one-way-door design decisions, run `pstack-architect`, which runs `pstack-arena`. Skip it for mechanical work whose shape is already concrete. A second arena over a settled design is over-engineering ([laziness-protocol](../pstack/references/principles.md#laziness-protocol)).
+- Decide what fans out. Parallelize only across seams, and give each writer its own worktree or branch ([separate-before-serializing-shared-state](../pstack/references/principles.md#separate-before-serializing-shared-state)). Do not over-fan.
 - Write the designed phase list down. That list is what the human reviews.
 
 Then execute the design: add its steps to the checklist as concrete items, after the Phase C entry and before Phase D. Run each under the Phase C loop discipline, weaving the Phase D log through them, a row as each step lands, rather than saving the whole trail for the end.
 
 ## Phase C. Run the loop
 
-Each unit is an experiment. State the hypothesis, make the smallest change, measure against the predicate on the real artifact, keep it if it advanced, revert it if it did not. Apply `references/principles.md#sequence-verifiable-units`: verify each unit before starting the next instead of batching checks at the end.
+Each unit is an experiment. State the hypothesis, make the smallest change, measure against the predicate on the real artifact, keep it if it advanced, revert it if it did not. Apply [sequence-verifiable-units](../pstack/references/principles.md#sequence-verifiable-units): verify each unit before starting the next instead of batching checks at the end.
 
 - Verify by inspecting the artifact, never a self-report. When something passes too easily, suspect the observation method before the system.
 - Pair delegated work with an independent check, and audit the delegate's artifacts yourself before trusting them. If a worker games the gate, reset and harden the contract. If the gate itself is wrong, fix the gate in its own change rather than routing around it.
@@ -46,6 +46,6 @@ Log the run via `pstack-show-me-your-work`: one canonical TSV, a row per decisio
 
 ## Phase E. Verify and hand back
 
-Check the whole against the Phase A predicate on the real product, not just the harness. Encode any recurring correction as a gate, lint rule, check, or script (`references/principles.md#encode-lessons-in-structure`).
+Check the whole against the Phase A predicate on the real product, not just the harness. Encode any recurring correction as a gate, lint rule, check, or script ([encode-lessons-in-structure](../pstack/references/principles.md#encode-lessons-in-structure)).
 
 **Reply.** The playbook you designed, the rigor level and why, the decision-trail path, what is verified against the predicate, and what is still open.

@@ -4,7 +4,7 @@
 
 Distinct from Runtime forensics, which instruments a live process. Here the capture already exists. The artifact is a fixed dataset: read it, do not re-run it. Keep the tooling generic so the playbook stays portable: a parser for a CPU profile or a compressed trace, a text editor for a spindump, the heap tooling for a heap snapshot.
 
-1. **Identify the format and load it with the right tool.** Parse large artifacts in a subagent or a script (`references/principles.md#guard-the-context-window`) and keep the reduced finding in the main thread.
+1. **Identify the format and load it with the right tool.** Parse large artifacts in a subagent or a script ([guard-the-context-window](../references/principles.md#guard-the-context-window)) and keep the reduced finding in the main thread.
 2. **Transform the raw artifact into a queryable shape.** Dump the trace or heap snapshot into a database, one row per sample, frame, or node. Reach the queryable shape before you read.
 3. **Narrow to the cause.** Query for the frames that hold the most time and walk the call tree to the hot path. For a leak, follow the retainer chain from the leaked object to a GC root. For a spindump, find the thread stuck on-CPU or blocked and its wait reason.
 4. **Attribute to source.** Map the hot frame to file, symbol, and line through the artifact's own symbols. A frame with no source mapping is not yet a diagnosis. Resolve the symbols, or say plainly that the artifact does not carry them.

@@ -29,9 +29,9 @@ pstack 的技能只说「需要什么能力」，不说「用哪个工具」。�
 
 | 能力 | 本项目的实现 | 边界 |
 |---|---|---|
-| 独立审查者 | `interrogate` 技能 + 新起会话的 reviewer | reviewer 不得先看实现者自述 |
+| 独立审查者 | `interrogate` 技能 + 新起会话的 reviewer | reviewer 不得先看实现者自述；给它需求 + 固定 commit |
 | 并行实现 | 每个写入者一个 git worktree，各自一条分支 | 只读者可共用稳定快照 |
-| 真实驱动被测表面 | 本仓库 `verify-<app>` skill（由 `pstack-create-verification-skill` 生成） | 无法驱动时明确 blocked，不以截图存在代替行为证据 |
+| 真实驱动被测表面 | 本仓库 `.pi/skills/verify-<app>/`（由 `pstack-create-verification-skill` 生成） | 无法驱动时明确 blocked，不以截图存在代替行为证据 |
 | 会话记录 | 当前会话的 `PI_SESSION_FILE` + 本项目 `memory_search` | 只读本项目记录，不读无关项目私有会话 |
 | 长期任务编排 | Herdr 承载独立 Pi 会话 + 文件证据交接 | 不新造调度器或 orch store |
 | 跨会话通信 | pi-intercom | |
@@ -41,6 +41,10 @@ pstack 的技能只说「需要什么能力」，不说「用哪个工具」。�
 
 替换的边界要写清。例如 Herdr 是**执行方式**，不是 swarm 的任务拆分与汇总规则；Ponytail 是**简化指导**，不能替代「跑起来看一眼」。
 
+上表里每一行都必须是你在这个环境里**真实见到并读过**的工具或 skill。不同人的机器装的东西不一样：不要把某个环境里恰好存在的 skill 当成所有使用者都有。只写你自己验证过的映射；没验证过的留空一行，让它回落到包内默认路径。
+
 ## 关于本包自身
 
-上表是给**使用本包的项目**用的。pstack-pi 自己怎么开发不受它约束：这个仓库的开发不需要 Herdr，不需要任何特定 subagent 扩展，也不需要 MCP。产品工作流的默认执行方式是 Herdr 优先，那是包里技能对使用者的建议，不是本仓库的开发要求。
+上表是给**使用本包的项目**用的模板。pstack-pi 自己怎么开发不受它约束：这个仓库的开发不需要 Herdr，不需要任何特定 subagent 扩展，也不需要 MCP。
+
+包内技能的默认执行方式是 Herdr 优先。那是**产品的包内默认**，通过使用者的 `AGENTS.md` 映射落地，不是本仓库的开发要求，也不是任何环境都应该有的前提。这条默认写在包内的 `skills/pstack/references/execution.md`：入口技能以及会委派或替换的技能都先读它，所以单独调一个 `/skill:pstack-swarm` 也会拿到这条策略，不依赖本文件的示例被加载。

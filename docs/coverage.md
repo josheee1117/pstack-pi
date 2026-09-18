@@ -10,7 +10,7 @@
 
 | 上游条目 | 类型 | 去向 | 差异 |
 |---|---|---|---|
-| `poteto-mode` | 公共技能 | `skills/pstack` | 改名 `pstack`。个人风格改为通用工程流程：不再强绑作者的语气与模型选择，删掉 Cursor 的 `Task`/`subagent_type`/`/loop` 绑定，改为按能力描述执行环境。playbook 数量保持 23。 |
+| `poteto-mode` | 公共技能 | `skills/pstack` | 改名 `pstack`。个人风格改为通用工程流程：不再强绑作者的语气与模型选择，删掉 Cursor 的 `Task`/`subagent_type`/`/loop` 绑定，改为按能力描述执行环境，并指向共享的执行与替换策略。playbook 数量保持 23。 |
 | `how` | 公共技能 | `skills/pstack-how` | 保留两段式复杂度判定（简单直接解释，复杂并行探查再汇总）。子代理派发改述为能力，环境无子代理时自己按同一输出格式做。 |
 | `why` | 公共技能 | `skills/pstack-why` | 保留证据分级与输出结构。MCP 发现改为「枚举本会话真实可用的来源」，允许只有 git 与 forge CLI，并要求把查不到的部分明确列为缺口。上游 7 个来源 playbook 合并为一份 `references/sources.md`。 |
 | `recall` | 公共技能 | `skills/pstack-recall` | 记录来源从 Cursor 的 `agent-transcripts/` 目录改为会话自身的 `PI_SESSION_FILE` 与项目记忆，并明确只读本项目记录。 |
@@ -27,7 +27,7 @@
 | `typescript-best-practices` | 公共技能 | `skills/pstack-typescript-best-practices` | 原样保留，规则表与 `references/patterns.md` 例子全带。`paths` frontmatter 删除（Pi 不按路径自动触发）。 |
 | `figure-it-out` | 公共技能 | `skills/pstack-figure-it-out` | 保留五阶段与「设计流程本身才是交付物」。 |
 | `show-me-your-work` | 公共技能 | `skills/pstack-show-me-your-work` | TSV 格式不变。上游的 `scripts/log.sh` helper 未打包（见下），改为写明用普通文件编辑或一次 `printf` 追加，并保留公式注入防护。 |
-| `create-verification-skill` | 公共技能 | `skills/pstack-create-verification-skill` | 功能地图契约与示例带全。生成路径改为本包技能根目录下的 `verify-<app>`。仍要求「没亲自跑过一次就只是草稿」。 |
+| `create-verification-skill` | 公共技能 | `skills/pstack-create-verification-skill` | 功能地图契约与示例带全。生成目标是使用者项目的 `.pi/skills/verify-<app>/`，不是本包目录；个人位置仅在用户明确要求时使用。仍要求「没亲自跑过一次就只是草稿」。 |
 | `maintain-verification-skill` | 公共技能 | `skills/pstack-maintain-verification-skill` | 源扫描波次与 live pass 保留，包括 doctor 三不变式。 |
 | `setup-pstack` | 公共技能 | `skills/pstack-setup` | 作为「发现环境能力 + 记录配置」的使用指南保留。删除 `~/.cursor/rules/pstack-models.mdc` 这条硬路径与整套默认模型表；不再自动写全局默认值，写入位置默认是项目 `AGENTS.md`，且需用户选择。 |
 | `reflect` | 公共技能 | `skills/pstack-reflect` | 三个审查视角与 synthesizer 契约保留（tooling/judgment/divergent 各一份 `references/`）。记录来源改为 `PI_SESSION_FILE`。 |
@@ -121,6 +121,7 @@
 
 | 条目 | 类型 | 去向 | 差异 |
 |---|---|---|---|
-| 能力映射约定 | 参考文件 | `AGENTS.md` | 原版把能力直接绑到具体工具。本包把「用哪个工具实现某个能力」外置成项目里的 Markdown 表：优先级是当前明确请求、然后项目映射、然后包内默认路径。替换实现不得删除原任务的产物、证据与独立性要求。 |
+| 执行与替换策略 | 参考文件 | `skills/pstack/references/execution.md` | 原版把执行方式埋在 `poteto-mode` 正文与各处 skill 里，且绑到 Cursor 的 Task 工具。本包抽成一份按需读取的共享参考：三级优先级（当前请求 → 使用者项目映射 → 包内默认），包内默认是 Herdr 承载独立 Pi 会话 + pi-intercom + 独占 worktree（短调查可 fresh subagent），以及独立性规则、发现先行、缺后端时如何停下。入口及会委派/替换的技能都先读它，因此单独调一个 `/skill:` 也会拿到策略，不依赖 `AGENTS.md` 示例被加载。 |
+| 能力映射约定 | 参考文件 | `AGENTS.md` | 原版把能力直接绑到具体工具。本包把「用哪个工具实现某个能力」外置成项目里的 Markdown 表：优先级是当前明确请求、然后项目映射、然后包内默认路径。替换实现不得删除原任务的产物、证据与独立性要求。表里的示例只是格式演示，不声称所有使用者都装了同样的 skill。 |
 | 覆盖表 | 参考文件 | `docs/coverage.md` | 本文件。 |
-| 测试 | 测试 | `tests/` | Node 内置测试，覆盖技能发现、本地引用、覆盖表完整性和打包边界。 |
+| 测试 | 测试 | `tests/` | Node 内置测试，覆盖技能发现、本地安装解析、相对链接与锚点、执行策略在位、覆盖表完整性和打包边界。 |

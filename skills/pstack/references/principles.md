@@ -2,7 +2,13 @@
 
 Internal reference for `pstack`. Twenty-three principles, one section each. Read the section you apply and say which decision it changed.
 
-Sections are addressable by name, for example `references/principles.md#laziness-protocol`. Other skills reference them the same way.
+Sections are addressable by anchor. Reference a section with a standard Markdown relative link from the file that contains the sentence. Three relative path forms cover this package:
+
+- From a sibling skill, `../pstack/references/principles.md#anchor`.
+- From the `pstack` skill root, `references/principles.md#anchor`.
+- From `skills/pstack/playbooks/` or another subdirectory of `pstack`, `../references/principles.md#anchor`.
+
+Every principle reference in this package uses one of those three, so a reader who lands on any single file can resolve it without knowing a hidden base.
 
 ## Contents
 

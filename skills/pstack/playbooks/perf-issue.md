@@ -16,11 +16,11 @@
    - **Lazy evaluation.** Cost lands on results never used or not needed yet. Defer the work until first use.
    - **Scheduling.** The work must happen, but not during the interactive moment. Move it to idle callbacks, a background warmup, a precompute before the user arrives, or cleanup after the frame commits. The win is perceived latency, so measure the interactive path, not total work done.
 
-3. **Plan the fix from the trace.** If it crosses a function boundary, run `pstack-architect` first. Then implement, delegating to a fresh-context writer if that helps, and review the diff. Capture a post-fix trace. Apply `references/principles.md#sequence-verifiable-units`: verify each attempt before trying the next.
+3. **Plan the fix from the trace.** If it crosses a function boundary, run `pstack-architect` first. Then implement, delegating to a fresh-context writer if that helps, and review the diff. Read [`../references/execution.md`](../references/execution.md) before delegating. Capture a post-fix trace. Apply [sequence-verifiable-units](../references/principles.md#sequence-verifiable-units): verify each attempt before trying the next.
 4. **Parse and compare the artifacts** (dump to a database, diff the numbers). "Inconclusive" or a wrong surface is not a pass. Flag it.
 5. **Cite the measurement** in the PR body.
-6. **Finish per `opening-a-pr.md`** when the user authorized a PR.
+6. **Finish per [opening-a-pr](opening-a-pr.md)** when the user authorized a PR.
 
-For sustained improvement against a metric rather than a one-off fix, use `hillclimb.md`.
+For sustained improvement against a metric rather than a one-off fix, use [hillclimb](hillclimb.md).
 
 **Reply.** Baseline number, post-fix number, delta, artifact path.

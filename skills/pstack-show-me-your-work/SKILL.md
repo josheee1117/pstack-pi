@@ -48,7 +48,7 @@ Commit it only when the work is ambitious enough that a reviewer needs the trail
 
 - One row is one decision or checkpoint.
 - Append-only. A wrong call gets a new row that supersedes it. Never edit or delete history.
-- Prefer evidence produced by a committed script over a hand-made one-off (`references/principles.md#encode-lessons-in-structure`).
+- Prefer evidence produced by a committed script over a hand-made one-off ([encode-lessons-in-structure](../pstack/references/principles.md#encode-lessons-in-structure)).
 
 ## Audit the log against the record
 

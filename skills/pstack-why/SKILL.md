@@ -7,6 +7,8 @@ description: "Explain why code is shaped the way it is: design rationale, regres
 
 Investigate the motivation and intent behind code. `pstack-how` answers what the code does. `pstack-why` answers what forces led to its shape.
 
+Step 4 delegates to investigators and a synthesizer. Read [`../pstack/references/execution.md`](../pstack/references/execution.md) before that: a short bounded investigation can use any fresh-context mechanism the environment provides, and when none exists you run the categories yourself and say so, rather than presenting a self-check as independent.
+
 ## Operating posture
 
 Be a careful, precise investigator. Be explicit about what you know versus what you infer. Read [`references/epistemics.md`](references/epistemics.md) before writing anything, and follow its confidence tiers and phrasing. The synthesizer must follow it too.

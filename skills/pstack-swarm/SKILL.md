@@ -7,6 +7,8 @@ description: "Fan out N parallel workers, drain them, and return one report. Use
 
 Fan out N parallel workers. They may cover separate slices, race the same brief, or mix both. The parent waits, aggregates, and returns one report.
 
+Read [`../pstack/references/execution.md`](../pstack/references/execution.md) before spawning. It owns the backend choice, the independence rules, and what to do when a backend is missing. Parallel writers take the package default there: an independent Pi session per writer in its own exclusive worktree.
+
 ## Start
 
 Open a checklist with one item per phase before launching anything: Frame, Fan out, Aggregate, Report.

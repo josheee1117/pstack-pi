@@ -15,8 +15,8 @@ Two things this port does differently from the original, and they apply everywhe
 ## Non-negotiables
 
 - **Evidence, not assertion.** Real runs (test, build, smoke, actual use, reading the actual value) are evidence. Reading the code and concluding it works is a hypothesis. State every claim with its evidence or its label in the same sentence: measured, inferred, or guess. Never hand the user a check you could have run.
-- **Name the principle you applied only if you read it.** The principles index below points into `references/principles.md`. Read the section before citing it, and say which decision it changed.
-- **State the data shape before writing logic**, and pick the structure that fits it, per `references/principles.md#model-the-domain`.
+- **Name the principle you applied only if you read it.** The principles index below points into [references/principles.md](references/principles.md). Read the section before citing it, and say which decision it changed.
+- **State the data shape before writing logic**, and pick the structure that fits it, per [model-the-domain](references/principles.md#model-the-domain).
 - **Prose discipline.** Every reply is a prose surface, per `pstack-unslop`. Comments too: keep a comment only for a non-obvious why the code cannot show.
 - **Reply in the user's language.** Default to the language the user writes in.
 
@@ -24,14 +24,21 @@ Two things this port does differently from the original, and they apply everywhe
 
 Skills below say "spawn a subagent", "run an independent session", or "drive the surface". These are capabilities, not tool names.
 
-- **Fresh-context subagent.** A short, bounded investigation or a delegated implementation with its own context. If the environment has no subagent mechanism, do the work directly and say so, or hand the step to another session.
-- **Independent session.** A separate agent session with its own context and its own cwd or worktree, for long-lived owners, parallel writers, and formal review. A terminal multiplexer of independent Pi sessions is one way; a managed worktree per writer is required either way.
-- **Cross-session messaging.** To hand findings and requests between sessions. If unavailable, hand off through files plus the artifact paths, and say which channel was missing.
+**Read [`references/execution.md`](references/execution.md) before you delegate work, run attempts in parallel, or obtain an independent review.** It owns the full policy: the resolution order, how to discover what is installed, the independence rules, and what to do when a backend is missing. The short version:
+
+1. The current request wins.
+2. Then the using project's `AGENTS.md` capability mapping.
+3. Then the package default: a long-lived owner, a parallel writer, `pstack-swarm`, `pstack-arena`, or a formal independent review runs on an independent Pi session managed by Herdr, one session per writer in its own exclusive git worktree, with pi-intercom carrying cross-session messages. A short, bounded investigation can use any fresh-context mechanism the environment provides.
+
+Herdr is the execution mechanism, not the work rule: it decides where a session runs and how it is reached, not how the task is decomposed, aggregated, or verified. It is a package default, not a dependency. Confirm a tool is installed and read its own command contract before you invoke it. When the capability you need is missing, name the gap; when the step needs independence, stop and let the operator choose a verified backend or change the requirement, rather than self-reviewing and calling it equivalent.
+
+These are separate capabilities, not delegation backends:
+
 - **Real surface driving.** Something that exercises the running artifact (app, CLI, service) and captures evidence. If the project has no such harness, `pstack-create-verification-skill` generates one. If nothing can drive the surface, mark the step `blocked` and say why. A compile, a screenshot file, or a written summary does not substitute.
 - **Wake mechanism.** An event or interval that re-triggers the run without a human. Where the environment has none, say so plainly: a plan that promises a tick every 30 minutes without a scheduler is a lie. Poll on a bounded budget instead, and report between polls.
 - **Session record.** The current session's own record, named by `PI_SESSION_FILE` under Pi, or the equivalent for this harness. Read only records belonging to this project, and only when the task genuinely needs history. Never scan another project's private sessions, and never build a scanner that walks session directories on spec.
 
-Where a capability maps to a concrete tool, the project's own `AGENTS.md` says so. Check that map before substituting. The package default is the path described here. See the repo's `AGENTS.md` for the map format and a filled example. When a capability is missing, say which one and what it blocked. Do not report a step as passed when it was skipped.
+Where a capability maps to a concrete tool, the using project's own `AGENTS.md` says so, and that map outranks the package default above. See this repo's `AGENTS.md` for the map format and a worked example. Whenever a step was blocked or substituted, name which capability and what it left open. Do not report a step as passed when it was skipped.
 
 ## Authorization
 
@@ -46,7 +53,7 @@ Where a capability maps to a concrete tool, the project's own `AGENTS.md` says s
 Match the request, then open the playbook file and copy its steps into a checklist before any task-specific step. A step you skip stays in the list with `skip: <reason>`.
 
 - Nontrivial change, architecture call, or "are we sure?" → `pstack-how` first.
-- About to ask the user "which approach" or "what should this do" → classify it. If an experiment could answer it (behavior, timing, layout, output, perf), prototype it (`playbooks/prototype.md`) instead of asking. Reserve questions for genuine product or preference calls, and for irreversible actions.
+- About to ask the user "which approach" or "what should this do" → classify it. If an experiment could answer it (behavior, timing, layout, output, perf), prototype it ([prototype](playbooks/prototype.md)) instead of asking. Reserve questions for genuine product or preference calls, and for irreversible actions.
 - Code crossing a function boundary → `pstack-architect` before implementing.
 - Parallel fan-out over slices or races → `pstack-swarm`. Design or code bakeoff with a base pick and grafting → `pstack-arena`.
 - Contested design or a diff worth attacking → `pstack-interrogate`.
@@ -58,37 +65,37 @@ Match the request, then open the playbook file and copy its steps into a checkli
 
 ## Playbooks
 
-`playbooks/` relative to this skill. Read the matched file, not from memory.
+Every path below is a link relative to this file. Read the matched file, not from memory.
 
 | Playbook | For |
 |---|---|
-| `playbooks/investigation.md` | A read-only question. How does X work, why is Y shaped this way, are we sure. |
-| `playbooks/bug-fix.md` | A defect to reproduce, root-cause, and fix with runtime evidence. |
-| `playbooks/perf-issue.md` | A measured slowness to trace and improve against a baseline. |
-| `playbooks/hillclimb.md` | Sustained improvement of one metric against a target, one measured change per iteration. |
-| `playbooks/runtime-forensics.md` | Diagnose a live symptom from instrumentation. Deliverable is a diagnosis, not a fix. |
-| `playbooks/trace-forensics.md` | Diagnose a captured artifact (cpuprofile, trace, spindump, heap snapshot). |
-| `playbooks/feature.md` | New or changed behavior, built from a named data shape. |
-| `playbooks/refactoring.md` | A behavior-preserving change to structure or shape. |
-| `playbooks/prototype.md` | A throwaway sketch to settle a design or an empirical fork cheaply. |
-| `playbooks/visual-parity.md` | Pixel-exact equivalence between two implementations, or a styling migration. |
-| `playbooks/authoring-a-skill.md` | Writing or editing a SKILL.md. |
-| `playbooks/eval.md` | Test how a skill or prompt change affects agent behavior, blinded. |
-| `playbooks/babysit.md` | Drive a PR or a stack to merge-ready: conflicts, review threads, CI. |
-| `playbooks/shipping.md` | Independently verify a green stack, then land the verified run bottom-up. |
-| `playbooks/autonomous-run.md` | A long task driven to a predicate without stopping. |
-| `playbooks/orchestrate.md` | A standing project handed to one coordinator: multi-day, many stacked PRs, many workers. |
-| `playbooks/autopilot-full.md` | Independent PRs run to merged, one owner per PR, root verification before each merge. |
-| `playbooks/autopilot-stack.md` | Build and verify a queue of changes, deliver one linear stack for the operator to land. |
-| `playbooks/session-pickup.md` | Resume or take over prior in-flight work. |
-| `playbooks/pause-safely.md` | Suspend cleanly so a cold-start agent can resume. |
-| `playbooks/multi-phase-plan.md` | Work spanning phases or stacked PRs. The plan is the deliverable. |
-| `playbooks/worktree-cleanup.md` | Reclaim disk from merged or abandoned worktrees and stale simulators, safety-gated. |
-| `playbooks/opening-a-pr.md` | Open a ready PR from small ordered commits. Invoked at the end of every other playbook, when the user authorized a PR. |
+| [investigation](playbooks/investigation.md) | A read-only question. How does X work, why is Y shaped this way, are we sure. |
+| [bug-fix](playbooks/bug-fix.md) | A defect to reproduce, root-cause, and fix with runtime evidence. |
+| [perf-issue](playbooks/perf-issue.md) | A measured slowness to trace and improve against a baseline. |
+| [hillclimb](playbooks/hillclimb.md) | Sustained improvement of one metric against a target, one measured change per iteration. |
+| [runtime-forensics](playbooks/runtime-forensics.md) | Diagnose a live symptom from instrumentation. Deliverable is a diagnosis, not a fix. |
+| [trace-forensics](playbooks/trace-forensics.md) | Diagnose a captured artifact (cpuprofile, trace, spindump, heap snapshot). |
+| [feature](playbooks/feature.md) | New or changed behavior, built from a named data shape. |
+| [refactoring](playbooks/refactoring.md) | A behavior-preserving change to structure or shape. |
+| [prototype](playbooks/prototype.md) | A throwaway sketch to settle a design or an empirical fork cheaply. |
+| [visual-parity](playbooks/visual-parity.md) | Pixel-exact equivalence between two implementations, or a styling migration. |
+| [authoring-a-skill](playbooks/authoring-a-skill.md) | Writing or editing a SKILL.md. |
+| [eval](playbooks/eval.md) | Test how a skill or prompt change affects agent behavior, blinded. |
+| [babysit](playbooks/babysit.md) | Drive a PR or a stack to merge-ready: conflicts, review threads, CI. |
+| [shipping](playbooks/shipping.md) | Independently verify a green stack, then land the verified run bottom-up. |
+| [autonomous-run](playbooks/autonomous-run.md) | A long task driven to a predicate without stopping. |
+| [orchestrate](playbooks/orchestrate.md) | A standing project handed to one coordinator: multi-day, many stacked PRs, many workers. |
+| [autopilot-full](playbooks/autopilot-full.md) | Independent PRs run to merged, one owner per PR, root verification before each merge. |
+| [autopilot-stack](playbooks/autopilot-stack.md) | Build and verify a queue of changes, deliver one linear stack for the operator to land. |
+| [session-pickup](playbooks/session-pickup.md) | Resume or take over prior in-flight work. |
+| [pause-safely](playbooks/pause-safely.md) | Suspend cleanly so a cold-start agent can resume. |
+| [multi-phase-plan](playbooks/multi-phase-plan.md) | Work spanning phases or stacked PRs. The plan is the deliverable. |
+| [worktree-cleanup](playbooks/worktree-cleanup.md) | Reclaim disk from merged or abandoned worktrees and stale simulators, safety-gated. |
+| [opening-a-pr](playbooks/opening-a-pr.md) | Open a ready PR from small ordered commits. Invoked at the end of every other playbook, when the user authorized a PR. |
 
 ## Principles
 
-Internal reference, not public skills: `references/principles.md`. Each entry names when it applies. Read the section you apply.
+Internal reference, not public skills: [references/principles.md](references/principles.md). Each entry names when it applies. Read the section you apply.
 
 **Core**
 

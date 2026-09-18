@@ -21,7 +21,13 @@ If the checkout does not build or start as-is, fix that first, or report it prec
 
 ## 2. Generate the skill
 
-Write `<skill root>/verify-<app>/SKILL.md` with frontmatter (`name: verify-<app>`, and a description naming the app, the surface, and when to reach for it) and these sections, each grounded in what the interview found, with no placeholders left:
+Write the generated skill into the **target project**, not into this package: `.pi/skills/verify-<app>/SKILL.md` at the project root. That is Pi's project skill directory, it travels with the project, and a package install never overwrites it.
+
+- Default target: `<project>/.pi/skills/verify-<app>/`.
+- A personal location (`~/.pi/agent/skills/verify-<app>/`) only when the user explicitly asks for one that applies to every project.
+- Never write into an installed package's own `skills/` directory. A package install is replaced on update, and a generated skill there does not belong to the project it verifies.
+
+Give `SKILL.md` frontmatter (`name: verify-<app>`, and a description naming the app, the surface, and when to reach for it) and these sections, each grounded in what the interview found, with no placeholders left:
 
 - **Launch.** The exact command that starts the app for verification, and how to tell it is ready: a log line, a port answering, a prompt. Include teardown. For a short-lived CLI or TUI there is no server to keep alive, so launch means build the binary or install dependencies once, then start each drive in its own isolated session.
 - **Doctor.** One read-only check answering "is this instance worth driving": process up, right build, port owned by us, auth valid. An agent runs it first whenever anything looks off.
@@ -32,7 +38,7 @@ Write `<skill root>/verify-<app>/SKILL.md` with frontmatter (`name: verify-<app>
 
 ## 3. Seed the feature map
 
-Create `verify-<app>/features/README.md` plus one file per user-facing feature, starting with the top three to five from routes, commands, menus, or docs. Follow the shape in the example map, which ships a README index plus one file per feature.
+Create `<project>/.pi/skills/verify-<app>/features/README.md`, beside the generated `SKILL.md`, plus one file per user-facing feature, starting with the top three to five from routes, commands, menus, or docs. Follow the shape in the example map, which ships a README index plus one file per feature.
 
 Each feature file answers, from the user's point of view: what the feature is, how to reach it, how to drive it with the harness, and what observable end state proves it works. Start from [`references/feature-map-example/README.md`](references/feature-map-example/README.md) for the index shape. The four H2 sections are `Sub-features`, `How to get to it (user POV)`, `Driving it with <harness>`, and `Gotchas`. The map is the repo's maintained verification source. A proof that drives one convenient entry point is incomplete when the map lists others.
 

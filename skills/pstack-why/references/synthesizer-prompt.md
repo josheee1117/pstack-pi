@@ -1,6 +1,6 @@
 # Synthesizer prompt template
 
-Fill in the placeholders. Read `epistemics.md` in full before writing. Do not modify anything while verifying a citation.
+Fill in the placeholders. Read [epistemics.md](epistemics.md) in full before writing. Do not modify anything while verifying a citation.
 
 ---
 

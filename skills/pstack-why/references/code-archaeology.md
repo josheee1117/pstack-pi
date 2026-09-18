@@ -1,6 +1,6 @@
 # Code archaeology (git and in-repo)
 
-The always-available source, in more depth than the summary in `sources.md`.
+The always-available source, in more depth than the summary in [sources.md](sources.md).
 
 ## What this source contains
 

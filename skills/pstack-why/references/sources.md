@@ -14,7 +14,7 @@ Good evidence: a PR description explaining the problem solved, a long review thr
 
 Pitfalls: squash-merge repositories lose branch history, so fall back to the PR body. A commit message saying "small refactor" can hide an intentional behavior change, so read the diff. A pattern may be cargo-culted, so check whether it originated earlier and investigate that commit. Bot and auto-merge commits carry no motivation. Above all, **code itself is not evidence of its own intent**.
 
-Deeper treatment: `code-archaeology.md`.
+Deeper treatment: [code-archaeology.md](code-archaeology.md).
 
 ## Issue or ticket tracker (Linear, Jira, GitHub Issues, Plane, Shortcut)
 

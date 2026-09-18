@@ -7,6 +7,8 @@ description: "Mine the current conversation for durable learnings and route each
 
 Mine the current conversation for durable learnings, then route them into skill edits.
 
+Step 2 runs review lenses. Read [`../pstack/references/execution.md`](../pstack/references/execution.md) before that: the lenses need a context that did not write the work, and when no such context exists you say so instead of presenting a self-check as independent.
+
 ## When to invoke
 
 Invoke when the user says "reflect". Skip when the conversation is trivial, off topic, or already covered by an existing skill that the parent followed correctly. One-offs are not learnings.
@@ -15,7 +17,7 @@ Invoke when the user says "reflect". Skip when the conversation is trivial, off 
 
 ### 1. Locate the run's records
 
-The current session's record is named by `PI_SESSION_FILE` under Pi, or is the equivalent for this harness. Read only records belonging to this project. Do not read other projects' private sessions. For a long record, reduce it in a subagent or with a script and keep the reduced timeline in the main thread (`references/principles.md#guard-the-context-window`). If no record resolves, write a tight digest of the session and pass that instead.
+The current session's record is named by `PI_SESSION_FILE` under Pi, or is the equivalent for this harness. Read only records belonging to this project. Do not read other projects' private sessions. For a long record, reduce it in a subagent or with a script and keep the reduced timeline in the main thread ([guard-the-context-window](../pstack/references/principles.md#guard-the-context-window)). If no record resolves, write a tight digest of the session and pass that instead.
 
 ### 2. Run three review lenses
 
@@ -35,7 +37,7 @@ One synthesizer pass, using [`references/synthesizer.md`](references/synthesizer
 
 ### 4. Structural enforcement check
 
-For any Accepted item that a lint rule, script, metadata flag, or runtime check would enforce more reliably, move it to Backlog (`references/principles.md#encode-lessons-in-structure`).
+For any Accepted item that a lint rule, script, metadata flag, or runtime check would enforce more reliably, move it to Backlog ([encode-lessons-in-structure](../pstack/references/principles.md#encode-lessons-in-structure)).
 
 ### 5. Apply
 

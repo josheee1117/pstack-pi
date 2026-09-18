@@ -14,13 +14,13 @@ Three rules carry the rest.
 
 ## Execution environment
 
-Independent sessions are the unit of work here. Under this environment they are long-lived agent sessions in their own panes, each with its own working directory and its own git worktree when it writes, coordinating through cross-session messages when that channel exists and through files when it does not. See the entry skill's Execution environment section and the project's `AGENTS.md` for the mapping. When the environment cannot host independent sessions, say so and route the program to a plainer equivalent: you doing the work, or the `autopilot-stack.md` playbook for a queue one operator can land. Do not pretend a single session is a fleet.
+Read [`../references/execution.md`](../references/execution.md) first. Independent sessions are the unit of work here: under the package default that means long-lived agent sessions managed by Herdr, each with its own working directory and its own git worktree when it writes, coordinating through pi-intercom when that channel exists and through files when it does not. See the entry skill's Execution environment section and the project's `AGENTS.md` for the mapping. When the environment cannot host independent sessions, say so and route the program to a plainer equivalent: you doing the work, or the [autopilot-stack](autopilot-stack.md) playbook for a queue one operator can land. Do not pretend a single session is a fleet.
 
 ## Roles and placement
 
 - **Coordinator (this session).** Frames, authors briefs, drains the inbox, owns the human report, makes judgment calls. It never authors or edits code. Conflicted merges, restacks, and code changes are always separate work units. Mechanically landing a verified unit (fast-forward or clean cherry-pick of a worker's commit, then push) is bookkeeping the coordinator may do itself once the operator authorized landing. Queueing finished work behind an idle stacker is how a deadline harvests nothing.
 - **Sub-coordinator.** Durable, one per track, only when the program exceeds what one coordinator's drains can manage. A track the coordinator can drain itself needs no middle layer. Each nested layer re-pays a full orientation preamble. Owns its track's units and board, authors its workers' briefs, runs its own workers and verifiers, rolls up aggregates at wave boundaries. Never forwards raw child reports. Cap in-flight children at roughly what one drain can process, around ten, as a rolling window, never as blocking batches that pay the slowest child of every batch.
-- **Worker / verifier.** Independent sessions. A worker that needs this machine keeps its worktree local; a worker whose verification is a cheap command reports the command output rather than getting a dedicated verifier. Prefer fewer, broader workers. One writer per worktree or branch (`references/principles.md#separate-before-serializing-shared-state`). Run a unit's verifier on a different model family from its worker when the environment offers the choice.
+- **Worker / verifier.** Independent sessions. A worker that needs this machine keeps its worktree local; a worker whose verification is a cheap command reports the command output rather than getting a dedicated verifier. Prefer fewer, broader workers. One writer per worktree or branch ([separate-before-serializing-shared-state](../references/principles.md#separate-before-serializing-shared-state)). Run a unit's verifier on a different model family from its worker when the environment offers the choice.
 
 Depth stays at coordinator, track, worker. Author the track decomposition per project. Build, landing, and verification are common cuts, not a required shape.
 
@@ -28,7 +28,7 @@ Depth stays at coordinator, track, worker. Author the track decomposition per pr
 
 Create `orchestrate/<project-slug>/` in the project working directory, or beside the run's scratch dir. Plain readable files. Every file has exactly one writer. Owners publish facts, readers aggregate at read time. No service, no scheduler, no CLI beyond your normal file tools.
 
-- `preferences.md`. The standing-orders register: numbered lines, one constraint each (model policy if the environment has one, stack shape and count, verification bar, forbidden paths, escalation policy). Paste it verbatim into every spawn and every resume. Directives decay across resumes and each dropped one costs a human turn. When you catch yourself restating an instruction, append the line before you act (`references/principles.md#encode-lessons-in-structure`).
+- `preferences.md`. The standing-orders register: numbered lines, one constraint each (model policy if the environment has one, stack shape and count, verification bar, forbidden paths, escalation policy). Paste it verbatim into every spawn and every resume. Directives decay across resumes and each dropped one costs a human turn. When you catch yourself restating an instruction, append the line before you act ([encode-lessons-in-structure](../references/principles.md#encode-lessons-in-structure)).
 - `overview.md`. The durable PR and issue list. Append. Never rewrite wholesale per event.
 - `units.tsv`. One row per unit: id, track, state, branch, PR, head SHA, brief path. Update rows in place.
 - `frontier.tsv`. The computed merge frontier: ordered PR list, branch names, head SHAs, lowest unmerged PR, and a generation number incremented on every merge or stack mutation.
@@ -79,7 +79,7 @@ Size the brief to the unit. A one-command unit collapses to a paragraph that sti
 
 - The frontier is a computed object, never narrative. Recompute `frontier.tsv` after every merge and stack mutation, because base refs drift mid-restack. Resolve it from the forge's own tracking where the forge knows the stack; a checkout whose metadata never saw the stack reports no PRs, and that is an error to report, not a guess to make.
 - Exactly one writer may touch stack topology, serialized within a stack. Record the holder in the standing orders. Restacks that rewrite many SHAs run where they are cheap and reversible.
-- Workers never rebase another unit's branch and never run a stacking tool. Babysitters follow `babysit.md`, one per stack, scoped to one immutable frontier generation. They report conflicts to the topology writer rather than restacking.
+- Workers never rebase another unit's branch and never run a stacking tool. Babysitters follow [babysit](babysit.md), one per stack, scoped to one immutable frontier generation. They report conflicts to the topology writer rather than restacking.
 - Closing a base PR orphans every chain above it. Merges and stack surgery are units with briefs like any other.
 - One watcher follows merged PRs for reverts, post-merge CI breaks, and orphaned follow-ups.
 

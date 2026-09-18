@@ -90,8 +90,8 @@ test("the pstack routing table and the playbooks directory agree", () => {
 
   // Only table rows count as the routing table. Other prose in the skill may
   // name a playbook inline without claiming it in the table.
-  const tableRows = entry.split("\n").filter((line) => line.startsWith("| `playbooks/"));
-  const listed = tableRows.map((line) => line.split("`")[1].replace("playbooks/", ""));
+  const tableRows = entry.split("\n").filter((line) => /^\| \[[a-z0-9-]+\]\(playbooks\/[a-z0-9-]+\.md\)/.test(line));
+  const listed = tableRows.map((line) => line.match(/\(playbooks\/([a-z0-9-]+\.md)\)/)[1]);
 
   assert.deepEqual(listed.slice().sort(), onDisk, "the table lists every playbook exactly once");
 

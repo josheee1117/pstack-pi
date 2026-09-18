@@ -7,6 +7,8 @@ description: "Run N parallel attempts at the same task, pick a base, and graft t
 
 Fan out N parallel attempts at the same task. Read every candidate end to end. Pick the strongest as the base. Graft the best ideas from the others into it. Verify the synthesized result.
 
+Read [`../pstack/references/execution.md`](../pstack/references/execution.md) before launching. It owns the backend choice, the independence rules, and what to do when a backend is missing. Each candidate needs its own context and its own working copy, per the package default there.
+
 ## Start
 
 Open a checklist with one item per phase before launching anything: Frame, Fan out, Cross-judge, Pick, Graft, Verify.
@@ -18,7 +20,7 @@ The candidates receive the same prompt, so the prompt is the contract.
 1. State the artifact each candidate produces.
 2. Derive the rubric. State what success looks like for *this* task, then turn it into three to six concrete gradeable criteria. The rubric is the picker's tool in Phase D. Candidates see only the task.
 3. Pick the runners. Use the operator's configured runner set when one exists. Otherwise choose distinct models this environment actually offers, and when only one model or no subagent mechanism is available, produce the candidates yourself as clearly distinct attempts and say so. Same model N times when the work is generation-bound rather than judgment-sensitive.
-4. Assign output paths. Each candidate writes to its own location, a git worktree where possible, otherwise a scratch directory per candidate (`references/principles.md#separate-before-serializing-shared-state`).
+4. Assign output paths. Each candidate writes to its own location, a git worktree where possible, otherwise a scratch directory per candidate ([separate-before-serializing-shared-state](../pstack/references/principles.md#separate-before-serializing-shared-state)).
 
 ## Phase B. Fan out
 
@@ -34,7 +36,7 @@ After the candidates complete, spawn one read-only judge on a model family diffe
 
 Read every candidate end to end before picking. Score each against the rubric criterion by criterion, not on holistic feel. Compare against the cross-judge. Agreement on the base confirms the pick. Disagreement means one of you is biased or the rubric was ambiguous, so read both rationales before deciding.
 
-Pick the base a future maintainer can extend most easily without breaking invariants. Prefer the cleaner boundary or smaller API when two feel tied (`references/principles.md#laziness-protocol`).
+Pick the base a future maintainer can extend most easily without breaking invariants. Prefer the cleaner boundary or smaller API when two feel tied ([laziness-protocol](../pstack/references/principles.md#laziness-protocol)).
 
 Record the pick and the reason in a short synthesis note alongside the base artifact, including the cross-judge's verdict.
 
@@ -42,7 +44,7 @@ Record the pick and the reason in a short synthesis note alongside the base arti
 
 Walk each losing candidate once more and identify what is worth porting into the base. The signal is usually one or two things per candidate, not most of it.
 
-Fold each graft in by hand, per `references/principles.md#redesign-from-first-principles`. Do not paste mechanically. The result must stay coherent under one mental model.
+Fold each graft in by hand, per [redesign-from-first-principles](../pstack/references/principles.md#redesign-from-first-principles). Do not paste mechanically. The result must stay coherent under one mental model.
 
 Record what was grafted, from which candidate, and what was rejected and why.
 
@@ -50,7 +52,7 @@ When the candidates converge on the same shape, that is a strong signal. Note th
 
 ## Phase F. Verify
 
-The synthesized artifact holds up under the same scrutiny as any other output (`references/principles.md#prove-it-works`).
+The synthesized artifact holds up under the same scrutiny as any other output ([prove-it-works](../pstack/references/principles.md#prove-it-works)).
 
 If verification surfaces a problem the arena missed, either Phase A was wrong, so reframe and re-run, or one candidate caught it and you missed the graft, so return to Phase E. Do not paper over it.
 

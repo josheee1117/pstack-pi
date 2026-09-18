@@ -7,6 +7,8 @@ description: "Design types, signatures, and module structure before writing code
 
 Design before implementing. Sketch types, function signatures, class shapes, and module boundaries with `not implemented` bodies and pseudocode. Synthesize across more than one design perspective, then fill in code against the chosen sketch. If implementation proves the sketch wrong, throw it out and redesign.
 
+Phase B delegates and runs `pstack-arena`. Read [`../pstack/references/execution.md`](../pstack/references/execution.md) before that phase: it owns the backend choice and the independence rules.
+
 ## Start
 
 Open a checklist with one item per phase before starting: Ground, Sketch, Agree, Implement, Scrap.
@@ -25,7 +27,7 @@ Run `pstack-arena` with the design task and the Phase A grounding artifacts, pas
 
 Use the operator's configured runner set when one exists. When none is configured, pick the strongest independent reasoners this environment offers, and when only one model or no subagent mechanism is available, produce at least two structurally distinct sketches yourself and say that you did. Do not invent model names.
 
-**Design it twice.** Require at least two structurally distinct candidates before synthesis, even when the first looks sufficient. This is `references/principles.md#exhaust-the-design-space` made concrete. Whole-shape alternatives, not point fixes inside one shape.
+**Design it twice.** Require at least two structurally distinct candidates before synthesis, even when the first looks sufficient. This is [exhaust-the-design-space](../pstack/references/principles.md#exhaust-the-design-space) made concrete. Whole-shape alternatives, not point fixes inside one shape.
 
 Screen every candidate against [`references/design-red-flags.md`](references/design-red-flags.md) before synthesis. Reject or revise shallow modules, information leakage, temporal decomposition, and pass-through methods.
 
@@ -39,7 +41,7 @@ Default: proceed directly to implementation with the synthesized design. No huma
 
 Opt in to a checkpoint when the invoker explicitly asks ("stop and show me before implementing"). Then surface the synthesized design and pause for sign-off.
 
-The synthesis can ship as its own commit either way, as the scaffold-first mode of `references/principles.md#foundational-thinking`. Planned and scoped breakage during fill-in is fine, per `references/principles.md#outcome-oriented-execution`. For adversarial pressure before implementing, run `pstack-interrogate` on the synthesized sketch.
+The synthesis can ship as its own commit either way, as the scaffold-first mode of [foundational-thinking](../pstack/references/principles.md#foundational-thinking). Planned and scoped breakage during fill-in is fine, per [outcome-oriented-execution](../pstack/references/principles.md#outcome-oriented-execution). For adversarial pressure before implementing, run `pstack-interrogate` on the synthesized sketch.
 
 If the human pushes back on the shape, treat that as Phase A evidence. Re-ground and re-run Phase B before writing more code.
 
@@ -51,7 +53,7 @@ A deviation from the sketch is signal worth surfacing, not friction to absorb si
 
 ## Phase E. Scrap when the architecture is wrong
 
-If implementation keeps producing friction the sketch cannot absorb, throw the sketch out. Do not bolt fixes onto a wrong design (`references/principles.md#redesign-from-first-principles`, `references/principles.md#fix-root-causes`).
+If implementation keeps producing friction the sketch cannot absorb, throw the sketch out. Do not bolt fixes onto a wrong design ([redesign-from-first-principles](../pstack/references/principles.md#redesign-from-first-principles), [fix-root-causes](../pstack/references/principles.md#fix-root-causes)).
 
 The signal is a **pattern**, not single instances:
 

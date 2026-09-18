@@ -7,6 +7,8 @@ description: "Explain how a subsystem works and where things belong. Use for 'ho
 
 Explore the codebase to answer "how does X work?" at the level a senior engineer needs to build a working mental model, not so much that it reads like annotated source.
 
+Steps 2a, 2b, and 3 delegate to readers. Read [`../pstack/references/execution.md`](../pstack/references/execution.md) before that: a short bounded investigation can use any fresh-context mechanism the environment provides, and when none exists you do the exploration yourself and say so.
+
 ## Step 1. Assess complexity
 
 If the scope is ambiguous, state your interpretation and explore. The user can redirect.

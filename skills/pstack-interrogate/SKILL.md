@@ -7,6 +7,8 @@ description: "Adversarial multi-model review of a change: find bugs, design flaw
 
 One reviewer per configured model, each reviewing the same change and the same rubric. The adversarial signal comes from model diversity, not assigned personas.
 
+Read [`../pstack/references/execution.md`](../pstack/references/execution.md) before spawning. It owns the backend choice and the independence rules: a formal review runs on an independent session, one model is not one context, and the reviewer gets the requirement plus a pinned code version, never the implementer's self-report or another reviewer's conclusions.
+
 **The deliverable is a synthesized verdict. Do not auto-apply changes.**
 
 ## Step 1. Determine scope
