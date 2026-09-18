@@ -1,0 +1,35 @@
+{
+  "name": "pstack-pi",
+  "version": "0.1.0",
+  "description": "Rigorous engineering workflows for Pi: understand, design, implement, verify independently, ship, recover. A Pi-native port of pstack.",
+  "type": "module",
+  "license": "MIT",
+  "keywords": [
+    "pi-package",
+    "pstack",
+    "workflow",
+    "skills",
+    "principles",
+    "review"
+  ],
+  "pi": {
+    "skills": [
+      "./skills"
+    ]
+  },
+  "files": [
+    "skills",
+    "tests",
+    "README.md",
+    "AGENTS.md",
+    "LICENSE",
+    "NOTICE.md",
+    "docs"
+  ],
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
