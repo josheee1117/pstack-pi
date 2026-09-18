@@ -1,0 +1,21 @@
+# Hillclimb
+
+**You own the metric and the experiment's integrity. Supervise and review.** For sustained, iterative improvement of one measurable thing against a target. A one-off fix is Bug fix or Perf issue. This is the loop.
+
+Core discipline: one change, one measurement, keep or revert. Never stack untested changes, and never claim a win from code inspection (`references/principles.md#prove-it-works`).
+
+1. **Ground the workload and the architecture before choosing the metric.** Run `pstack-how` over the target. Name the realistic workload dimensions that can move the result (data size, history, state, concurrency), and select a case that reproduces the user's complaint. If no case reproduces it, fix the repro instead of hillclimbing. Then fix one metric, the direction that counts as better, and a checkable stop predicate that pairs a target with a floor on attempts, so a lucky early win cannot end the run. "At least 50% better than baseline and at least 10 iterations" is that shape. Use the user's numbers when given, otherwise agree them.
+2. **Build the measurement harness, prove its sensitivity, then freeze it** (`references/principles.md#build-the-lever`). Run contrasting realistic workloads and confirm the target case reproduces the symptom while easier cases separate as expected. If the harness cannot distinguish them, revise the workload or the metric. Once frozen, one repeatable command emits the metric, sampled enough to clear the noise (median of N, not a single run). Record the baseline metric and a green run of the regression gate before any change.
+3. **Open the decision log** via `pstack-show-me-your-work`. One row per attempt: id, hypothesis, change, before, after, delta, tests, verdict (kept or reverted), note. Read it before each attempt. Keep it out of the tree (gitignored) unless the run has to be auditable.
+4. **Ground each hypothesis in the architecture model from step 1**, so it names a specific mechanism ("defer X off the boot path because it blocks first paint"), not "try memoizing something".
+5. **Loop, one hypothesis per iteration.**
+   - Hand the change to a fresh-context writer with a tight scope when one is available, and supervise and review the diff rather than typing it (`references/principles.md#guard-the-context-window`). When several independent hypotheses are live, fan them to parallel writers, each in its own worktree (`references/principles.md#separate-before-serializing-shared-state`).
+   - Measure before and after with the frozen harness, and run the regression gate.
+   - Accept only when the metric moves past noise and the gate stays green. Otherwise revert the change in full. A tweak that "might help" is not kept.
+   - One commit per accepted fix, staging only the files you changed (`git add <files>`, never `-A`). Log the row either way, kept or reverted.
+   - Each iteration ends in a check before the next begins (`references/principles.md#sequence-verifiable-units`). If the run is unattended, borrow only the wake mechanism from `autonomous-run.md`, not its stop rule.
+6. **Push past the first plateau.** On a stall or several rejects in a row, pivot category, combine near-misses, re-read the source, or try something more radical before concluding the hill is climbed. Correctness and simplicity outrank the number. Revert a win that breaks behavior. Keep a simplification that holds the number (`references/principles.md#laziness-protocol`).
+7. **Stop when the predicate is met**, or when the remaining ideas are marginal and not worth their cost. Do not relax the predicate to meet it, and do not quit while cheap untried hypotheses remain. Stuck gets surfaced, not spun on.
+8. **Finish per `opening-a-pr.md`**, with the accepted commits stacked in the order they landed, when the user authorized a PR.
+
+**Reply.** The metric and target, baseline to final with the percent delta, iterations run (kept versus reverted), each accepted fix on one line, the decision-log path, and the best idea you would try next if pushed further.
