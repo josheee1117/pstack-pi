@@ -18,19 +18,30 @@ Do not assume a tool exists because a skill once named it. When this file says a
 
 Work that needs an owner, a parallel writer, or independence gets a backend chosen by the kind of work:
 
-- **Long-lived owner, parallel writer, `swarm`, `arena`, or a formal independent review.** An independent Pi session managed by Herdr (one session per writer, its own exclusive git worktree), with pi-intercom for cross-session messages. This is the default because it is the shape that gives a genuinely separate context and a genuinely separate working copy.
-- **A short, bounded investigation.** A fresh-context subagent is enough. This is not a hard dependency on any particular subagent extension: use whatever fresh-context mechanism the environment provides, and if it provides none, see the gap rules below.
+- **Long-lived owner, parallel writer, `swarm`, `arena`, or a formal independent review.** An independent Pi session managed by Herdr (one session per writer, its own exclusive git worktree), with pi-intercom for cross-session messages. This is the default because it is the shape that gives a genuinely separate context and, for a writer, a genuinely separate working copy.
+- **A short, bounded investigation.** A fresh context is enough. This is not a hard dependency on any particular subagent extension: use whatever fresh-context mechanism the environment provides, and if it provides none, see the gap rules below.
 
-Herdr here is the **execution mechanism**. It governs where a session runs and how it is located and messaged. It does not change the task decomposition, the aggregation rule, or the independence requirement of the work that runs on it. A `swarm` still partitions and aggregates per its own skill; `arena` still picks a base and grafts; `interrogate` still synthesizes a verdict.
+Herdr here is the **execution mechanism**. It governs where a session runs and how it is located and messaged. It does not change the task decomposition, the aggregation rule, or the independence requirement of the work that runs on it. A `swarm` still partitions and aggregates per its own skill; `arena` still picks a base and grafts; `interrogate` still synthesizes a verdict. Running workers one after another because concurrency is limited is still the same swarm, as long as each worker keeps its own fresh context.
 
 ## Independence
 
-Independence comes from a separate context and a separate working copy, not from a separate model name.
+Independence comes from two things, and neither of them is a model name.
 
-- **One model is not one context.** If you can still start a fresh context, do, and keep the independence. Do not collapse to self-review merely because only one model is available in the environment.
+- **A context that did not produce the work.** A fresh session, or any other mechanism that yields a genuinely separate context. The same model in a fresh context is independent. Different model names sharing one context are not.
+- **For a reviewer, a blind read of a fixed artifact.** Give the requirement plus a pinned version: a commit SHA, a tag, or a frozen worktree.
+
+An **exclusive working copy is required for writers**, not for readers. A read-only reviewer may read the same stable snapshot several reviewers share; it must not be handed the author's framing.
+
+- **One model is not one context.** If you can still start a fresh context, do, and keep the independence. Do not collapse to self-review merely because only one model is available in the environment. Losing model diversity is a real but different loss from losing independence.
 - **Self-review is not independent review.** A session reviewing work it produced, or the main session reporting "looks good", is not evidence and never substitutes for an independent verdict. Say plainly when a step is a self-check rather than an independent one.
-- **Give the reviewer the requirement and a pinned version.** Provide the task's requirement plus a fixed code version (a commit SHA, a tag, or a frozen worktree). Do not pre-feed the implementer's self-report, its decision trail, or another reviewer's conclusions, because those anchor the reviewer to the author's framing. Let the reviewer reach its own read of the code.
+- **Do not pre-feed the framing.** Do not hand the reviewer the implementer's self-report, its decision trail, or another reviewer's conclusions, because those anchor the reviewer to the author's framing. Let the reviewer reach its own read of the code.
 - **Preserve the artifacts.** A substituted tool still has to produce the same conclusion, evidence, and independence the original step required. Replacing the implementation never excuses dropping the product.
+
+## A capability you can use is not a permission to use it
+
+Availability never grants authority. Delegation, substitution, and the choice of backend still obey the current request, the applicable project instructions, and the mapped tool's own authorization and command contract. A tool being installed, or a mechanism being reachable, is a reason it *can* be used, not a reason it may be.
+
+No command wrapper, registry, or extension is needed for any of this. The policy is text the skill reads.
 
 ## Substituting a concrete skill
 
@@ -47,8 +58,9 @@ Do not silently fall back to something weaker and call it equivalent.
 
 ## What still runs directly
 
-Not every task is a delegation.
+Not every task is a delegation. The single criterion is whether the step's own product requires independence:
 
-- A non-delegated, ordinary task runs in the main session, at the process weight its real risk justifies. There is no obligation to spin up a full independent workflow for a small, reversible change.
-- Read-only questions, single-file lookups, and direct answers are done directly.
-- What the main session may not do is manufacture independence it does not have. Whenever a playbook requires an independent verdict, an independent owner, or a parallel writer, obtaining that is the requirement, not an optional flourish.
+- **No**, the step just needs the work done. Run it in the main session, at the process weight its real risk justifies. There is no obligation to spin up a full independent workflow for a small, reversible change, a read-only question, a single-file lookup, or a direct answer.
+- **Yes**, the step's product is an independent verdict, an independent owner, a parallel writer, or a set of genuinely separate attempts. Then obtaining a separate context is the requirement, not an optional flourish. It does not downgrade to a self-check when a backend is missing; it stops and asks, per above.
+
+The trap this section exists to close: a skill that says "when no mechanism is available, do it yourself" has quietly converted a required independent step into a self-review. When you meet that instruction, apply the criterion instead of the instruction.

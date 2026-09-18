@@ -23,7 +23,7 @@ Open a checklist with one item per phase before launching anything: Frame, Fan o
 
 ## Phase B. Fan out
 
-Spawn all N in one message when the environment supports parallel sessions, with a fresh context each. When it does not, run them in sequence and say so in the report. Run a worker in this machine's working directory only when it needs something that exists only here.
+Spawn all N in one message when the environment supports parallel sessions, with a fresh context each. When concurrency is limited, run them in sequence and say so in the report. **A sequential run is the same swarm**: each worker still gets its own fresh context, and the parent context does not stand in for one. Looping the workers inside the parent is not a smaller swarm, it is a different thing that reports one context's work as N. Run a worker in this machine's working directory only when it needs something that exists only here.
 
 When a worker must start from a specific pushed branch, pass that branch.
 

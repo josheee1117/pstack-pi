@@ -19,18 +19,18 @@ The candidates receive the same prompt, so the prompt is the contract.
 
 1. State the artifact each candidate produces.
 2. Derive the rubric. State what success looks like for *this* task, then turn it into three to six concrete gradeable criteria. The rubric is the picker's tool in Phase D. Candidates see only the task.
-3. Pick the runners. Use the operator's configured runner set when one exists. Otherwise choose distinct models this environment actually offers, and when only one model or no subagent mechanism is available, produce the candidates yourself as clearly distinct attempts and say so. Same model N times when the work is generation-bound rather than judgment-sensitive.
+3. Pick the runners. Use the operator's configured runner set when one exists. Otherwise choose the strongest independent reasoners this environment actually offers; same model N times is fine when the work is generation-bound rather than judgment-sensitive, because independence here comes from a fresh context, not from a different model name. Never invent model names. **If the environment offers no way to start a fresh context at all, do not produce the candidates yourself.** A single context attempting its own variations is one attempt, not an arena. Name the gap and follow [When a backend is missing](../pstack/references/execution.md#when-a-backend-is-missing): stop and let the operator pick a verified backend or change the requirement.
 4. Assign output paths. Each candidate writes to its own location, a git worktree where possible, otherwise a scratch directory per candidate ([separate-before-serializing-shared-state](../pstack/references/principles.md#separate-before-serializing-shared-state)).
 
 ## Phase B. Fan out
 
-Spawn all N in one message when the environment supports it, each with the task, the path to the shared grounding, its own output path, and instructions to produce both the artifact and a short rationale naming the alternatives it considered and rejected. When only one session is available, run them sequentially and say so; the value of the arena survives sequential runs, only slower.
+Spawn all N in one message when the environment supports it, each with the task, the path to the shared grounding, its own output path, and instructions to produce both the artifact and a short rationale naming the alternatives it considered and rejected. When concurrency is limited, run them sequentially and say so. **Each run is still its own fresh context**, so a sequential run is the same arena, only slower; it is not permission to generate the alternatives from the parent context.
 
 If a candidate fails to produce output, proceed with N-1 and note the dropout in the synthesis record.
 
 ## Phase C. Cross-judge
 
-After the candidates complete, spawn one read-only judge on a model family different from the parent's when the environment allows. It sees the rubric and the candidates by label, scores each criterion, and recommends a base with rationale. It runs in parallel with your own reading in Phase D, not with the candidates. Do not start the judge while candidates are still writing. With no judge available, say so and hold yourself to the rubric criterion by criterion.
+After the candidates complete, spawn one read-only judge in a fresh context that did not produce the candidates. A different model family is preferred but not required: independence comes from a separate context and a blind read of a fixed artifact, not from a different model name. It sees the rubric and the candidates by label, scores each criterion, and recommends a base with rationale. It runs in parallel with your own reading in Phase D, not with the candidates. Do not start the judge while candidates are still writing. If no fresh judge context can be started, do not grade the candidates yourself and count it as the cross-judge. Say the judge is missing and follow [When a backend is missing](../pstack/references/execution.md#when-a-backend-is-missing).
 
 ## Phase D. Pick a base
 

@@ -7,7 +7,7 @@ description: "Strip comments that do not earn their place before review, and tur
 
 Review the comments in the change. Act on the accepted findings.
 
-The reviewer's fresh perspective is the point. Read [`../pstack/references/execution.md`](../pstack/references/execution.md) before running the review. When the environment has a separate review-session mechanism, give it [`references/comment-reviewer-prompt.md`](references/comment-reviewer-prompt.md) so the comment review does not come from the same context that wrote the comments. When it does not, say so and do the pass yourself against that same prompt, and label it a self-check rather than an independent review.
+The reviewer's fresh perspective is the point. Read [`../pstack/references/execution.md`](../pstack/references/execution.md) before running the review. When the environment has a separate review-session mechanism, give it [`references/comment-reviewer-prompt.md`](references/comment-reviewer-prompt.md) so the comment review does not come from the same context that wrote the comments. This step exists to get a view the author did not have, so a missing backend stops the review rather than shrinking it into one: see [When a backend is missing](../pstack/references/execution.md#when-a-backend-is-missing). Say the review is missing, and stop there rather than self-reviewing and calling it done.
 
 ## Scope
 

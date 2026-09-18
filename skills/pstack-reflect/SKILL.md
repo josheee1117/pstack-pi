@@ -29,7 +29,9 @@ Three reviewers over the same record, each with a different strength, plus one m
 | Tooling | [`references/tooling-reviewer.md`](references/tooling-reviewer.md) | Names the concrete command, flag, or path detail that future agents would otherwise re-derive. |
 | Divergent | [`references/divergent-reviewer.md`](references/divergent-reviewer.md) | Finds what the other two miss: second-order effects, skipped verification, decisions that survived by luck. |
 
-Pass each template verbatim, substituting the record path or the digest and the scope the session actually used. With no subagent mechanism, run the three lenses yourself in sequence, and say that one model produced all three.
+Pass each template verbatim, substituting the record path or the digest and the scope the session actually used. Each lens needs its own fresh context that did not do the work being reviewed. **These lenses review conclusions, so a missing backend stops the step rather than collapsing to a self-review.** If no fresh context can be started, run nothing and follow [When a backend is missing](../pstack/references/execution.md#when-a-backend-is-missing): say the lenses are missing and let the operator pick a verified backend or change the requirement.
+
+One scope note specific to this skill: a reviewer outside the working session cannot read the parent's own session record, so the isolation that normally keeps a reviewer independent does not apply to that input. The record is a legitimate input here, and when a lens does read it, hand over only the record and the diff, and keep the reviewer's conclusions out of the parent context until the synthesis step.
 
 ### 3. Synthesize
 

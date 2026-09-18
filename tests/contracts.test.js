@@ -183,6 +183,10 @@ test("the shared execution policy ships, and the skills that delegate point at i
     "pstack-reflect",
     "pstack-no-comments",
     "pstack-recall",
+    "pstack-setup",
+    "pstack-automate-me",
+    "pstack-figure-it-out",
+    "pstack-teach",
   ];
   const playbooks = [
     "orchestrate",
@@ -213,7 +217,7 @@ test("the shared execution policy ships, and the skills that delegate point at i
     [/Herdr/, "the Herdr default is named"],
     [/pi-intercom/, "pi-intercom is named"],
     [/worktree/, "an exclusive worktree is required"],
-    [/fresh-context subagent/, "the short-investigation path is named"],
+    [/fresh-context subagent|A fresh context is enough/, "the short-investigation path is named"],
     [/current request/, "the resolution order starts from the current request"],
     [/AGENTS\.md/, "the project mapping is read"],
     [/one model is not one context/i, "single model is not treated as single context"],
@@ -225,6 +229,86 @@ test("the shared execution policy ships, and the skills that delegate point at i
   for (const [pattern, label] of required) {
     assert.match(policyText, pattern, label);
   }
+});
+
+test("a step that requires independence never falls back to the main session doing it", () => {
+  // The known bad pattern: a step whose whole product is an independent
+  // verdict, an independent owner, or a set of genuinely separate attempts,
+  // telling the reader to just do it in the parent when a backend is missing.
+  // Each entry names the exact file and the self-fallback phrasing to keep out.
+  const independenceRequired = [
+    [
+      "pstack-arena",
+      /(produce|generate)( the candidates)? yourself|hold yourself to the rubric|the angles you have/,
+      "arena candidates and its cross-judge are independent contexts",
+    ],
+    [
+      "pstack-architect",
+      /produce[^.]{0,60}(sketches|designs) yourself|produce at least two[^.]*yourself/i,
+      "architect runners are independent contexts",
+    ],
+    [
+      "pstack-interrogate",
+      /run the review with the angles you have|review it yourself/i,
+      "interrogate's product is an independent verdict",
+    ],
+    [
+      "pstack-reflect",
+      /run the three lenses yourself|run them yourself in sequence/i,
+      "reflect's lenses need contexts that did not do the work",
+    ],
+    [
+      "pstack-no-comments",
+      /do the pass yourself/i,
+      "no-comments exists to get a view the author did not have",
+    ],
+    [
+      "pstack-setup",
+      /becomes a self-check|cross-judge becomes a self-check/i,
+      "setup must describe the gap the same way the policy does",
+    ],
+    [
+      "pstack/playbooks/orchestrate",
+      /route the program to a plainer equivalent: you doing the work/i,
+      "orchestrate's workers are independent sessions",
+    ],
+  ];
+
+  const offenders = [];
+  for (const [name, pattern, why] of independenceRequired) {
+    const file = name.includes("/") ? resolve(skillsDir, `${name}.md`) : resolve(skillsDir, name, "SKILL.md");
+    const text = readFileSync(file, "utf8");
+    // A negated form ("do not produce the candidates yourself") is the correct
+    // instruction, so only an un-negated one counts as a fallback.
+    for (const match of text.matchAll(new RegExp(pattern.source, `${pattern.flags}g`))) {
+      const sentence = text.slice(Math.max(0, match.index - 120), match.index + match[0].length);
+      if (/\b(do not|never|not|instead of|rather than)\b[^.]{0,90}$/i.test(sentence)) continue;
+      offenders.push(`${name}: "${match[0]}" (${why})`);
+    }
+  }
+
+  assert.deepEqual(
+    offenders,
+    [],
+    "a step requiring independence must stop and ask, not substitute a self-review",
+  );
+});
+
+test("a non-delegated step is still allowed to run directly", () => {
+  // The counterpart to the test above: the same sweep must not collapse the
+  // short bounded investigations into the stop-and-ask path.
+  const stillDirect = [
+    ["pstack-why", /run the categories sequentially yourself/],
+    ["pstack-how", /do it directly/],
+    ["pstack/playbooks/multi-phase-plan", /explore directly/],
+  ];
+
+  const missing = [];
+  for (const [name, pattern] of stillDirect) {
+    const file = name.includes("/") ? resolve(skillsDir, `${name}.md`) : resolve(skillsDir, name, "SKILL.md");
+    if (!pattern.test(readFileSync(file, "utf8"))) missing.push(name);
+  }
+  assert.deepEqual(missing, [], "short bounded investigations keep the direct path");
 });
 
 test("the generated verification skill targets the using project, not this package", () => {

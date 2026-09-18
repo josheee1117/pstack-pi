@@ -27,7 +27,7 @@ Before spawning reviewers, state the intent in one clear paragraph, derived from
 
 ## Step 3. Spawn reviewers
 
-Launch every reviewer in one message so they run concurrently. One reviewer per entry in the operator's configured reviewer list. When no list is configured, choose independent models the environment actually offers, preferring different model families, and say which models you used. If the environment offers only one model or no subagent mechanism, say so and run the review with the angles you have rather than pretending to multi-model coverage.
+Launch every reviewer in one message so they run concurrently. One reviewer per entry in the operator's configured reviewer list. When no list is configured, use the strongest independent review this environment offers, preferring different model families; one model for every reviewer is fine, because independence comes from a fresh context and a blind read of a fixed artifact, not from the model name. Say which reviewers you used. **This step's whole product is an independent verdict, so it does not degrade into a self-review.** If no reviewer can be given a fresh context, say the review is missing and follow [When a backend is missing](../pstack/references/execution.md#when-a-backend-is-missing): stop and let the operator pick a verified backend or change the requirement.
 
 Each reviewer is a read-only subagent prompted from [`references/reviewer-prompt.md`](references/reviewer-prompt.md), filled in with:
 

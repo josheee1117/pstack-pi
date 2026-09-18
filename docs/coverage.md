@@ -15,24 +15,24 @@
 | `why` | 公共技能 | `skills/pstack-why` | 保留证据分级与输出结构。MCP 发现改为「枚举本会话真实可用的来源」，允许只有 git 与 forge CLI，并要求把查不到的部分明确列为缺口。上游 7 个来源 playbook 合并为一份 `references/sources.md`。 |
 | `recall` | 公共技能 | `skills/pstack-recall` | 记录来源从 Cursor 的 `agent-transcripts/` 目录改为会话自身的 `PI_SESSION_FILE` 与项目记忆，并明确只读本项目记录。 |
 | `blast-radius` | 公共技能 | `skills/pstack-blast-radius` | 原样保留五级确定性阶梯与「证明那个唯一的安全事实」。 |
-| `architect` | 公共技能 | `skills/pstack-architect` | 保留五阶段与「设计两次」。runner 默认模型列表删除，改为使用操作者配置或本环境真实可用的模型。 |
-| `arena` | 公共技能 | `skills/pstack-arena` | 保留六阶段与 base 选择、graft 规则。模型列表删除，环境不支持并行时明确说明为顺序执行。 |
-| `swarm` | 公共技能 | `skills/pstack-swarm` | 保留四阶段。`environment: cloud` 与 `run_in_background` 删除，改为「环境支持并行会话就并行，不支持就顺序并说明」。 |
-| `interrogate` | 公共技能 | `skills/pstack-interrogate` | 保留多模型对抗与 lead judgment 分类。reviewer 列表改为操作者配置或本环境可用模型；只有单模型时如实说明覆盖面下降。 |
+| `architect` | 公共技能 | `skills/pstack-architect` | 保留五阶段与「设计两次」。runner 默认模型列表删除，改为使用操作者配置或本环境真实可用的模型；同一模型跑多个 runner 是允许的，独立性来自新 context 而非模型不同。起不了新 context 时不自已画两张草图充数，按共享执行策略的缺后端规则停下。 |
+| `arena` | 公共技能 | `skills/pstack-arena` | 保留六阶段与 base 选择、graft 规则。模型列表删除。并发受限时可以顺序跑，但每个候选仍是自己的 fresh context，不等于让主 context 自己生成多个候选；起不了新 context 或找不到 judge 时按共享执行策略停下，不用「自评代替 cross-judge」。 |
+| `swarm` | 公共技能 | `skills/pstack-swarm` | 保留四阶段。`environment: cloud` 与 `run_in_background` 删除。并发受限时顺序跑仍是同一个 swarm，因为每个 worker 都有自己的 fresh context；在主 context 里循环冒充 N 个 worker 不是 swarm。 |
+| `interrogate` | 公共技能 | `skills/pstack-interrogate` | 保留多模型对抗与 lead judgment 分类。reviewer 列表改为操作者配置或本环境可用模型，同一模型也可，独立性来自 fresh context 与对固定版本的盲审。这一步的产品就是独立判词，所以缺 reviewer 时说缺口并停下，不降级为自评。 |
 | `tdd` | 公共技能 | `skills/pstack-tdd` | 原样保留，包括「不划算就别硬写测试」。 |
 | `bro` | 公共技能 | `skills/pstack-bro` | 原样保留，补一句「简单不等于更含糊」。 |
 | `unslop` | 公共技能 | `skills/pstack-unslop` | 规则编号保持不变（其他技能按编号引用）。仅用于写作清理；代码清理不走这个技能。 |
 | `technical-writing` | 公共技能 | `skills/pstack-technical-writing` | 四层标准与来源注记保留。补上「变化句长」一节（原文只在别处暗示）。 |
-| `no-comments` | 公共技能 | `skills/pstack-no-comments` | 原来派发 `Comment Sicko` 子代理，改为把同一套审查规则写成 `skills/pstack-no-comments/references/comment-reviewer-prompt.md` 交给一个干净上下文的审查会话；没有该机制时自己按同一份 prompt 走。 |
+| `no-comments` | 公共技能 | `skills/pstack-no-comments` | 原来派发 `Comment Sicko` 子代理，改为把同一套审查规则写成 `skills/pstack-no-comments/references/comment-reviewer-prompt.md` 交给一个干净上下文的审查会话。这一步要的就是作者没有的视角，所以缺该机制时停下等操作者选，不自己代跑后自称已完成。 |
 | `typescript-best-practices` | 公共技能 | `skills/pstack-typescript-best-practices` | 原样保留，规则表与 `references/patterns.md` 例子全带。`paths` frontmatter 删除（Pi 不按路径自动触发）。 |
-| `figure-it-out` | 公共技能 | `skills/pstack-figure-it-out` | 保留五阶段与「设计流程本身才是交付物」。 |
+| `figure-it-out` | 公共技能 | `skills/pstack-figure-it-out` | 保留五阶段与「设计流程本身才是交付物」。自己决定 writer 与 fanout，所以委派前先读共享执行策略：owner 与并行写入者需要独立 context 与独占工作副本，提供不了就停下问，不自己招成。 |
 | `show-me-your-work` | 公共技能 | `skills/pstack-show-me-your-work` | TSV 格式不变。上游的 `scripts/log.sh` helper 未打包（见下），改为写明用普通文件编辑或一次 `printf` 追加，并保留公式注入防护。 |
 | `create-verification-skill` | 公共技能 | `skills/pstack-create-verification-skill` | 功能地图契约与示例带全。生成目标是使用者项目的 `.pi/skills/verify-<app>/`，不是本包目录；个人位置仅在用户明确要求时使用。仍要求「没亲自跑过一次就只是草稿」。 |
 | `maintain-verification-skill` | 公共技能 | `skills/pstack-maintain-verification-skill` | 源扫描波次与 live pass 保留，包括 doctor 三不变式。 |
-| `setup-pstack` | 公共技能 | `skills/pstack-setup` | 作为「发现环境能力 + 记录配置」的使用指南保留。删除 `~/.cursor/rules/pstack-models.mdc` 这条硬路径与整套默认模型表；不再自动写全局默认值，写入位置默认是项目 `AGENTS.md`，且需用户选择。 |
-| `reflect` | 公共技能 | `skills/pstack-reflect` | 三个审查视角与 synthesizer 契约保留（tooling/judgment/divergent 各一份 `references/`）。记录来源改为 `PI_SESSION_FILE`。 |
-| `automate-me` | 公共技能 | `skills/pstack-automate-me` | 流程保留，删除 `create-skill` 内置技能依赖（改为引用本包的 `authoring-a-skill` playbook），挖掘范围限定本项目记录。 |
-| `teach` | 公共技能 | `skills/pstack-teach` | 逐图递进、不设小测、不贴标签等要求全保留，来源改为 `pstack-how` 与 `pstack-why`。 |
+| `setup-pstack` | 公共技能 | `skills/pstack-setup` | 作为「发现环境能力 + 记录配置」的使用指南保留。删除 `~/.cursor/rules/pstack-models.mdc` 这条硬路径与整套默认模型表；不再自动写全局默认值，写入位置默认是项目 `AGENTS.md`，且需用户选择。能力缺口报告改为与共享执行策略同向：短调查和普通任务仍直接做，需要独立性的步骤停下让你选，不再声称单模型/无机制就自动降为主会话自办。 |
+| `reflect` | 公共技能 | `skills/pstack-reflect` | 三个审查视角与 synthesizer 契约保留（tooling/judgment/divergent 各一份 `references/`）。记录来源改为 `PI_SESSION_FILE`。三个 lens 各自需要没参与工作的 fresh context；起不了就停下，不自己串一遍充数。另注明本技能特有例外：session 记录本身就是合法输入，对外部 reviewer 的常规隔离不适用于它。 |
+| `automate-me` | 公共技能 | `skills/pstack-automate-me` | 流程保留，删除 `create-skill` 内置技能依赖（改为引用本包的 `authoring-a-skill` playbook），挖掘范围限定本项目记录。大规模挖掘会 fanout fresh reader，因此那种分发前先读共享执行策略（它属短的有界调查）。 |
+| `teach` | 公共技能 | `skills/pstack-teach` | 逐图递进、不设小测、不贴标签等要求全保留，来源改为 `pstack-how` 与 `pstack-why`。会并行跑这两个技能，所以并行前先读共享执行策略。 |
 | `make-bot-ui` | 公共技能 | 未移植 | 用 webhook 唤醒 Cursor 的 Grok Bot，含 sender key 交接与 Tailscale 暴露。行为面完全依赖 Cursor 运行时，没有可移植内核。 |
 
 ## Playbook（23）
@@ -54,7 +54,7 @@
 | `babysit` | playbook | `skills/pstack/playbooks/babysit.md` | 九步保留。删掉 `watch-pr` 脚本、Graphite、Origin 分支与 `/loop`，改为 forge CLI 状态 + 有上限的观望；栈拓扑只允许一个写者。 |
 | `shipping` | playbook | `skills/pstack/playbooks/shipping.md` | 九步保留，含 patch-id 重验与「只落自下而上的连续已验证段」。补明 head 保护不覆盖 base 变化，且不声称等价于专门的落地工具。 |
 | `autonomous-run` | playbook | `skills/pstack/playbooks/autonomous-run.md` | 六步保留。`/loop` 删除，改为「唤醒机制要么是真实事件，要么是有上限的轮询；没有调度器就不要承诺定时」。 |
-| `orchestrate` | playbook | `skills/pstack/playbooks/orchestrate.md` | 角色、brief 模板、drain 纪律、栈安全、账本全部保留。`orch.ts` CLI 与 `bun` 依赖删除，状态落在可读文件；30 分钟 tick 改为「必须有真实定时或你自己持有的轮询，否则就说没有并改在自然边界审查」。 |
+| `orchestrate` | playbook | `skills/pstack/playbooks/orchestrate.md` | 角色、brief 模板、drain 纪律、栈安全、账本全部保留。`orch.ts` CLI 与 `bun` 依赖删除，状态落在可读文件；30 分钟 tick 改为「必须有真实定时或你自己持有的轮询，否则就说没有并改在自然边界审查」。起不了独立会话时不再自动降为由协调者自己做，而是停下让操作者选后端或明确缩小规模。 |
 | `autopilot-full` | playbook | `skills/pstack/playbooks/autopilot-full.md` | 七步保留，含「每个 merge-ready head 都要根上独立验证」与 owner 不得单独合并。云 agent 与 `/goal` 依赖删除，改为会话目标与真实唤醒。 |
 | `autopilot-stack` | playbook | `skills/pstack/playbooks/autopilot-stack.md` | 八步保留，含 append-only、单一拓扑写者、patch-id 判据。 |
 | `session-pickup` | playbook | `skills/pstack/playbooks/session-pickup.md` | 五步保留。记录来源改为 `PI_SESSION_FILE` 或明确授权的会话路径，且只读本项目。 |

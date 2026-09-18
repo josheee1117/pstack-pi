@@ -25,7 +25,7 @@ Update mode changes the rest of the flow:
 
 Locate the records before searching. Read **only this project's** records: the current session record named by `PI_SESSION_FILE`, the other records in the same project directory, and the project's long-term memory. Do not read other projects' private sessions.
 
-Survey the window for recurring patterns. For a large corpus, split it into two to four slices and run one fresh-context reader per slice ([guard-the-context-window](../pstack/references/principles.md#guard-the-context-window)). Each returns a short structured list of patterns with evidence pointers. Default signals worth hunting:
+Survey the window for recurring patterns. For a large corpus, split it into two to four slices and run one fresh-context reader per slice ([guard-the-context-window](../pstack/references/principles.md#guard-the-context-window)). Read [`../pstack/references/execution.md`](../pstack/references/execution.md) before that fan-out: the readers are a short bounded investigation, so one slice per fresh context is enough and no independent verdict is involved. Each returns a short structured list of patterns with evidence pointers. Default signals worth hunting:
 
 - Response preferences: length, tone, format, corrections like "dumb it down".
 - Delegation habits: subagents, models, specialized workflows, parallelism.

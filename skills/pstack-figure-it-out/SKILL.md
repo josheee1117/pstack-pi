@@ -27,7 +27,7 @@ Decompose into atomic, independently landable units. Sequence the riskiest unkno
 
 - Build the verification harness before the work, with the baseline captured from the pre-change state, so the check reads as "old value versus new value".
 - For one-way-door design decisions, run `pstack-architect`, which runs `pstack-arena`. Skip it for mechanical work whose shape is already concrete. A second arena over a settled design is over-engineering ([laziness-protocol](../pstack/references/principles.md#laziness-protocol)).
-- Decide what fans out. Parallelize only across seams, and give each writer its own worktree or branch ([separate-before-serializing-shared-state](../pstack/references/principles.md#separate-before-serializing-shared-state)). Do not over-fan.
+- Decide what fans out. Read [`../pstack/references/execution.md`](../pstack/references/execution.md) before assigning any writer or parallel branch: an owner or a parallel writer needs its own fresh context and its own working copy, and if that cannot be provided the phase stops for the operator rather than collapsing into one context. Parallelize only across seams, and give each writer its own worktree or branch ([separate-before-serializing-shared-state](../pstack/references/principles.md#separate-before-serializing-shared-state)). Do not over-fan.
 - Write the designed phase list down. That list is what the human reviews.
 
 Then execute the design: add its steps to the checklist as concrete items, after the Phase C entry and before Phase D. Run each under the Phase C loop discipline, weaving the Phase D log through them, a row as each step lands, rather than saving the whole trail for the end.

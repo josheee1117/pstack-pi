@@ -81,7 +81,7 @@ Write the whole block on every run so re-runs are idempotent.
 
 ### 6. Confirm, and account for gaps
 
-Tell the user what was written and that the choices apply to new sessions. When the environment offers only one model, or no subagent mechanism, say plainly which pstack capabilities are therefore degraded: multi-model review becomes single-reviewer, parallel writers become sequential, and the arena's cross-judge becomes a self-check against the rubric. Do not paper over the gap.
+Tell the user what was written and that the choices apply to new sessions. Then account for gaps **in the direction the execution policy set**: read [`../pstack/references/execution.md`](../pstack/references/execution.md) and report which pstack capabilities this environment cannot satisfy, and for each one which of the two routes applies. A short bounded investigation or a non-delegated task still runs directly. A step whose product is an independent verdict, an independent owner, or a parallel writer does not: it needs a fresh context, and if none can be started the step stops for the operator to pick a verified backend or change the requirement. One model is not one context, so a single-model environment loses multi-model diversity but not independence. Do not paper over any of it.
 
 ### 7. Offer a verification skill
 

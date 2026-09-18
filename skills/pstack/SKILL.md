@@ -10,7 +10,7 @@ Rigorous engineering workflow. This skill is the entry point. It reads the reque
 Two things this port does differently from the original, and they apply everywhere below.
 
 - **Process weight follows the cost of being wrong.** A one-line change gets implemented and checked, nothing more. Multi-model review, design contests, PRs, and task ledgers are for work where a wrong shape is expensive to undo or where the operator asked for them. Read-only questions never get routed into writing code.
-- **Delegation is a means, not a rule.** Spawn a fresh-context subagent when it buys real parallelism or real independence. You may do the work directly. What you may not do is fake independence: a self-review is not an independent review, and the main session's own "looks good" is not evidence.
+- **Delegation is a means, not a rule, but independence is sometimes the requirement.** Spawn a fresh context when it buys real parallelism or real independence, and do an ordinary task directly. What you may not do is fake independence: a self-review is not an independent review, and the main session's own "looks good" is not evidence. Whenever a step's product is an independent verdict, an independent owner, or a parallel writer, obtaining a genuinely separate context **is** the requirement, not an optional flourish, and a missing backend stops that step rather than shrinking it. See [references/execution.md](references/execution.md#what-still-runs-directly).
 
 ## Non-negotiables
 

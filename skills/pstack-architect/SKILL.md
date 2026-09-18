@@ -25,7 +25,7 @@ Skip Phase A only when the work is genuinely greenfield with no surrounding syst
 
 Run `pstack-arena` with the design task and the Phase A grounding artifacts, passing [`references/runner-prompt.md`](references/runner-prompt.md) as each runner's prompt. Each candidate produces a design package shaped per [`references/rationale-template.md`](references/rationale-template.md).
 
-Use the operator's configured runner set when one exists. When none is configured, pick the strongest independent reasoners this environment offers, and when only one model or no subagent mechanism is available, produce at least two structurally distinct sketches yourself and say that you did. Do not invent model names.
+Use the operator's configured runner set when one exists. When none is configured, pick the strongest independent reasoners this environment offers; one model for every runner is fine, because independence comes from a fresh context and a separate working copy, not from the model name. Never invent model names. **If the environment offers no way to start a fresh context at all, do not produce the sketches yourself.** One context sketching variants is one candidate, not a design space. Name the gap and follow [When a backend is missing](../pstack/references/execution.md#when-a-backend-is-missing): stop and let the operator pick a verified backend or change the requirement.
 
 **Design it twice.** Require at least two structurally distinct candidates before synthesis, even when the first looks sufficient. This is [exhaust-the-design-space](../pstack/references/principles.md#exhaust-the-design-space) made concrete. Whole-shape alternatives, not point fixes inside one shape.
 
