@@ -6,9 +6,9 @@
 
 原始工作流来源：`cursor/plugins` 的 `pstack/`，快照 `e31650eea443aaea1e84cc15d88c13f40080b275`。移植经验及可靠性修复参考：`michael-denyer/pstack-claude`，快照 `430a4f5d1fdcba0750ffa21e441ced5114f7d8ce`。保留上游 MIT 许可与署名，明确哪些是改写、替代和暂不支持，不宣称逐字或全平台等价。
 
-## 已确认的执行选择
+## 产品多 agent 工作流的执行选择
 
-用户选择 A：**Herdr 优先，fresh subagent 可选，不静默切换后端。**
+用户选择 A：**Herdr 优先，fresh subagent 可选，不静默切换后端。** 本节规定的是用户使用 pstack-pi 时的多 agent 行为，不约束开发 pstack-pi 仓库本身的协作方式。开发协作按任务、效率和成本选择执行方式，不能把产品默认值当作开发派发要求。
 
 - 长期 owner、并行实现、swarm、arena 和正式独立审查优先使用 Herdr 承载的独立 Pi 会话。
 - Herdr 负责终端、进程和会话定位及控制；pi-intercom 负责会话间通信；Git worktree 隔离并行写入。
