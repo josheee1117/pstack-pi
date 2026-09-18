@@ -8,11 +8,13 @@
 
 上游 `make-bot-ui` 依赖 Cursor 的 Grok Bot webhook 与 Tailscale 会话密钥交接，没有可移植的行为，因此不做。其余 23 个全部交付，入口改名 `pstack`。
 
+触发方式与上游一致：除 `pstack-setup` 外，其余 22 个技能都带 `disable-model-invocation: true`（上游也只留 `setup-pstack` 可见）。它们不进系统提示，用 `/skill:<name>` 点名调用；入口技能和它引用的其他技能都由使用者显式启动，模型不自行路由。`pstack-setup` 保持可见，以便模型在装完后主动提一句配置。
+
 | 上游条目 | 类型 | 去向 | 差异 |
 |---|---|---|---|
 | `poteto-mode` | 公共技能 | `skills/pstack` | 改名 `pstack`。个人风格改为通用工程流程：不再强绑作者的语气与模型选择，删掉 Cursor 的 `Task`/`subagent_type`/`/loop` 绑定，改为按能力描述执行环境，并指向共享的执行与替换策略。playbook 数量保持 23。 |
 | `how` | 公共技能 | `skills/pstack-how` | 保留两段式复杂度判定（简单直接解释，复杂并行探查再汇总）。子代理派发改述为能力，环境无子代理时自己按同一输出格式做。 |
-| `why` | 公共技能 | `skills/pstack-why` | 保留证据分级与输出结构。MCP 发现改为「枚举本会话真实可用的来源」，允许只有 git 与 forge CLI，并要求把查不到的部分明确列为缺口。上游 7 个来源 playbook 合并为一份 `references/sources.md`。 |
+| `why` | 公共技能 | `skills/pstack-why` | 保留证据分级与输出结构。MCP 发现改为「枚举本会话真实可用的来源」，允许只有 git 与 forge CLI，并要求把查不到的部分明确列为缺口。七个来源 recipe 按上游结构保留在 `references/sources/`，由 `references/source-playbook.md` 索引。 |
 | `recall` | 公共技能 | `skills/pstack-recall` | 记录来源从 Cursor 的 `agent-transcripts/` 目录改为会话自身的 `PI_SESSION_FILE` 与项目记忆，并明确只读本项目记录。 |
 | `blast-radius` | 公共技能 | `skills/pstack-blast-radius` | 原样保留五级确定性阶梯与「证明那个唯一的安全事实」。 |
 | `architect` | 公共技能 | `skills/pstack-architect` | 保留五阶段与「设计两次」。runner 默认模型列表删除，改为使用操作者配置或本环境真实可用的模型；同一模型跑多个 runner 是允许的，独立性来自新 context 而非模型不同。起不了新 context 时不自己画两张草图充数，按共享执行策略的缺后端规则停下。 |
@@ -99,7 +101,7 @@
 |---|---|---|---|
 | `skills/poteto-mode/references/bugbot-triage.md` | 参考文件 | `skills/pstack/references/bugbot-triage.md` | 判定规则与已记录的 skip 模式保留。删掉特定 PR 的历史注记，改为可复用的模式描述，并补上「过窄的错误条件不该放宽」这一条。 |
 | `skills/show-me-your-work/references/decision-log-template.tsv` | 参考文件 | `skills/pstack-show-me-your-work/references/decision-log-template.tsv` | 表头原样。 |
-| `skills/why/references/*` | 参考文件 | `skills/pstack-why/references/` | 七个来源合并为 `sources.md`；`epistemics.md` 与 `code-archaeology.md` 独立保留；investigator 与 synthesizer 提示词保留。 |
+| `skills/why/references/*` | 参考文件 | `skills/pstack-why/references/` | 按上游结构保留：`source-playbook.md` 索引 + `sources/` 下七个类别各一份（含 `incident-postmortem.md`），连同 `epistemics.md`、investigator 与 synthesizer 提示词。 |
 | `skills/how/references/*` | 参考文件 | `skills/pstack-how/references/` | explorer 与 explainer 提示词保留。 |
 | `skills/interrogate/references/*` | 参考文件 | `skills/pstack-interrogate/references/` | rubric、code-quality、lead-judgment、reviewer-prompt 四份全保留。 |
 | `skills/reflect/references/*` | 参考文件 | `skills/pstack-reflect/references/` | 三个视角加 synthesizer，共四份保留，路径约定改为 Pi。 |

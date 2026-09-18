@@ -17,11 +17,11 @@ pi install -l /path/to/pstack-pi
 pi -e /path/to/pstack-pi
 ```
 
-装完新开一个 Pi 会话，23 个技能会被发现。
+装完新开一个 Pi 会话，23 个技能会被注册。和上游一样，除 `pstack-setup` 外的技能都不进系统提示，由你用 `/skill:<name>` 点名调用，模型不会自己抢进去跑流程。
 
 ## 用
 
-入口是 `pstack`。给它一个任务，它匹配到 23 个 playbook 之一，然后按步骤调其他技能。
+入口是 `pstack`，用 `/skill:pstack` 启动。给它一个任务，它匹配到 23 个 playbook 之一，然后按步骤调其他技能。因为其他技能是显式调用的，这条链完全由入口技能在流程里驱动，不靠模型自行路由。
 
 ```
 /skill:pstack 这个 PR 有个隐蔽 bug，空闲时滚动每 750 毫秒漂一次。先复现，再修，再验证。

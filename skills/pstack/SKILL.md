@@ -1,5 +1,6 @@
 ---
 name: pstack
+disable-model-invocation: true
 description: "Rigorous engineering workflow for any non-trivial task: understand, design, implement, verify independently, ship, recover. Matches the task to one of 23 playbooks (investigation, bug fix, perf, hillclimb, forensics, feature, refactoring, prototype, visual parity, skill authoring, eval, babysit, shipping, autonomous run, orchestrate, autopilot, session pickup, pause safely, multi-phase plan, worktree cleanup, opening a PR). Use for /skill:pstack, 'pstack this', 'use pstack', 'do this rigorously', or any task where the wrong shape is expensive to undo."
 ---
 

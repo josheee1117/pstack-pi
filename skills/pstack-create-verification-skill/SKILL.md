@@ -1,5 +1,6 @@
 ---
 name: pstack-create-verification-skill
+disable-model-invocation: true
 description: "Generate a project-local verification skill that drives the app the way a user does, for any language, framework, or platform. Use for /skill:pstack-create-verification-skill, 'make a verification skill for this repo', or when a project has no scripted way to prove UI, CLI, or service behavior. Records Launch, Doctor, Drive, Evidence, Cleanup, and a feature map."
 ---
 

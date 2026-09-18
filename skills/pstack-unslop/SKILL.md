@@ -1,5 +1,6 @@
 ---
 name: pstack-unslop
+disable-model-invocation: true
 description: "Cut AI tells from any writing: prose replies, docs, PR descriptions, commit messages, comments. Use whenever you are about to deliver written output, and always before handing prose to the user."
 ---
 

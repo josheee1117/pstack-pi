@@ -1,5 +1,6 @@
 ---
 name: pstack-tdd
+disable-model-invocation: true
 description: "Write the failing test first when a bug has a clear, cheap local test path, then fix and rerun it. Use when the user asks for TDD or a regression test, or when the bug has an obvious cheap test target. Skip when the test path is unclear, expensive, integration-heavy, or not requested."
 ---
 

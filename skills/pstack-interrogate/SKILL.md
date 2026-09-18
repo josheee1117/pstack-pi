@@ -1,5 +1,6 @@
 ---
 name: pstack-interrogate
+disable-model-invocation: true
 description: "Adversarial multi-model review of a change: find bugs, design flaws, security issues, and maintainability problems from independent angles, then synthesize a verdict with act-on, consider, and dismissed findings. Use for /skill:pstack-interrogate, 'interrogate this', 'adversarial review', 'multi-model review', 'stress test this diff', 'find blind spots', 'tear this apart', or before shipping a contested design."
 ---
 

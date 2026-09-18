@@ -1,5 +1,6 @@
 ---
 name: pstack-typescript-best-practices
+disable-model-invocation: true
 description: "TypeScript best practices for reading or editing any .ts or .tsx file. Grounds type-system discipline in syntax: discriminated unions, branded types, constructive modeling, unknown over any, no casts, exhaustive matching, boundary parsing. Read it before writing or reviewing TypeScript."
 ---
 

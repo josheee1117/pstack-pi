@@ -40,7 +40,7 @@ test("the real Pi loader discovers every skill with no diagnostics", async (t) =
   }
 });
 
-test("every public skill is reachable from the system prompt", async (t) => {
+test("the trigger model matches upstream: one visible skill, the rest explicit-only", async (t) => {
   const pi = await loadPi();
   if (!pi) {
     t.skip("the Pi package is not installed on this machine");
@@ -49,13 +49,22 @@ test("every public skill is reachable from the system prompt", async (t) => {
 
   const result = pi.loadSkillsFromDir({ dir: skillsDir, source: "pstack-pi" });
 
-  // Deliberate design decision: no public skill sets disable-model-invocation,
-  // so the model can route to any of them from the description alone.
-  assert.equal(result.skills.filter((s) => s.disableModelInvocation).length, 0);
+  // Upstream hides every public skill except setup-pstack, so the human picks
+  // the workflow with /skill:<name> instead of the model routing itself in.
+  // This port keeps that model; the one visible skill is the setup guide.
+  const visible = result.skills.filter((s) => !s.disableModelInvocation).map((s) => s.name);
+  assert.deepEqual(visible, ["pstack-setup"], "only the setup guide is offered to the model");
 
+  const hidden = result.skills.filter((s) => s.disableModelInvocation).map((s) => s.name).sort();
+  const expectedHidden = expectedPublicSkills.filter((name) => name !== "pstack-setup");
+  assert.deepEqual(hidden, expectedHidden, "every other public skill is explicit-invocation only");
+
+  // Hidden from the prompt is not hidden from the user: /skill:<name> still
+  // resolves, which is the whole point of the setting.
   const prompt = pi.formatSkillsForPrompt(result.skills, "read");
-  for (const name of expectedPublicSkills) {
-    assert.match(prompt, new RegExp(`<name>${name}</name>`), `${name} appears in the system prompt`);
+  assert.match(prompt, /<name>pstack-setup<\/name>/, "the setup guide stays in the system prompt");
+  for (const name of expectedHidden) {
+    assert.doesNotMatch(prompt, new RegExp(`<name>${name}</name>`), `${name} is kept out of the system prompt`);
   }
 });
 
@@ -76,7 +85,15 @@ test("every SKILL.md parses through Pi's own frontmatter reader and carries a bo
     assert.equal(typeof frontmatter?.description, "string", `${name} declares a description`);
     assert.ok(frontmatter.description.trim().length > 20, `${name} description says when to use it`);
     assert.ok(body.trim().length > 200, `${name} carries a body, not just frontmatter`);
-    const allowed = new Set(["name", "description", "license", "compatibility", "metadata", "allowed-tools"]);
+    const allowed = new Set([
+      "name",
+      "description",
+      "license",
+      "compatibility",
+      "metadata",
+      "allowed-tools",
+      "disable-model-invocation",
+    ]);
     const unknown = Object.keys(frontmatter).filter((key) => !allowed.has(key));
     assert.deepEqual(unknown, [], `${name} declares only documented frontmatter fields`);
   }

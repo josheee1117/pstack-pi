@@ -1,5 +1,6 @@
 ---
 name: pstack-arena
+disable-model-invocation: true
 description: "Run N parallel attempts at the same task, pick a base, and graft the strongest parts of the losers into it. Use for /skill:pstack-arena, 'arena this', 'throw it in the arena', 'compare approaches', or when one attempt at a non-trivial artifact would lock in the wrong shape."
 ---
 

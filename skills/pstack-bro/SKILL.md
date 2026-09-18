@@ -1,5 +1,6 @@
 ---
 name: pstack-bro
+disable-model-invocation: true
 description: "Restate the last message in plain human language, with no jargon. Use for /skill:pstack-bro, 'bro', 'explain that like a person', or when the previous reply was too dense."
 ---
 

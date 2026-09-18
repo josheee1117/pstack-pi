@@ -1,5 +1,6 @@
 ---
 name: pstack-reflect
+disable-model-invocation: true
 description: "Mine the current conversation for durable learnings and route each one to a concrete edit on an existing skill, a backlog item, or a rejection. Use when the user says reflect, or after a long task where the same friction is likely to recur."
 ---
 

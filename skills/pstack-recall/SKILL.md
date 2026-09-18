@@ -1,5 +1,6 @@
 ---
 name: pstack-recall
+disable-model-invocation: true
 description: "Rebuild recent working context on a topic from this project's own records (session records, the project's long-term memory, live git and PR state) and hand back a tight current-state brief. Use for 'recall my work on X', 'catch me up', 'what have I been working on', 'where did I leave off', before starting or resuming work."
 ---
 

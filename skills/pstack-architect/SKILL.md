@@ -1,5 +1,6 @@
 ---
 name: pstack-architect
+disable-model-invocation: true
 description: "Design types, signatures, and module structure before writing code, then stay in the loop while implementation fills in. Use for /skill:pstack-architect, 'architect this', 'design this first', or any change crossing a function boundary where jumping to code would lock in the wrong shape."
 ---
 

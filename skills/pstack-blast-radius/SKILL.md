@@ -1,5 +1,6 @@
 ---
 name: pstack-blast-radius
+disable-model-invocation: true
 description: "Find what a change could break somewhere else before it ships, beyond the diff, and prove the one fact its safety depends on by running code instead of writing it up. Use for 'blast radius of X', 'what could this break', or reviewing a small diff you do not trust."
 ---
 

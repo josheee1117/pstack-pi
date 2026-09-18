@@ -1,5 +1,6 @@
 ---
 name: pstack-why
+disable-model-invocation: true
 description: "Explain why code is shaped the way it is: design rationale, regressions, postmortems, data-backed thresholds. Use for 'why does X work this way', 'why did we pick Y', 'where did this number come from'. Discovers the evidence sources actually available in this session, queries each category in parallel, and returns a cited read with explicit confidence tiers. Use pstack-how for runtime behavior."
 ---
 
@@ -55,6 +56,8 @@ Source control is always available through git and the forge CLI. Classify the r
 
 Aim for a complete **coverage map**, not a minimal one. Document the null rather than skipping the search.
 
+[`references/source-playbook.md`](references/source-playbook.md) names one playbook per category, each written against an example tool: `code-archaeology.md` for source control (git, the forge CLI), then `linear.md`, `notion.md`, `slack.md`, `datadog.md`, `sentry.md`, and `databricks.md`. They are concrete recipes, not abstractions: they name the tool calls to make and the pitfalls that produce false confidence. Adapt the one matching the tool actually connected, and skip the rest with a written reason.
+
 ## Step 4. Run the investigators (default posture)
 
 Default to the full parallel investigation. One investigator per available category. Never one investigator covering several sources.
@@ -62,8 +65,8 @@ Default to the full parallel investigation. One investigator per available categ
 Each investigator is a fresh-context subagent, is allowed to read and query but must not write, and gets:
 
 1. The base prompt from [`references/investigator-prompt.md`](references/investigator-prompt.md)
-2. The category section from [`references/sources.md`](references/sources.md) for its category, adapted to the actual tool
-3. The incident angle from the same file when the target code looks defensive (null checks, retry logic, timeout handling, rate limiting, feature flags, egress guards, out-of-memory handlers)
+2. The single matching category playbook under [`references/sources/`](references/sources), adapted to the tool actually connected
+3. [`references/sources/incident-postmortem.md`](references/sources/incident-postmortem.md) **if the target code looks defensive** (null checks, retry logic, timeout handling, rate limiting, feature flags, egress guards, out-of-memory handlers)
 4. The code anchor from step 2
 5. The user's original question
 
@@ -112,6 +115,6 @@ After the Sources Consulted block, when the question is a precursor to changing 
 
 - [`references/epistemics.md`](references/epistemics.md). Confidence tiers and phrasing. Mandatory for the synthesizer.
 - [`references/investigator-prompt.md`](references/investigator-prompt.md). Base prompt for an investigator.
-- [`references/sources.md`](references/sources.md). One concrete search recipe per evidence category, plus the cross-cutting incident angle.
-- [`references/code-archaeology.md`](references/code-archaeology.md). The always-available source, in more depth.
+- [`references/source-playbook.md`](references/source-playbook.md). Category index, plus the cross-cutting incident angle.
+- [`references/sources/`](references/sources). One recipe per evidence category, with the concrete tool calls.
 - [`references/synthesizer-prompt.md`](references/synthesizer-prompt.md). Synthesizer prompt and output format.

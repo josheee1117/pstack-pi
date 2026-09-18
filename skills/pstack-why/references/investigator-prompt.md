@@ -1,6 +1,6 @@
 # Investigator prompt template
 
-Fill in the placeholders. Append the single category recipe from [sources.md](sources.md) that matches this investigator's category, and the incident angle when the target code looks defensive.
+Fill in the placeholders. Append the single category recipe from [`sources/`](sources) that matches this investigator's category, and [`sources/incident-postmortem.md`](sources/incident-postmortem.md) when the target code looks defensive.
 
 ---
 

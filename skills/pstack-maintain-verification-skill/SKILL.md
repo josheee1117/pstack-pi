@@ -1,5 +1,6 @@
 ---
 name: pstack-maintain-verification-skill
+disable-model-invocation: true
 description: "Periodic pass that keeps a project's verification skill and feature map honest: one source reader per feature, one live session driving every feature, at most one PR of proven corrections. Use for /skill:pstack-maintain-verification-skill or 'audit the verify skill'."
 ---
 
