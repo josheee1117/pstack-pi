@@ -2,36 +2,117 @@
 
 把 pstack 的工程工作流移植成一个可安装的 Pi skills 包。理解、设计、实现、独立审查、真实验证、交付、恢复，全流程都有对应技能。
 
-不是再实现一个 agent runtime。也不宣称与上游逐字等价或全平台等价。差异清单在 [`docs/coverage.md`](docs/coverage.md)。
+不是再实现一个 agent runtime。本包只含技能：没有 extension、prompt、theme，目前从 git 源或本地路径安装。不宣称与上游逐字等价或全平台等价，差异清单在 [`docs/coverage.md`](docs/coverage.md)。
 
-## 装
+## 准备
+
+只需要两样东西，都不随本包安装：
+
+1. **一个能用的 Pi。** 没装的话：
+
+   ```bash
+   npm install -g --ignore-scripts @earendil-works/pi-coding-agent
+   ```
+
+   当前 Pi（写作时 0.85.1）要求 Node ≥ 22.19.0。本包 `package.json` 里的 `engines: >=20` 是包自身的开发基线，不是宿主的最低要求；以你装的 Pi 版本的要求为准。安装、认证与 provider 配置见 Pi 官方仓库与文档：<https://github.com/earendil-works/pi/tree/main/packages/coding-agent>。
+
+2. **至少一个已认证的模型。** 启动 `pi`，用 `/login` 做订阅登录或录入 API key，`/model` 选一个当前可用的模型。支持哪些 provider、怎么配，按 Pi 官方指南来。全程不需要向本包提供任何凭证。
+
+另外，从 GitHub 这类 git 源安装时，机器上要有 git。
+
+## 安装
+
+推荐装进**你要用它干活的项目**。`-l` 把包写进该项目的 `.pi/settings.json`（可随项目提交给团队共享；其他人信任项目后，启动 Pi 会自动补装缺失的包），不碰全局设置：
 
 ```bash
-# 本地路径，直接指向包目录
-pi install /path/to/pstack-pi
-
-# 装到当前项目而不是全局
-pi install -l /path/to/pstack-pi
-
-# 不动 settings，本次运行临时用
-pi -e /path/to/pstack-pi
+cd /path/to/your-project
+pi install -l git:github.com/josheee1117/pstack-pi
+pi
 ```
 
-装完新开一个 Pi 会话，23 个技能全部注册。默认只有 `pstack-setup` 列在系统提示里；其余 22 个不进提示列表，但隐藏不等于禁读——模型照样可以读它们的文件。你可以用 `/skill:<name>` 点名载入任何一个，也可以只载入入口，让流程自己往下走。
+同一个来源的其余装法：
 
-## 用
+```bash
+pi install git:github.com/josheee1117/pstack-pi   # 装进全局用户设置（~/.pi/agent/settings.json）
+pi -e git:github.com/josheee1117/pstack-pi        # 只在本会话临时加载，不写安装配置
+pi install -l /path/to/pstack-pi                  # 本地路径安装，适合自己改技能内容
+```
 
-入口是 `pstack`，用 `/skill:pstack` 启动。给它一个任务，它匹配到 23 个 playbook 之一，然后按步骤调其他技能。入口是你显式载入的锚点；之后的技能由模型按正文读取，不需要你每一步手动点名。
+更新与卸载，用同一个来源：
+
+```bash
+pi update git:github.com/josheee1117/pstack-pi       # 更新这一个包
+pi remove -l git:github.com/josheee1117/pstack-pi    # 从项目卸载
+```
+
+安装时固定了 tag 或 commit（`git:…@v1`）的源不会随 `pi update` 移动 ref；要换版本，重跑安装命令并把 ref 换成新值：项目安装写 `pi install -l git:…@新ref`（沿用你当初的安装作用域，`新ref` 替换成实际的 tag 或 commit 再运行），当初装在全局就去掉 `-l`。
+
+**信任。** Pi 只在受信任的项目里加载项目级设置和包。项目里装了包之后，首次在该项目启动 `pi` 默认会询问是否信任（决定存在 `~/.pi/agent/trust.json`，交互会话里也可用 `/trust` 保存信任决定；通过 `/trust` 保存后需重启 Pi 才生效）。只信任你认可的源；不信任时，项目里的包和技能不会加载。
+
+## 配置
+
+装好后，在**目标项目**里（不是在本包仓库里）跑一次：
+
+```
+/skill:pstack-setup
+```
+
+setup 做三件事：列出**本会话实际发现的模型**；问你推理预算（`unlimited` / `large` / `medium` / `small`）和每个角色用哪个模型；把结果写进**你项目的 `AGENTS.md`**（或你指定的个人文件）。它不写安装包内部，也不会自动写全局配置；写进去的每个模型都是它发现存在、且你确认要用的。
+
+两点边界：
+
+- 本包没有任何硬编码模型，也没有默认 fanout 数量，不为任何角色捏造默认。没配置的角色继承你环境/父会话里实际可用的模型（setup 里的 `inherit` 就是这个意思）；要不要独立会话、用哪个后端这类执行方式，另按你项目 `AGENTS.md` 的能力映射走，没写映射就落包内默认。
+- setup 不是强制门槛；它默认建议把配置写进项目 `AGENTS.md`，但这只是建议，写哪、写不写都由你选。只用当前模型跑小任务，可以一项角色都不配，之后随时重跑 setup 补。
+
+## 按需依赖
+
+用到哪一步，才需要配哪一样。下面这些都不随本包安装，本包也不会替你装；新用户只装 Pi 和本包就能跑普通任务：
+
+| 用法 | 需要什么 |
+|---|---|
+| 普通任务、只读提问 | 主会话即可，无需任何扩展 |
+| 独立审查、并行写入者、长期 owner | 包内默认：Herdr 承载的独立 Pi 会话 + pi-intercom（写入者独占 worktree）；也可在你项目 `AGENTS.md` 里映射成任何你验证过的等价后端 |
+| 开 PR、查 CI | 你已认证的 forge CLI（如 `gh`） |
+| 证明改动让应用真实工作 | 项目已有的驱动/verify 手段，或用 `pstack-create-verification-skill` 生成一个 |
+
+缺哪样，对应步骤会停下来说明缺口，不自动降级为自评。这张表写给使用本包的项目；本仓库自己的开发不受它约束，不强制 Herdr。
+
+## 自检
+
+前两步不跑任务就能确认包已加载；第 3 步可选，用一个只读试用确认技能能被实际调用：
+
+1. **shell 里看来源。** `pi list` 列出设置里登记的包和来源（`-e` 的临时加载不写设置，所以不会出现在这里）。
+2. **看技能命令。** 新开一个 Pi 会话，或在已开的会话里 `/reload`，在输入框敲 `/skill:` 看补全，应该能看到 `pstack`、`pstack-setup` 等 23 个命令。23 个技能都已注册，但默认只有 `pstack-setup` 出现在系统提示里；其余 22 个隐藏但不禁用——`/skill:<名字>` 随时点名，流程也会按正文自行读取。
+3. **可选：只读试用。** 给入口一个明确窄的只读请求，例如：`/skill:pstack 只读查看这个项目的 README 和测试配置，告诉我如何运行已有检查；不要改文件，也不要安装依赖。` 只读边界以你请求里写的约束为准。这一步验证的是「包已加载、技能能被调用」，不是完整工作流的验证——那只能在你自己的真实任务里发生。
+
+故障短表：
+
+| 症状 | 先看什么 |
+|---|---|
+| `/skill:pstack-…` 补全里没有 | 是否在装了包的那个项目里启动的 `pi`；新会话或 `/reload`；`/settings` 里 `enableSkillCommands` 是否开着；项目设置是否在该包的 `packages` 配置对象里用资源过滤清掉了技能（例如 `"skills": []`）；项目是否已信任；是否有同名技能冲突（同名时 Pi 保留先发现的那个并告警） |
+| setup 写不出某个模型 | setup 只写它本会话发现到的模型。用它列出的名字，或先去 `/model`、`/login` 确认可用，不要手写模型名 |
+| 某步报「独立后端缺失」 | 按包内执行策略停在那里，选一个你验证过的替代后端，或明确调整要求。主会话自评不能冒充独立结果 |
+
+## 第一个任务
+
+本包不接管会话：没有 SessionStart 注入，也没有自动路由 hook——这是与 Claude 版 pstack 的显式差别（那边靠启动 hook 把符合条件的任务转进 poteto-mode）。要用流程，显式载入入口：
+
+```
+/skill:pstack 检查这个项目 README 里的本地链接，只修正失效的链接；不要发布，也不要动其他内容。
+```
 
 ```
 /skill:pstack 这个 PR 有个隐蔽 bug，空闲时滚动每 750 毫秒漂一次。先复现，再修，再验证。
 ```
 
-```
-/skill:pstack 我要睡了，把这叠 PR 落到 main，CI 抖了也别停。
-```
+入口先定轻重，再路由，不会把每个任务都塞进 playbook：
 
-也可以直接点名技能：
+- **小而明确的任务**——范围清楚、方法已知、有一个能便宜真跑的检查——直接做完，附上那个最小检查，不进 playbook。你在请求里点名要的流程或独立审查优先于这条路径，不会因为任务小被跳过。
+- **只读的问题**只回答，不改文件；**只要计划**的请求停在计划，不顺手实现。
+- **其余任务**匹配 `skills/pstack/playbooks/` 里的 23 个 playbook 之一，照其中的步骤走。
+- 授权不因流程扩大：push、开 PR、合并、发布这类动作，仍只在你明确授权时发生。
+
+入口是你显式载入的锚点；之后的技能由模型按正文读取，不需要你每一步手动点名。也可以跳过入口直接点名：
 
 ```
 /skill:pstack-how 请求从 API handler 到数据库是怎么走的？
@@ -39,11 +120,9 @@ pi -e /path/to/pstack-pi
 /skill:pstack-tdd 先写失败的测试再修。
 ```
 
-首次使用建议先跑 `/skill:pstack-setup`，把「哪个角色用哪个模型」写进你项目的 `AGENTS.md`。这个包不带任何模型默认值。
-
 ## 两个与上游不同的地方
 
-**流程轻重跟着「错了有多难回头」走。** 一行改动就实现加最小真实验证，不强制多模型审查、方案竞赛、PR 或任务清单。需要独立判断、有实质设计分歧、或要长期并行时才上重流程。只读问题不会被路由到写代码或开 PR。
+**流程轻重跟着「错了有多难回头」走，不跟着 diff 大小走。** 范围明确、方法已知、能便宜真实验证的小任务，直接完成加最小检查；一两行的改动如果真带着并发、安全或未知根因，同样进完整 playbook。多模型审查、方案竞赛、PR、任务清单，是错了难回头的工作或你点名要的场合才上的。只读问题不会被路由到写代码或开 PR。
 
 **委派是手段，不是规矩。** 普通任务可以直接做；需要独立判词或真正分开的尝试时，必须取得独立上下文。缺少执行后端就说明缺口，让操作者选择替代或调整要求，不自动降级为自评。
 
@@ -162,4 +241,4 @@ npm test
 
 ## 许可与来源
 
-MIT，见 [`LICENSE`](LICENSE)。上游是 Lauren Tan 的 pstack，快照和改写范围见 [`NOTICE.md`](NOTICE.md)。
+MIT，见 [`LICENSE`](LICENSE)。上游是 Lauren Tan 的 pstack：<https://github.com/cursor/plugins/tree/main/pstack>。本仓库是它的 Pi 移植；Michael Denyer 的 Claude Code 移植 [pstack-claude](https://github.com/michael-denyer/pstack-claude) 是这次移植的参考。具体的快照与改写范围见 [`NOTICE.md`](NOTICE.md) 和 [`docs/coverage.md`](docs/coverage.md)——两边都不是逐字等价，也不承诺全平台等价。
