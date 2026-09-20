@@ -7,7 +7,7 @@
 3. **Explore with fresh-context subagents** when the exploration is bulk or covers several areas ([guard-the-context-window](../references/principles.md#guard-the-context-window)). Each returns file pointers, conventions, test commands, and entry points. No inlined dumps. When no subagent mechanism exists, explore directly and keep the notes compact.
 4. **Copy the skeleton below into the plan file and fill every placeholder.** Unless the operator names a path, write the file under `docs/` in the project. Keep every heading and sub-block in order. One section per PR. One PR is one change with its own evidence ([sequence-verifiable-units](../references/principles.md#sequence-verifiable-units)). Name the execution playbook in **How to read this**. A queue of independent PRs takes [autopilot-full](autopilot-full.md). A queue delivered as one reviewed stack takes [autopilot-stack](autopilot-stack.md). A standing program takes [orchestrate](orchestrate.md).
 5. Write under `pstack-technical-writing` in full, then apply `pstack-unslop`. The body is one Diátaxis mode, how-to. Appendices hold explanation and reference. Each heading states the task or the finding. No em dashes. No mid-sentence colons.
-6. **Verify the plan mechanically.** Walk every box and confirm it names its evidence, its command or driving path, and a pass predicate. A box without evidence is not a box. That check is the plan's own test, and it replaces a bespoke validator script.
+6. **Verify the plan mechanically.** Run `node <the installed pstack directory>/scripts/check-plan.mjs <plan.md>` on the plan file. From this playbook the script is at [`../scripts/check-plan.mjs`](../scripts/check-plan.mjs). The script proves the structure only: it cannot prove the evidence is real or that a task passed. Then audit the substance. Walk every box and confirm it names its evidence, its command or driving path, and a pass predicate. A box without evidence is not a box.
 7. **Hand back.** Post the plan path and the check result, then stop. Execution starts on the operator's explicit go, under the execution playbook the plan names.
 
 ## Verification rule
@@ -29,7 +29,7 @@ A PR that changes an interaction is review-gated: the operator reviews it in cha
 
 ## How to read this
 
-One box is one unit of work. Every box names the evidence that checks it. A nested box is a sub-step of the box above it. Check a box only when its evidence exists: a file, a log line, a screenshot, a test run, or a SHA. The body is a how-to. The appendices explain and record.
+One box is one unit of work. Every box names the evidence that checks it. A nested box is a sub-step of the box above it. Check a box only when its evidence exists, a file, a log line, a screenshot, a test run, or a SHA. The body is a how-to. The appendices explain and record.
 
 The program runs the <execution playbook> playbook. <Who merges, and which PR ids are the operator's items that stop at merge-ready.>
 
@@ -47,8 +47,8 @@ Tests alone are not sufficient verification. A PR is verified only when its unit
   - [ ] The project verification skill.
   - [ ] The `opening-a-pr` playbook.
   - [ ] <Each other skill the program uses.>
-- [ ] Establish the audit cadence. Name the mechanism: a recurring wake the environment fires, or a bounded poll loop the root holds. If neither exists, write `audit cadence: natural boundaries only, no scheduler available` and audit at wave boundaries instead of claiming a tick.
-- [ ] Use this audit prompt, verbatim. "Re-read the execution playbook and the registered goal. Check the operation against both and fix drift in this audit. Probe every active lane and judge progress by side effects only. Stand down a stuck lane and dispatch its replacement now. Then post a status message to the operator, whether or not anything changed: the queue table of PR, owner, state, and head SHA, the verdicts since the last audit, what merged, open operator gates, and blockers."
+- [ ] Establish the audit cadence. Name the mechanism, a recurring wake the environment fires or a bounded poll loop the root holds. If neither exists, write `audit cadence: natural boundaries only, no scheduler available` and audit at wave boundaries instead of claiming a tick.
+- [ ] Use this audit prompt, verbatim. "Re-read the execution playbook and the registered goal. Check the operation against both and fix drift in this audit. Probe every active lane and judge progress by side effects only. Stand down a stuck lane and dispatch its replacement now. Then post a status message to the operator, whether or not anything changed, with the queue table of PR, owner, state, and head SHA, the verdicts since the last audit, what merged, open operator gates, and blockers."
 - [ ] On the operator's hold or stand-down, send every owner a zero-writes order at once.
 
 ### Spawn owners

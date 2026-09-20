@@ -51,7 +51,7 @@ Where a capability maps to a concrete tool, the using project's own `AGENTS.md` 
 
 ## Routing
 
-Match the request, then open the playbook file and copy its steps into a checklist before any task-specific step. A step you skip stays in the list with `skip: <reason>`.
+Size the request before you route it. A small task with a clear scope, a known method, and a check you can really run cheaply completes the requested work directly with a minimal real check, then returns: no full playbook, no copied checklist, no mandatory delegation. A read-only question is answered directly without touching files, and a plan-only request stays a plan, not implemented on the side. Everything else matches a playbook. Open the matched file and copy its steps into a checklist before any task-specific step. A step you skip stays in the list with `skip: <reason>`. Two limits on the small-task path. A process or an independent review the user names outranks this routing and is never silently skipped. Concurrency, security, or an unknown root cause moves a task to the full playbook only when that risk is really present, not whenever the words appear, even when the change is one or two lines.
 
 - Nontrivial change, architecture call, or "are we sure?" → `pstack-how` first.
 - About to ask the user "which approach" or "what should this do" → classify it. If an experiment could answer it (behavior, timing, layout, output, perf), prototype it ([prototype](playbooks/prototype.md)) instead of asking. Reserve questions for genuine product or preference calls, and for irreversible actions.

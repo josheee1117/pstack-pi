@@ -61,7 +61,7 @@
 | `autopilot-stack` | playbook | `skills/pstack/playbooks/autopilot-stack.md` | 八步保留，含 append-only、单一拓扑写者、patch-id 判据。 |
 | `session-pickup` | playbook | `skills/pstack/playbooks/session-pickup.md` | 五步保留。记录来源改为 `PI_SESSION_FILE` 或明确授权的会话路径，且只读本项目。 |
 | `pause-safely` | playbook | `skills/pstack/playbooks/pause-safely.md` | 四步保留，恢复说明写在临时文件里，不新增扫描器。 |
-| `multi-phase-plan` | playbook | `skills/pstack/playbooks/multi-phase-plan.md` | 骨架与验证规则全保留。`check-plan.mjs` 删除，改为「逐框检查证据与命令」的手工但可复核的检查；模型名与 `control-*` 技能改为环境无关表述。 |
+| `multi-phase-plan` | playbook | `skills/pstack/playbooks/multi-phase-plan.md` | 骨架与验证规则全保留。第 6 步接回 `check-plan.mjs`（`skills/pstack/scripts/check-plan.mjs`）做机械结构检查，其后仍逐框审查证据、命令与通过条件；模型名与 `control-*` 技能改为环境无关表述。 |
 | `worktree-cleanup` | playbook | `skills/pstack/playbooks/worktree-cleanup.md` | 安全闸保留（未提交改动要出示 diff 再决定；在用的一律不动）。`worktree-audit.sh` 删除，改为直接列出的 git 命令；模拟器命令改为按平台条件执行。 |
 | `opening-a-pr` | playbook | `skills/pstack/playbooks/opening-a-pr.md` | 章法、Conventional Commits、body 结构全保留。Origin/GitGraph 分支删除；`/deslop` 改为 `pstack-unslop` 加项目自己的 lint。补明「只有用户授权开 PR 才执行」。 |
 
@@ -114,7 +114,7 @@
 | `skills/poteto-mode/scripts/watch-pr/**` | 未打包 | 未打包 | GitHub 专用的 PR 状态守望器。改为用 forge CLI 直读状态，不再打包一个只服务单一 forge 的轮询工具。 |
 | `skills/poteto-mode/scripts/orch/**` | 未打包 | 未打包 | 一套 orch 状态存储 CLI。契约禁止新造第二套 orchestration store，改为可读文件加写者归属规则。 |
 | `skills/poteto-mode/scripts/worktree-audit.sh` | 未打包 | 未打包 | 清理 playbook 里要做的判断（大小、年龄、合并状态、未提交、是否有 chat 动过）改为直接给出的 git 命令与人工闸门。 |
-| `skills/poteto-mode/scripts/check-plan.mjs` | 未打包 | 未打包 | 只校验一份计划文件的格式。改为逐框检查证据与命令，不引入一个为单文件格式服务的脚本。 |
+| `skills/poteto-mode/scripts/check-plan.mjs` | 脚本 | `skills/pstack/scripts/check-plan.mjs` | 恢复上游结构检查（章节顺序、PR 子块、验证规则开头句、perf 四项、review gate None/需人工、附录归属、禁排），按当前 Pi 模板适配：live lanes 为计划声明的正整数 N 且从 1 连续编号，Program checklist 标记改为注册目标、执行 playbook、audit cadence、status message；采用 Claude 版围栏与 box 修正（见 `NOTICE.md`）。脚本只证明结构齐备，不证明证据真实或任务通过。 |
 | `skills/show-me-your-work/scripts/log.sh` | 脚本 | `skills/pstack-show-me-your-work/scripts/log.sh` | 与上游逐字一致（40 行：目录与表头创建、tab/换行/CR 清洗、公式注入防护）。技能正文接回该 helper。 |
 | `skills/poteto-mode/scripts/bootstrap.ts`、`bun.lock`、`package.json`、`tsconfig.json` | 未打包 | 未打包 | 上游脚本的构建配置，本包不引入 bun 与 TS 构建链。 |
 | `docs/guide/**`、`assets/logo.png`、`.cursor-plugin/plugin.json`、`.gitignore` | 未打包 | 未打包 | 上游教程与 Cursor 插件清单。安装与用法写在 `README.md`，包清单是 `package.json`。 |

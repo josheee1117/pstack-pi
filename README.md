@@ -157,7 +157,7 @@ npm test
 
 - 未移植 `make-bot-ui`（Cursor Grok Bot webhook 与 Tailscale 专属）。
 - 未移植 `automations/benny`（Cursor automation 运行时专属）。
-- 原版的 `watch-pr`、`orch` store、`worktree-audit.sh`、`check-plan.mjs` 等脚本没有移植。需要时用你项目自己的工具，或按 playbook 里的步骤做。
+- 原版的 `watch-pr`、`orch` store、`worktree-audit.sh` 等脚本没有移植。需要时用你项目自己的工具，或按 playbook 里的步骤做。`check-plan.mjs` 已按当前 Pi 计划模板适配并随包恢复为 `skills/pstack/scripts/check-plan.mjs`，供 `multi-phase-plan` 第 6 步做机械结构检查。
 - `docs/guide/` 的上游教程没有移植。`docs/coverage.md` 是覆盖表，技能正文自带步骤。
 
 ## 许可与来源
