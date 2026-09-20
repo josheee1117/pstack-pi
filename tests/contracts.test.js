@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { dirname, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { existsSync, readFileSync } from "node:fs";
 import { listFiles, skillsDir } from "./helpers.js";
 
@@ -8,11 +8,18 @@ function markdownFiles() {
   return listFiles(skillsDir, (f) => f.endsWith(".md"));
 }
 
+// The upstream synthesizer prompt template uses [PR #123](url) as a prose
+// example. That placeholder is exempt only in this one file; a relative link
+// to `url` anywhere else stays a broken link.
+const SYNTHESIZER_TEMPLATE = join("pstack-why", "references", "synthesizer-prompt.md");
+
 function relativeLinks(file) {
   const text = readFileSync(file, "utf8");
+  const isSynthesizerTemplate = file.endsWith(SYNTHESIZER_TEMPLATE);
   return [...text.matchAll(/\]\(([^)\s]+)\)/g)]
     .map((m) => m[1])
     .filter((target) => !/^(https?:|mailto:|#)/.test(target))
+    .filter((target) => !(target === "url" && isSynthesizerTemplate))
     .map((target) => ({ path: target.split("#")[0], anchor: target.split("#")[1] }))
     .filter((link) => link.path !== "");
 }

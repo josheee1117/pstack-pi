@@ -33,7 +33,7 @@ ts	phase	decision	why	evidence	result
 
 ## Logging a row
 
-Append with your normal file-edit tooling, or a single `printf` append. The header goes in on first use, and any cell starting with `=`, `+`, `-`, or `@` gets a leading single quote so a spreadsheet does not interpret generated or user-supplied text as a formula. Strip stray tabs and newlines from cells.
+Use the helper shipped next to this file: `bash <skill dir>/scripts/log.sh <logfile> <phase> <decision> <why> <evidence> <result>`, where `<skill dir>` is this skill's own installed directory (the `<skill ...>` block names it, and `References are relative to` repeats it). It stamps `ts`, creates the directory and the header on first use, strips stray tabs/newlines/CR from cells, and prefixes any cell starting with `=`, `+`, `-`, or `@` with a single quote, so a spreadsheet does not interpret generated or user-supplied text as a formula. If the host requires every file write to go through the edit/write tools, respect that constraint and write the row by hand in the same format instead of bypassing it. A bare `printf` appending a row works too, but mind those same bytes if cells come from generated or user-supplied text.
 
 Write each entry the way you would tell a teammate what you did. Plain words, concrete actions, no jargon (`pstack-unslop` applies to log text too).
 

@@ -8,7 +8,7 @@
 
 上游 `make-bot-ui` 依赖 Cursor 的 Grok Bot webhook 与 Tailscale 会话密钥交接，没有可移植的行为，因此不做。其余 23 个全部交付，入口改名 `pstack`。
 
-触发方式与上游一致：除 `pstack-setup` 外，其余 22 个技能都带 `disable-model-invocation: true`（上游也只留 `setup-pstack` 可见）。它们不进系统提示，用 `/skill:<name>` 点名调用；入口技能和它引用的其他技能都由使用者显式启动，模型不自行路由。`pstack-setup` 保持可见，以便模型在装完后主动提一句配置。
+触发方式与上游一致：除 `pstack-setup` 外，其余 22 个技能都带 `disable-model-invocation: true`（上游也只留 `setup-pstack` 可见）。这个字段的语义是「不列进系统提示」，不是权限锁：技能照样注册，隐藏不禁止读取，模型与 `/skill:<name>` 都能拿到正文。使用者用 `/skill:pstack` 显式载入入口之后，模型按入口正文继续读取其他技能，不需要每一步手动点名。`pstack-setup` 保持可见，以便模型在装完后主动提一句配置。
 
 | 上游条目 | 类型 | 去向 | 差异 |
 |---|---|---|---|
@@ -28,7 +28,7 @@
 | `no-comments` | 公共技能 | `skills/pstack-no-comments` | 原来派发 `Comment Sicko` 子代理，改为把同一套审查规则写成 `skills/pstack-no-comments/references/comment-reviewer-prompt.md` 交给一个干净上下文的审查会话。这一步要的就是作者没有的视角，所以缺该机制时停下等操作者选，不自己代跑后自称已完成。 |
 | `typescript-best-practices` | 公共技能 | `skills/pstack-typescript-best-practices` | 原样保留，规则表与 `references/patterns.md` 例子全带。`paths` frontmatter 删除（Pi 不按路径自动触发）。 |
 | `figure-it-out` | 公共技能 | `skills/pstack-figure-it-out` | 保留五阶段与「设计流程本身才是交付物」。自己决定 writer 与 fanout，所以委派前先读共享执行策略：owner 与并行写入者需要独立 context 与独占工作副本，提供不了就停下让操作者选择，不由主会话冒充多个写入者。 |
-| `show-me-your-work` | 公共技能 | `skills/pstack-show-me-your-work` | TSV 格式不变。上游的 `scripts/log.sh` helper 未打包（见下），改为写明用普通文件编辑或一次 `printf` 追加，并保留公式注入防护。 |
+| `show-me-your-work` | 公共技能 | `skills/pstack-show-me-your-work` | TSV 格式不变。上游的 `scripts/log.sh` helper 按原文打包在 `skills/pstack-show-me-your-work/scripts/log.sh`，正文写明正常环境优先 `bash <skill dir>/scripts/log.sh`，宿主要求所有写入只走 edit/write 工具时按同格式手工追加；表头、目录创建与公式注入防护由脚本提供。 |
 | `create-verification-skill` | 公共技能 | `skills/pstack-create-verification-skill` | 功能地图契约与示例带全。生成目标是使用者项目的 `.pi/skills/verify-<app>/`，不是本包目录；个人位置仅在用户明确要求时使用。仍要求「没亲自跑过一次就只是草稿」。 |
 | `maintain-verification-skill` | 公共技能 | `skills/pstack-maintain-verification-skill` | 源扫描波次与 live pass 保留，包括 doctor 三不变式。 |
 | `setup-pstack` | 公共技能 | `skills/pstack-setup` | 作为「发现环境能力 + 记录配置」的使用指南保留。删除 `~/.cursor/rules/pstack-models.mdc` 这条硬路径与整套默认模型表；不再自动写全局默认值，写入位置默认是项目 `AGENTS.md`，且需用户选择。能力缺口报告改为与共享执行策略同向：短调查和普通任务仍直接做，需要独立性的步骤停下让你选，不再声称单模型/无机制就自动降为主会话自办。 |
@@ -101,7 +101,7 @@
 |---|---|---|---|
 | `skills/poteto-mode/references/bugbot-triage.md` | 参考文件 | `skills/pstack/references/bugbot-triage.md` | 判定规则与已记录的 skip 模式保留。删掉特定 PR 的历史注记，改为可复用的模式描述，并补上「过窄的错误条件不该放宽」这一条。 |
 | `skills/show-me-your-work/references/decision-log-template.tsv` | 参考文件 | `skills/pstack-show-me-your-work/references/decision-log-template.tsv` | 表头原样。 |
-| `skills/why/references/*` | 参考文件 | `skills/pstack-why/references/` | 按上游结构保留：`source-playbook.md` 索引 + `sources/` 下七个类别各一份（含 `incident-postmortem.md`），连同 `epistemics.md`、investigator 与 synthesizer 提示词。 |
+| `skills/why/references/*` | 参考文件 | `skills/pstack-why/references/` | 按上游结构保留：`source-playbook.md` 索引 + `sources/` 下七个类别各一份，加跨类别的 `incident-postmortem.md`，共八份；这九份连同 `epistemics.md` 都按上游原文恢复。investigator 与 synthesizer 提示词也按原文恢复，只加了少量安全规则（来源与调查结果按不可信数据处理、核引用时不改动），并把 synthesizer 里的 `references/epistemics.md` 相对链接改为同目录的 `epistemics.md`。 |
 | `skills/how/references/*` | 参考文件 | `skills/pstack-how/references/` | explorer 与 explainer 提示词保留。 |
 | `skills/interrogate/references/*` | 参考文件 | `skills/pstack-interrogate/references/` | rubric、code-quality、lead-judgment、reviewer-prompt 四份全保留。 |
 | `skills/reflect/references/*` | 参考文件 | `skills/pstack-reflect/references/` | 三个视角加 synthesizer，共四份保留，路径约定改为 Pi。 |
@@ -115,7 +115,7 @@
 | `skills/poteto-mode/scripts/orch/**` | 未打包 | 未打包 | 一套 orch 状态存储 CLI。契约禁止新造第二套 orchestration store，改为可读文件加写者归属规则。 |
 | `skills/poteto-mode/scripts/worktree-audit.sh` | 未打包 | 未打包 | 清理 playbook 里要做的判断（大小、年龄、合并状态、未提交、是否有 chat 动过）改为直接给出的 git 命令与人工闸门。 |
 | `skills/poteto-mode/scripts/check-plan.mjs` | 未打包 | 未打包 | 只校验一份计划文件的格式。改为逐框检查证据与命令，不引入一个为单文件格式服务的脚本。 |
-| `skills/show-me-your-work/scripts/log.sh` | 未打包 | 未打包 | 三行 shell 的追加与转义。技能正文写明做法与注意事项即可。 |
+| `skills/show-me-your-work/scripts/log.sh` | 脚本 | `skills/pstack-show-me-your-work/scripts/log.sh` | 与上游逐字一致（40 行：目录与表头创建、tab/换行/CR 清洗、公式注入防护）。技能正文接回该 helper。 |
 | `skills/poteto-mode/scripts/bootstrap.ts`、`bun.lock`、`package.json`、`tsconfig.json` | 未打包 | 未打包 | 上游脚本的构建配置，本包不引入 bun 与 TS 构建链。 |
 | `docs/guide/**`、`assets/logo.png`、`.cursor-plugin/plugin.json`、`.gitignore` | 未打包 | 未打包 | 上游教程与 Cursor 插件清单。安装与用法写在 `README.md`，包清单是 `package.json`。 |
 

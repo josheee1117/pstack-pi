@@ -40,7 +40,7 @@ test("the real Pi loader discovers every skill with no diagnostics", async (t) =
   }
 });
 
-test("the trigger model matches upstream: one visible skill, the rest explicit-only", async (t) => {
+test("the trigger model matches upstream: setup in the default prompt listing, the other 22 hidden from it", async (t) => {
   const pi = await loadPi();
   if (!pi) {
     t.skip("the Pi package is not installed on this machine");
@@ -49,18 +49,22 @@ test("the trigger model matches upstream: one visible skill, the rest explicit-o
 
   const result = pi.loadSkillsFromDir({ dir: skillsDir, source: "pstack-pi" });
 
-  // Upstream hides every public skill except setup-pstack, so the human picks
-  // the workflow with /skill:<name> instead of the model routing itself in.
-  // This port keeps that model; the one visible skill is the setup guide.
+  // Upstream keeps every public skill except setup-pstack out of the system
+  // prompt listing. disable-model-invocation hides a skill from that listing;
+  // it is not a permission lock: the skill stays registered and its body can
+  // still be read by the model and by /skill:<name>. The human explicitly
+  // loads the entry with /skill:pstack, and from there the model reads the
+  // other skills as the entry's body directs. The one listed skill is setup.
   const visible = result.skills.filter((s) => !s.disableModelInvocation).map((s) => s.name);
-  assert.deepEqual(visible, ["pstack-setup"], "only the setup guide is offered to the model");
+  assert.deepEqual(visible, ["pstack-setup"], "only the setup guide is listed in the default prompt");
 
   const hidden = result.skills.filter((s) => s.disableModelInvocation).map((s) => s.name).sort();
   const expectedHidden = expectedPublicSkills.filter((name) => name !== "pstack-setup");
-  assert.deepEqual(hidden, expectedHidden, "every other public skill is explicit-invocation only");
+  assert.deepEqual(hidden, expectedHidden, "every other public skill is hidden from the default prompt listing");
 
-  // Hidden from the prompt is not hidden from the user: /skill:<name> still
-  // resolves, which is the whole point of the setting.
+  // Hidden from the prompt listing is not hidden from the model: every hidden
+  // skill is still registered, and its body is reachable both through
+  // /skill:<name> and through the model reading the file as skill text directs.
   const prompt = pi.formatSkillsForPrompt(result.skills, "read");
   assert.match(prompt, /<name>pstack-setup<\/name>/, "the setup guide stays in the system prompt");
   for (const name of expectedHidden) {
@@ -135,6 +139,68 @@ test("every pstack-* name used in skill prose resolves to a shipped skill", () =
   }
 
   assert.deepEqual(offenders, [], "no skill references a skill name that does not exist");
+});
+
+test("/skill:<name> expands through Pi's real AgentSession.prototype._expandSkillCommand for all 22 hidden skills", async (t) => {
+  const pi = await loadPi();
+  if (!pi) {
+    t.skip("the Pi package is not installed on this machine");
+    return;
+  }
+
+  const result = pi.loadSkillsFromDir({ dir: skillsDir, source: "pstack-pi" });
+
+  // The method only reads this.resourceLoader.getSkills() and, when a SKILL.md
+  // read fails, calls this._extensionRunner.emitError(). A plain context is
+  // enough; the throwing emitError makes any read failure fail the test loudly
+  // instead of silently passing the original text through.
+  const context = {
+    resourceLoader: { getSkills: () => result },
+    _extensionRunner: {
+      emitError: (e) => {
+        throw new Error(`skill expansion failed (${e.event}): ${e.error}`);
+      },
+    },
+  };
+  const expandSkillCommand = pi.AgentSession.prototype._expandSkillCommand;
+
+  const hidden = expectedPublicSkills.filter((name) => name !== "pstack-setup");
+  assert.equal(hidden.length, 22, "22 hidden skills get expansion coverage");
+
+  for (const name of hidden) {
+    const skill = result.skills.find((s) => s.name === name);
+    assert.ok(skill, `${name} is discovered by the real loader`);
+
+    const expanded = expandSkillCommand.call(context, `/skill:${name} some task args`);
+    const expectedBody = pi.stripFrontmatter(readFileSync(skill.filePath, "utf8")).trim();
+
+    assert.ok(
+      expanded.startsWith(`<skill name="${name}" location="${skill.filePath}">`),
+      `${name} expands into a skill block naming its own SKILL.md path`,
+    );
+    assert.ok(
+      expanded.includes(`References are relative to ${skill.baseDir}`),
+      `${name} expansion points readers at its base directory`,
+    );
+    assert.ok(expanded.includes(expectedBody), `${name} expansion carries the full skill body`);
+    assert.ok(
+      expanded.endsWith("</skill>\n\nsome task args"),
+      `${name} appends the user's args after the skill block`,
+    );
+
+    const withoutArgs = expandSkillCommand.call(context, `/skill:${name}`);
+    assert.ok(
+      withoutArgs.startsWith(`<skill name="${name}"`) && withoutArgs.endsWith("</skill>"),
+      `${name} without args expands to exactly the skill block`,
+    );
+  }
+
+  // Plain text and unknown skills pass through untouched.
+  assert.equal(expandSkillCommand.call(context, "plain prompt"), "plain prompt");
+  assert.equal(
+    expandSkillCommand.call(context, "/skill:no-such-skill args"),
+    "/skill:no-such-skill args",
+  );
 });
 
 function walkMarkdown(dir) {

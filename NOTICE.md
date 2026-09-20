@@ -19,7 +19,7 @@
 - 全部 23 个可移植公共技能和 23 个 playbook 重写为 Pi 的 skill 形式并调整执行绑定。
 - 23 条原则合并为一份内部参考 `skills/pstack/references/principles.md`，不注册为公共 skill。
 - 删除了 Cursor 专属机制：`Task`/`subagent_type`、`run_in_background`、`environment: cloud`、`AskQuestion`、`/loop`、`control-ui`/`control-cli`、`/deslop`、`cursor-team-kit`、`~/.cursor/rules/pstack-models.mdc`、`agent-transcripts` 目录约定、Graphite（`gt`）与 Origin 专属 forge 分支。
-- 删除了不再有意义的脚本与基础设施：`watch-pr`、`orch` store、`worktree-audit.sh`、`check-plan.mjs`、`show-me-your-work/scripts/log.sh`、`bun.lock`、模型默认值。
+- 当前未移植的脚本与基础设施：`watch-pr`、`orch` store、`worktree-audit.sh`、`check-plan.mjs`、`bun.lock`、模型默认值。`show-me-your-work` 的 `scripts/log.sh` 按上游原文恢复为 `skills/pstack-show-me-your-work/scripts/log.sh`。
 - 未移植 `make-bot-ui`（Cursor Grok Bot webhook 与 Tailscale 专属）和 `automations/benny`（Cursor automation 运行时专属）。
 
 逐项去向见 `docs/coverage.md`。
