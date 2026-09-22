@@ -1,7 +1,7 @@
 ---
 name: pstack-bro
 disable-model-invocation: true
-description: "Restate the last message in plain human language, with no jargon. Use for /skill:pstack-bro, 'bro', 'explain that like a person', or when the previous reply was too dense."
+description: "用大白话重说上一条回复：去掉术语，把话讲清楚。适用于上条回答太密、太绕，或希望换成容易理解的解释。"
 ---
 
 Restate your last message. Stop using jargon and speak coherently. Say it more simply and more concisely, like one human talking to another.

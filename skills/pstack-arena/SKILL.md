@@ -1,7 +1,7 @@
 ---
 name: pstack-arena
 disable-model-invocation: true
-description: "Run N parallel attempts at the same task, pick a base, and graft the strongest parts of the losers into it. Use for /skill:pstack-arena, 'arena this', 'throw it in the arena', 'compare approaches', or when one attempt at a non-trivial artifact would lock in the wrong shape."
+description: "多方案并行竞赛：针对同一任务开展 N 次独立尝试，选出基础方案，再合入其他方案的优势。适用于比较实现思路，或一次尝试不足以确定复杂产物的正确形态。"
 ---
 
 # Arena

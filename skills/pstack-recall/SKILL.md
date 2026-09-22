@@ -1,7 +1,7 @@
 ---
 name: pstack-recall
 disable-model-invocation: true
-description: "Rebuild recent working context on a topic from this project's own records (session records, the project's long-term memory, live git and PR state) and hand back a tight current-state brief. Use for 'recall my work on X', 'catch me up', 'what have I been working on', 'where did I leave off', before starting or resuming work."
+description: "恢复工作上下文：仅从本项目的会话记录、长期记忆、当前 git 与 PR 状态中重建主题现状，给出简短交接说明。适用于开工、接着干、回顾最近工作或查找上次停在哪里。"
 ---
 
 # Recall

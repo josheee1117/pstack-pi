@@ -33,6 +33,7 @@ test("the real Pi loader discovers every skill with no diagnostics", async (t) =
     assert.match(skill.name, NAME_PATTERN, `${skill.name} is a valid skill name`);
     assert.ok(skill.name.length <= 64, `${skill.name} is within the 64 character limit`);
     assert.ok(skill.description.length > 0, `${skill.name} has a description`);
+    assert.match(skill.description, /^\p{Script=Han}/u, `${skill.name} has a Chinese command description`);
     assert.ok(skill.description.length <= 1024, `${skill.name} description is within 1024 characters`);
     assert.equal(skill.baseDir, join(skillsDir, skill.name), `${skill.name} resolves to its own directory`);
     assert.equal(skill.filePath, join(skillsDir, skill.name, "SKILL.md"));

@@ -1,7 +1,7 @@
 ---
 name: pstack-technical-writing
 disable-model-invocation: true
-description: "Layered technical-writing standard: Diátaxis structure, Google developer style sentences, STE instruction rules, Global English syntax. Use for /skill:pstack-technical-writing or when writing or reviewing docs, RFCs, readmes, PR descriptions, or commit messages."
+description: "规范技术写作：结合 Diátaxis 文档结构、Google 开发者文风、STE 操作说明规则与 Global English 语法。适用于撰写或审阅文档、RFC、README、PR 描述和提交信息。"
 ---
 
 # Technical writing

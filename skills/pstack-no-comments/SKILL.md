@@ -1,7 +1,7 @@
 ---
 name: pstack-no-comments
 disable-model-invocation: true
-description: "Strip comments that do not earn their place before review, and turn claimed constraints into structure. Use before a review or a PR, or when comments have accumulated in a diff. Comments survive only for a non-obvious why the code cannot show."
+description: "精简无价值注释：把口头约束变成代码结构，只保留代码无法表达、且不显而易见的原因说明。适用于审查或开 PR 前，或 diff 中堆积了过多注释时。"
 ---
 
 # No comments

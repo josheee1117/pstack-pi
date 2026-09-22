@@ -1,7 +1,7 @@
 ---
 name: pstack-figure-it-out
 disable-model-invocation: true
-description: "Design an auditable playbook when no narrower one fits: a large migration, an ambitious multi-part change, or work a human reviews after stepping away. Scales rigor to the task, runs a hypothesis loop, and logs decisions. Use for /skill:pstack-figure-it-out, 'figure it out', a large migration, or when no narrower playbook applies."
+description: "为复杂任务制定可审计的执行流程：在没有现成流程适用时，按任务风险安排严谨程度，循环验证假设并记录决策。适用于大型迁移、多部分改造，或需要事后人工审查的长期工作。"
 ---
 
 # Figure it out

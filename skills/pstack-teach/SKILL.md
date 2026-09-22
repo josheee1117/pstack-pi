@@ -1,7 +1,7 @@
 ---
 name: pstack-teach
 disable-model-invocation: true
-description: "Explain a body of work plainly so a person actually understands it. Runs pstack-how and pstack-why and weaves what they find into one clear explanation built up diagram by diagram. Use for 'teach me this', 'help me really understand X', 'explain this change or subsystem to me'."
+description: "把改动或子系统真正讲明白：结合 pstack-how 的运行机制与 pstack-why 的设计依据，用通俗说明和逐步展开的图解建立理解。适用于学习一项工作、深入理解改动，而不只是要摘要。"
 ---
 
 # Teach

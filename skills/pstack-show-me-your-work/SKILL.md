@@ -1,7 +1,7 @@
 ---
 name: pstack-show-me-your-work
 disable-model-invocation: true
-description: "Keep a reviewable decision trail for long-running or unattended work: a TSV log with one row per decision (what, why, evidence, result). Local by default; commit it when a reviewer needs the trail to trust the result. Use for /skill:pstack-show-me-your-work, autonomous or multi-phase runs, or work a human reviews after stepping away."
+description: "记录可审查的决策过程：用 TSV 日志逐条写明做了什么、原因、证据与结果。默认留在本地，审查者需要时再提交。适用于长期、无人值守、自主或多阶段任务，以及需要事后复核的工作。"
 ---
 
 # Show me your work

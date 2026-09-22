@@ -1,7 +1,7 @@
 ---
 name: pstack-how
 disable-model-invocation: true
-description: "Explain how a subsystem works and where things belong. Use for 'how does X work', a code walkthrough before changing something, and placement or ownership questions ('where should this live', 'which module owns this', 'is this the right layer'). Produces an architectural explanation for a senior engineer. Use pstack-why for motivation."
+description: "解释系统如何工作、代码该放在哪一层。适用于改动前梳理代码、了解运行机制、确认模块归属或分层边界，产出面向工程师的架构说明。追问设计动机请用 pstack-why。"
 ---
 
 # How

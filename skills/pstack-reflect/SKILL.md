@@ -1,7 +1,7 @@
 ---
 name: pstack-reflect
 disable-model-invocation: true
-description: "Mine the current conversation for durable learnings and route each one to a concrete edit on an existing skill, a backlog item, or a rejection. Use when the user says reflect, or after a long task where the same friction is likely to recur."
+description: "复盘并固化经验：从当前对话提取可复用的教训，逐条落实为现有技能的修改、待办，或明确不采纳。适用于主动复盘，或长任务结束后避免同类阻力再次出现。"
 ---
 
 # Reflect

@@ -1,7 +1,7 @@
 ---
 name: pstack
 disable-model-invocation: true
-description: "Rigorous engineering workflow for any non-trivial task: understand, design, implement, verify independently, ship, recover. Matches the task to one of 23 playbooks (investigation, bug fix, perf, hillclimb, forensics, feature, refactoring, prototype, visual parity, skill authoring, eval, babysit, shipping, autonomous run, orchestrate, autopilot, session pickup, pause safely, multi-phase plan, worktree cleanup, opening a PR). Use for /skill:pstack, 'pstack this', 'use pstack', 'do this rigorously', or any task where the wrong shape is expensive to undo."
+description: "工程工作流入口：理解、设计、实现、独立验证、交付与恢复。简单任务直接完成并做最小真实检查；复杂任务匹配 23 种流程，覆盖调查、修复、性能优化、取证、功能开发、重构、原型、视觉对齐、技能编写与评估、PR 跟进与交付、自主运行、编排、自动执行、会话接手、安全暂停、多阶段计划、工作区清理与开 PR。适用于 /skill:pstack、严谨工程任务，或错误方案难以撤回的改动。"
 ---
 
 # pstack

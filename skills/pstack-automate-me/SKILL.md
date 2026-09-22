@@ -1,7 +1,7 @@
 ---
 name: pstack-automate-me
 disable-model-invocation: true
-description: "Draft or revise a personal mode skill that captures how the user actually works, from their own recent session records plus what they tell you. Use for 'automate me', 'create my mode skill', 'turn my preferences into a skill', 'capture my working style', or wanting agents to follow the user's conventions."
+description: "把个人工作习惯做成技能：结合用户自己的近期会话记录与明确偏好，编写或更新专属工作模式。适用于沉淀个人约定、创建个人模式，或希望代理按自己的习惯工作。"
 ---
 
 # Automate me

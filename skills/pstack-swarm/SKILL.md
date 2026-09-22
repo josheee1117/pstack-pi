@@ -1,7 +1,7 @@
 ---
 name: pstack-swarm
 disable-model-invocation: true
-description: "Fan out N parallel workers, drain them, and return one report. Use for /skill:pstack-swarm, 'swarm this', or parallel coverage, races, gauntlets, and exploration partitions."
+description: "并行分工与汇总：派出 N 个工作者，收齐各路结果后形成一份报告。适用于分片调查、并行覆盖、方案竞速或多轮挑战。"
 ---
 
 # Swarm

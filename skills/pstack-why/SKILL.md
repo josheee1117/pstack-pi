@@ -1,7 +1,7 @@
 ---
 name: pstack-why
 disable-model-invocation: true
-description: "Explain why code is shaped the way it is: design rationale, regressions, postmortems, data-backed thresholds. Use for 'why does X work this way', 'why did we pick Y', 'where did this number come from'. Discovers the evidence sources actually available in this session, queries each category in parallel, and returns a cited read with explicit confidence tiers. Use pstack-how for runtime behavior."
+description: "追溯代码为什么这样设计：查明设计理由、回归原因、事故复盘与阈值依据。适用于追问方案选择或数字来源；发现本会话实际可用的证据源，按类别并行调查，给出带引用和明确置信度的解释。了解运行机制请用 pstack-how。"
 ---
 
 # Why
