@@ -2,7 +2,7 @@
 
 把 pstack 的工程工作流移植成一个可安装的 Pi skills 包。理解、设计、实现、独立审查、真实验证、交付、恢复，全流程都有对应技能。
 
-不是再实现一个 agent runtime。本包只含技能：没有 extension、prompt、theme，目前从 git 源或本地路径安装。不宣称与上游逐字等价或全平台等价，差异清单在 [`docs/coverage.md`](docs/coverage.md)。
+不是再实现一个 agent runtime。本包几乎只含技能：23 个技能，加一个 extension。extension 做两件事：把写作规则常驻进系统提示，和实现 `/pstack` 模式（进一次，之后每轮自己判断要不要走流程）。没有 prompt、theme、agents，也不自动路由任务。目前从 git 源或本地路径安装。不宣称与上游逐字等价或全平台等价，差异清单在 [`docs/coverage.md`](docs/coverage.md)。
 
 ## 准备
 
@@ -79,11 +79,13 @@ setup 做三件事：列出**本会话实际发现的模型**；问你推理预�
 
 ## 自检
 
-前两步不跑任务就能确认包已加载；第 3 步可选，用一个只读试用确认技能能被实际调用：
+前三步不跑任务就能确认包已加载；第 4 步可选，用一个只读试用确认技能能被实际调用：
 
 1. **shell 里看来源。** `pi list` 列出设置里登记的包和来源（`-e` 的临时加载不写设置，所以不会出现在这里）。
-2. **看技能命令。** 新开一个 Pi 会话，或在已开的会话里 `/reload`，在输入框敲 `/skill:` 看补全，应该能看到 `pstack`、`pstack-setup` 等 23 个命令。23 个技能都已注册，但默认只有 `pstack-setup` 出现在系统提示里；其余 22 个隐藏但不禁用——`/skill:<名字>` 随时点名，流程也会按正文自行读取。
-3. **可选：只读试用。** 给入口一个明确窄的只读请求，例如：`/skill:pstack 只读查看这个项目的 README 和测试配置，告诉我如何运行已有检查；不要改文件，也不要安装依赖。` 只读边界以你请求里写的约束为准。这一步验证的是「包已加载、技能能被调用」，不是完整工作流的验证——那只能在你自己的真实任务里发生。
+2. **看技能命令。** 新开一个 Pi 会话，或在已开的会话里 `/reload`，在输入框敲 `/skill:` 看补全，应该能看到 `pstack`、`pstack-setup` 等 23 个命令。23 个技能都已注册，但默认只有 `pstack-setup` 出现在系统提示里；其余 22 个隐藏但不禁用——`/skill:<名字>` 随时点名，流程也会按正文自行读取。写作规则和模式提醒不靠技能常驻，由 extension 直接注入系统提示，见[模式](#模式)。敲 `/pstack` 看 footer 是否出现 `pstack: mode on`。
+3. **看注入的段落。** 在装了包的项目里跑一次 `pi --approve -p ok --session-dir /tmp/psc`，然后 `grep -l prose_rules /tmp/psc/*.jsonl`。命中的那个会话文件里有一段 `<prose_rules>`，内容就是注入的规则。系统提示在会话建立时就已落盘，所以这一步不依赖模型能不能用（模型报错也不影响）。没命中就看 `/settings` 里本包的 `extensions` 是否被过滤掉。
+4. **可选：只读试用。** 给入口一个明确窄的只读请求，例如：`/skill:pstack 只读查看这个项目的 README 和测试配置，告诉我如何运行已有检查；不要改文件，也不要安装依赖。` 只读边界以你请求里写的约束为准。这一步验证的是「包已加载、技能能被调用」，不是完整工作流的验证——那只能在你自己的真实任务里发生。
+4. **可选：只读试用。** 给入口一个明确窄的只读请求，例如：`/skill:pstack 只读查看这个项目的 README 和测试配置，告诉我如何运行已有检查；不要改文件，也不要安装依赖。` 只读边界以你请求里写的约束为准。这一步验证的是「包已加载、技能能被调用」，不是完整工作流的验证——那只能在你自己的真实任务里发生。
 
 故障短表：
 
@@ -93,9 +95,46 @@ setup 做三件事：列出**本会话实际发现的模型**；问你推理预�
 | setup 写不出某个模型 | setup 只写它本会话发现到的模型。用它列出的名字，或先去 `/model`、`/login` 确认可用，不要手写模型名 |
 | 某步报「独立后端缺失」 | 按包内执行策略停在那里，选一个你验证过的替代后端，或明确调整要求。主会话自评不能冒充独立结果 |
 
+## 模式
+
+本包带一个 extension（`extensions/pstack.js`），里面两个 prompt 关注点。它们都是技能承载不了的东西。
+
+### 模式：进一次，之后一直管用
+
+Pi 没有「模式」这个机制。所以本包自己做一个：
+
+```
+/pstack                开启模式（本会话记住）
+/pstack 修一下这个 bug   开启，并直接跑入口技能
+/pstack off            关闭
+/pstack status         看当前状态
+```
+
+模式开着的时候，每一轮都往系统提示里加一段短提醒：需要严谨度的话去读入口技能（提醒里带绝对路径），休闲回复和单文件小改直接做、不要加载流程。你不敲任何命令，它自己判断。
+
+你习惯直接敲 `/skill:pstack` 也行，敲了就等于进模式。
+
+与上游的差别：Cursor 的 sticky mode 是 `mode: true` + `reminder` 两个 frontmatter 字段，Pi 会忽略未知字段，所以这里用会话状态加系统提示段落复刻。另外，上游把整份技能每轮重发进 context（那份 SKILL.md 约 18 KB）；这里只发约 1 KB：每轮都要守的几条硬规矩、入口技能路径，外加「每会话读一次、读过不再读」。流程正文需要时模型自己 read。
+
+模式状态存在会话的 custom entry 里，`--continue` 接回同一个会话时它会恢复。新会话从关开始。
+
+### 写作规则：没有开关
+
+`pstack-unslop` 的规则要每一句回复都生效，所以它在 `before_agent_start` 写进系统提示的 `prose_rules` 段落，不依赖模型有没有打开技能。
+
+注入的是普通回复会踩到的那批高频规则；长文（文档、RFC、README、PR 描述、提交信息）在段落末尾指向 `skills/pstack-unslop/SKILL.md` 的完整规则目录（编号 3-33）和 `skills/pstack-technical-writing/SKILL.md` 的结构要求。规则的归属仍是那个技能文件，extension 只负责把它们放进提示。
+
+这一段没有开关。不要的话把设置里本包的 `extensions` 置空，或者不装本包。
+
+### 两段共用的机制
+
+Pi 按段落做 diff。都实测过：只变的段才发（第二条系统消息里只有 `pstack_mode` 一个键），关模式时发的是 `pstack_mode: null`（模型那边真的丢掉这一段），resume 后又能重新加回。见下一节自检。
+
+已实测的是「规则和提醒真的进了系统提示」。它们对输出行为的实际影响没有做盲测；要量化就用 `pstack` 的 `eval` playbook。
+
 ## 第一个任务
 
-本包不接管会话：没有 SessionStart 注入，也没有自动路由 hook——这是与 Claude 版 pstack 的显式差别（那边靠启动 hook 把符合条件的任务转进 poteto-mode）。要用流程，显式载入入口：
+本包不自动路由任务：没有启动 hook 把符合条件的请求转进流程。要进流程，进一次模式（上面一节），之后它自己判断；或者每次显式载入入口。这是与 Claude 版 pstack 的差别（那边靠 SessionStart hook 把任务转进 poteto-mode）。
 
 ```
 /skill:pstack 检查这个项目 README 里的本地链接，只修正失效的链接；不要发布，也不要动其他内容。
@@ -164,7 +203,7 @@ setup 做三件事：列出**本会话实际发现的模型**；问你推理预�
 | `pstack-interrogate` | 有人写了个 diff，想让几个不同模型一起来找问题。 |
 | `pstack-tdd` | 修 bug 且有便宜好用的本地测试路径：先写失败的测试。 |
 | `pstack-bro` | 上一条回复太绕，用大白话重说一遍。 |
-| `pstack-unslop` | 清理任何写作里的机器腔。 |
+| `pstack-unslop` | 清理任何写作里的机器腔。规则已由 extension 常驻，见[模式](#模式)；这个技能是完整目录。 |
 | `pstack-technical-writing` | 写文档、RFC、readme、PR 描述、commit message。 |
 | `pstack-no-comments` | 送审前。删掉赚不回成本的注释，把约束变成结构。 |
 | `pstack-typescript-best-practices` | 读写 `.ts` / `.tsx` 之前。 |
@@ -227,7 +266,8 @@ npm test
 - `/skill:<name>` 经真实的 `AgentSession._expandSkillCommand` 展开：22 个隐藏技能的参数、正文与路径断言（不调模型，不读私有会话）。
 - `log.sh` helper 的行为：成功追加、表头唯一、tab/换行/CR 清洗、危险前缀转义（临时目录，测后清理）。
 - 覆盖表完整：上游每个条目都有明确去向，交付的路径都真实存在，磁盘上的技能和表里声称的一致。
-- 打包边界：`package.json` 的 `pi.skills`、`files`、`pi-package` 关键字，以及没有 agents 目录、没有 extension、没有 `pi.subagents` schema。
+- 打包边界：`package.json` 的 `pi.skills`、`pi.extensions`、`files`、`pi-package` 关键字，以及没有 agents 目录、没有 prompt/theme、没有 `pi.subagents` schema。
+- 常驻写作规则与模式：extension 在 `before_agent_start` 写入 `prose_rules` 段落（总在）和 `pstack_mode` 段落（进模式才有），段落名合法（Pi 对非法段落名会抛错），段落里的技能路径真实存在，重复注入内容不变；`/pstack` 能开关，`off` 不被当任务，resume 后按 branch 里最后一条 entry 恢复。
 - 没有失效的工具名、陈旧的路径、硬编码的模型 ID；任何提到的可选扩展都不得被写成必需依赖。
 
 这些是静态检查、资源发现检查和命令级行为检查（`/skill:` 命令展开、`log.sh` 真实追加），不是完整 agent workflow smoke。真实工作流的验证要你在自己项目里跑一遍：把 `skills/pstack/playbooks/` 里对得上的那个 playbook 用一次。

@@ -49,7 +49,7 @@ test("the package installs from a local path and its skills are discovered", asy
   assert.equal(ours.length, expectedPublicSkills.length);
 });
 
-test("the package contributes no extensions, prompts, or themes", async (t) => {
+test("the package contributes its extension and no prompts or themes", async (t) => {
   const pi = await loadPi();
   if (!pi) {
     t.skip("the Pi package is not installed on this machine");
@@ -68,8 +68,13 @@ test("the package contributes no extensions, prompts, or themes", async (t) => {
   await loader.reload();
 
   const fromPackage = (items) => items.filter((item) => item.sourceInfo?.source === repoRoot);
-  assert.deepEqual(fromPackage(loader.getExtensions().extensions), [], "no extensions");
+  const extensions = fromPackage(loader.getExtensions().extensions);
+  assert.deepEqual(
+    extensions.map((ext) => ext.path),
+    [join(repoRoot, "extensions", "pstack.js")],
+    "the package contributes exactly its one extension",
+  );
+  assert.deepEqual(loader.getExtensions().errors, [], "the extension loads without error");
   assert.deepEqual(fromPackage(loader.getPrompts().prompts), [], "no prompt templates");
   assert.deepEqual(fromPackage(loader.getThemes().themes), [], "no themes");
-  assert.deepEqual(loader.getExtensions().errors, [], "no extension load errors");
 });

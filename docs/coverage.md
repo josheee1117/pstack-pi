@@ -8,7 +8,11 @@
 
 上游 `make-bot-ui` 依赖 Cursor 的 Grok Bot webhook 与 Tailscale 会话密钥交接，没有可移植的行为，因此不做。其余 23 个全部交付，入口改名 `pstack`。
 
-触发方式与上游一致：除 `pstack-setup` 外，其余 22 个技能都带 `disable-model-invocation: true`（上游也只留 `setup-pstack` 可见）。这个字段的语义是「不列进系统提示」，不是权限锁：技能照样注册，隐藏不禁止读取，模型与 `/skill:<name>` 都能拿到正文。使用者用 `/skill:pstack` 显式载入入口之后，模型按入口正文继续读取其他技能，不需要每一步手动点名。`pstack-setup` 保持可见，以便模型在装完后主动提一句配置。
+触发方式：除 `pstack-setup` 外，其余 22 个技能都带 `disable-model-invocation: true`（上游也只留 `setup-pstack` 可见）。这个字段的语义是「不列进系统提示」，不是权限锁：技能照样注册，隐藏不禁止读取，模型与 `/skill:<name>` 都能拿到正文。使用者用 `/skill:pstack` 显式载入入口之后，模型按入口正文继续读取其他技能，不需要每一步手动点名。`pstack-setup` 保持可见，以便模型在装完后主动提一句配置。
+
+一条例外：本包带一个 extension（`extensions/pstack.js`），做两件事。一是把 `pstack-unslop` 的高频写作规则写进系统提示的 `prose_rules` 段落，因为那些规则是横切的、每句回复都适用，不能靠「任务匹配才去读」的机制承载。二是实现 `/pstack` 模式：进一次后，后续回合都往提示里加一段短提醒，模型自己判断该不该走流程。
+
+上游对应的是 Cursor 的 always-apply `.mdc` 规则和 sticky mode（`mode`/`reminder` 每轮重注入），Pi 都不认，所以换成系统提示段落加会话开关。与上游的一个差别：上游把整份 `poteto-mode` 每轮重发进 context，本包只发一段提醒和入口技能的绝对路径，需要时模型自己去 read。
 
 | 上游条目 | 类型 | 去向 | 差异 |
 |---|---|---|---|

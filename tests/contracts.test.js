@@ -163,11 +163,13 @@ test("an optional tool is never stated as a required dependency", () => {
   assert.deepEqual(offenders, [], "no skill states an optional extension as a requirement");
 });
 
-test("the package manifest declares no extension or subagent dependency", () => {
+test("the package manifest declares no runtime dependency or subagent schema", () => {
   const pkg = JSON.parse(readFileSync(resolve(skillsDir, "..", "package.json"), "utf8"));
   assert.equal(pkg.dependencies, undefined, "no runtime dependency is declared");
   assert.equal(pkg.pi.subagents, undefined, "no subagents schema is declared");
-  assert.equal(pkg.pi.extensions, undefined, "no extension entry is declared");
+  // One extension, and it is the always-on prose rules plus the mode. A second
+  // entry means a new always-on behavior arrived without this test being updated.
+  assert.deepEqual(pkg.pi.extensions, ["./extensions/pstack.js"]);
 });
 
 test("the shared execution policy ships, and the skills that delegate point at it", () => {

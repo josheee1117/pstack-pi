@@ -15,10 +15,14 @@
   "pi": {
     "skills": [
       "./skills"
+    ],
+    "extensions": [
+      "./extensions/pstack.js"
     ]
   },
   "files": [
     "skills",
+    "extensions",
     "tests",
     "README.md",
     "AGENTS.md",

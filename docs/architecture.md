@@ -30,6 +30,19 @@
 
 先交付标准 Pi package，`package.json` 显式列出 skills。使用 `pstack` 作为入口，其余入口使用 `pstack-` 前缀，避免占用已有 `how`、`why` 等短名称。原生调用使用 `/skill:<name>`，不为每个 skill 再生成一份命令包装。
 
+### 唯一的 extension：写作规则与模式
+
+包内只允许一个 extension，`extensions/pstack.js`，两个 prompt 关注点，都是技能承载不了的：
+
+- **写作规则，总生效。** 在 `before_agent_start` 写进 `prose_rules` 段落。
+- **模式，进一次才生效。** 一个会话内的开关键，开着时往提示里加 `pstack_mode` 段。
+
+它不加工具，不改消息，不改工具参数或结果，不碰文件，也不自己调度任何东西。唯一读的状态是当前 branch 里的 custom entry（用来恢复模式开关），唯一写的命令是 `/pstack`。
+
+为什么必须有它。写作规则作用在每一句回复上，不是「任务匹配才用」的能力；Pi 的技能机制是「描述常驻、正文按需读取」，一个要模型自己决定去读的技能承载不了横切约束，把这类规则留在技能里，它就只能靠操作者点名。模式同理：Pi 没有这个机制，不自己做一个，进一次入口技能就不能对后续回合生效。二者上游都有对应物（Cursor 的 always-apply `.mdc` 规则与 sticky mode），Pi 都不认。
+
+三段边界。两段都用系统提示 `sections`，不用 `systemPrompt` 返回值：Pi 按段落 diff，不变的段不重发，不再维护的段会以 `null` 补丁从提示里清掉（关模式靠这个）。模式段落只放入口技能的每轮硬规矩（Non-negotiables，归属仍是 `skills/pstack/SKILL.md`）、入口技能的绝对路径和「每会话读一次」的约定，约 1 KB，不重发 15 KB 的技能正文。写作规则开头是「说人话」的几条（结论先行、不假设读者看过过程、术语先解释），取自 `pstack-bro` 与入口技能的「Writing the reply」，默认总生效，不必每次点名 `/skill:pstack-bro`；其余条目的归属仍是 `skills/pstack-unslop/SKILL.md`，extension 里的列表只是普通回复会踩到的那一支。新增第三个 always-on 行为时，得先回答它为什么不能是一个技能，并同步更新本节。
+
 覆盖上游适用于 Pi 的公共工作流及全部 23 个 playbook。Cursor 专属 Grok Bot UI、Benny 自动化和 UI 元数据不机械移植，须在覆盖表中说明。Claude 额外引入的 cursor-team-kit 命令不是本次原版能力兼容的必要前提；所需清理、PR 和验证行为仍要有可用路径。
 
 23 条原则作为按需读取的内部 reference，不注册成 23 个公共 skill。每个实际引用的本地文件必须随包安装。

@@ -16,16 +16,25 @@ test("the package manifest declares the skills it ships, by manifest and by conv
   assert.ok(existsSync(join(repoRoot, "skills")), "the skills directory exists");
 });
 
-test("the package ships skills only: no extensions, prompts, themes, or agents", () => {
-  assert.equal(pkg.pi.extensions, undefined, "no extension entry");
+test("the package adds one extension and nothing else: no prompts, themes, or agents", () => {
+  assert.deepEqual(
+    pkg.pi.extensions,
+    ["./extensions/pstack.js"],
+    "the always-on prose rules and the mode are the only extension",
+  );
   assert.equal(pkg.pi.prompts, undefined, "no prompt templates");
   assert.equal(pkg.pi.themes, undefined, "no themes");
   assert.equal(pkg.pi.subagents, undefined, "no subagents schema");
   assert.equal(pkg.pi.tools, undefined, "no custom tools");
 
-  for (const dir of ["extensions", "prompts", "themes", "agents"]) {
+  for (const dir of ["prompts", "themes", "agents"]) {
     assert.equal(existsSync(join(repoRoot, dir)), false, `no ${dir}/ directory`);
   }
+  assert.deepEqual(
+    readdirSync(join(repoRoot, "extensions")),
+    ["pstack.js"],
+    "extensions/ holds exactly the declared extension",
+  );
   assert.equal(pkg.bin, undefined, "no binaries");
   assert.equal(pkg.dependencies, undefined, "no runtime dependencies");
 });
@@ -45,7 +54,15 @@ test("everything the package claims to publish is inside the package", () => {
   for (const entry of pkg.files) {
     assert.ok(existsSync(join(repoRoot, entry)), `files entry ${entry} exists`);
   }
-  for (const entry of ["skills", "README.md", "AGENTS.md", "LICENSE", "NOTICE.md", "docs"]) {
+  for (const entry of [
+    "skills",
+    "extensions",
+    "README.md",
+    "AGENTS.md",
+    "LICENSE",
+    "NOTICE.md",
+    "docs",
+  ]) {
     assert.ok(pkg.files.includes(entry), `${entry} is published`);
   }
   assert.ok(pkg.files.includes("skills"), "the skill bodies travel with the package");

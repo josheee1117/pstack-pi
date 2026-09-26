@@ -17,6 +17,7 @@
 
 ## 本次移植做了什么
 
+- 新增一个 extension（`extensions/pstack.js`），两个关注点。一是把 `pstack-unslop` 的高频写作规则常驻进系统提示（上游对应的 Cursor always-apply `.mdc` 规则与 `/setup-pstack` 写的模型规则表）；二是实现 `/pstack` 模式（上游对应的 Cursor sticky mode，`mode`/`reminder` 每轮重注入）。Pi 会忽略未知 frontmatter 且没有模式机制，所以两者都换成系统提示段落。这是对上游机制的替代，不是新增能力，详见 `docs/architecture.md`。
 - 全部 23 个可移植公共技能和 23 个 playbook 重写为 Pi 的 skill 形式并调整执行绑定。
 - 23 条原则合并为一份内部参考 `skills/pstack/references/principles.md`，不注册为公共 skill。
 - 删除了 Cursor 专属机制：`Task`/`subagent_type`、`run_in_background`、`environment: cloud`、`AskQuestion`、`/loop`、`control-ui`/`control-cli`、`/deslop`、`cursor-team-kit`、`~/.cursor/rules/pstack-models.mdc`、`agent-transcripts` 目录约定、Graphite（`gt`）与 Origin 专属 forge 分支。
