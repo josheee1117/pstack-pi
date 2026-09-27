@@ -1,6 +1,6 @@
 ---
 name: pstack-principle-type-system-discipline
-description: "Apply when designing types, reviewing a function signature, or writing code in any statically-typed language. Make illegal states unrepresentable, brand semantic primitives, parse external data at boundaries, refuse to lie to the compiler, exhaust variants, derive from authoritative schemas."
+description: "类型系统纪律：设计类型、审查函数签名或写任何静态类型语言时使用。让非法状态无法表示，给语义基本类型打品牌，在边界解析外部数据，不欺骗编译器，穷尽所有分支，从权威 schema 派生类型。"
 disable-model-invocation: true
 ---
 

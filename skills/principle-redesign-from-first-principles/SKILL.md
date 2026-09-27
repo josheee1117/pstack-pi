@@ -1,6 +1,6 @@
 ---
 name: pstack-principle-redesign-from-first-principles
-description: "Apply when integrating a new requirement into an existing design. Redesign as if the requirement had been a foundational assumption from day one, instead of bolting it on."
+description: "从头重新设计：往现有设计里加新需求时使用。假设这个需求从第一天起就是基础前提来重新设计，而不是硬塞进去。"
 disable-model-invocation: true
 ---
 

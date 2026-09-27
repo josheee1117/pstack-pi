@@ -1,6 +1,6 @@
 ---
 name: pstack-how
-description: "Use for \"how does X work\", code walkthroughs before changing something, and placement / ownership / layering questions (\"where should this live\", \"which package owns this\", \"is this the right layer\"). Explains subsystem architecture, runtime flow, onboarding mental models. Use why for motivation."
+description: "解释系统如何工作、代码该放在哪一层。适用于改动前梳理代码、了解运行机制、确认模块归属或分层边界，产出面向工程师的架构说明。追问设计动机请用 pstack-why。"
 disable-model-invocation: true
 ---
 

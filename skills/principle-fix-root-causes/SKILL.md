@@ -1,6 +1,6 @@
 ---
 name: pstack-principle-fix-root-causes
-description: "Apply when debugging. Trace each symptom to its root cause and fix it there; reproduce first, ask why until you reach it, resist nil-check guards that silence crashes."
+description: "修根因：调试时使用。先复现，一路追问为什么，把每个症状追到根因并在那里修复，不要用空值判断把崩溃压下去。"
 disable-model-invocation: true
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: pstack-reflect
-description: Spawn three parallel review subagents over the active transcript, surface learnings, and route each to a concrete edit on an existing skill. Use when the user says reflect.
+description: "复盘并固化经验：从当前对话提取可复用的教训，逐条落实为现有技能的修改、待办，或明确不采纳。适用于主动复盘，或长任务结束后避免同类阻力再次出现。"
 disable-model-invocation: true
 ---
 

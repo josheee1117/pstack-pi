@@ -1,6 +1,6 @@
 ---
 name: pstack-principle-subtract-before-you-add
-description: "Apply when sequencing an addition, refactor, or rewrite. Remove dead code, redundant validators, and stub references first, then build on the simpler base."
+description: "先减后加：安排新增、重构或重写的顺序时使用。先删死代码、多余的校验和空引用，再在更简单的基础上构建。"
 disable-model-invocation: true
 ---
 

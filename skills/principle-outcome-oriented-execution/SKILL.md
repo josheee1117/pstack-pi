@@ -1,6 +1,6 @@
 ---
 name: pstack-principle-outcome-oriented-execution
-description: "Apply during planned rewrites and migrations with explicit phase boundaries. Converge on the target architecture; don't preserve smooth intermediate states with throwaway compatibility code."
+description: "直奔目标架构：有明确阶段划分的重写和迁移中使用。直接收敛到目标架构，不为平滑过渡写一次性的兼容代码。"
 disable-model-invocation: true
 ---
 

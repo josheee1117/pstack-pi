@@ -1,6 +1,6 @@
 ---
 name: pstack-principle-laziness-protocol
-description: "Apply when refactoring, evaluating diff size, or tempted to add abstractions, layers, or signal threading. Bias toward deletion and the smallest change that solves the problem."
+description: "最小改动：重构、评估改动大小，或想加抽象、分层、层层传参时使用。优先删除，只做解决问题的最小改动。"
 disable-model-invocation: true
 ---
 

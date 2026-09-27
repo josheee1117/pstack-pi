@@ -1,6 +1,6 @@
 ---
 name: pstack-why
-description: "Use for 'why does X work this way', 'why we picked Y', design rationale, regressions, postmortems, or data-backed thresholds. Discovers available MCPs and queries each evidence category (source control, issue tracker, long-form docs, real-time chat, infrastructure observability, error tracking, product analytics warehouse) in parallel, then returns a cited read on decisions and tradeoffs. Use how for runtime behavior."
+description: "追溯代码为什么这样设计：查明设计理由、回归原因、事故复盘与阈值依据。适用于追问方案选择或数字来源；发现本会话实际可用的证据源，按类别并行调查，给出带引用和明确置信度的解释。了解运行机制请用 pstack-how。"
 disable-model-invocation: true
 ---
 

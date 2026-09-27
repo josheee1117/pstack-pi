@@ -1,6 +1,6 @@
 ---
 name: pstack-unslop
-description: Cut AI tells from any writing. Must always apply.
+description: "去掉文字里的机器腔：清理回复、文档、PR 描述、提交信息和注释中的空话与模板痕迹。适用于交付任何文字内容之前，尤其是面向用户的回复。"
 disable-model-invocation: true
 ---
 

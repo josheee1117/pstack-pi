@@ -1,6 +1,6 @@
 ---
 name: pstack-principle-minimize-reader-load
-description: "Apply when reviewing or shaping code that's hard to trace. Count layers between question and answer, and hidden state in the reader's head; collapse one-caller wrappers and shrink mutable scope."
+description: "减轻读者负担：审查或整理难以追踪的代码时使用。数一数从问题到答案要跨几层、读者要在脑子里记多少隐藏状态；合并只有一个调用方的包装，缩小可变状态的范围。"
 disable-model-invocation: true
 ---
 

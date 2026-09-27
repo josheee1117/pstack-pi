@@ -1,6 +1,6 @@
 ---
 name: pstack
-description: poteto's agent style for concise, detailed responses, deliberate subagents, unslopped prose, simple code, and verified work. Use for poteto, /poteto-mode, or requests to work in this style.
+description: "工程工作流入口：理解、设计、实现、独立验证、交付与恢复。简单任务直接完成并做最小真实检查；复杂任务匹配 23 种流程，覆盖调查、修复、性能优化、取证、功能开发、重构、原型、视觉对齐、技能编写与评估、PR 跟进与交付、自主运行、编排、自动执行、会话接手、安全暂停、多阶段计划、工作区清理与开 PR。适用于 /skill:pstack、严谨工程任务，或错误方案难以撤回的改动。"
 disable-model-invocation: true
 mode: true
 icon: crown

@@ -3,9 +3,10 @@ import { test } from "node:test";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { repoRoot } from "./helpers.js";
+import { repoRoot, skillsDir } from "./helpers.js";
 
 const extensionPath = join(repoRoot, "extensions", "pstack.js");
+const ENTRY_SKILL = join(skillsDir, "poteto-mode", "SKILL.md");
 
 /**
  * Run the extension the way Pi does: call its factory with a recording API
@@ -42,72 +43,146 @@ async function load() {
     handlers.get("before_agent_start")(event);
     return event.systemPromptOptions.sections;
   };
+  const read = (path) =>
+    handlers.get("tool_result")({
+      toolName: "read",
+      input: { path },
+      content: [{ type: "text", text: "file body" }],
+      isError: false,
+    });
   const command = commands.get("pstack");
-  return { handlers, entries, statuses, notifications, sent, ctx, turn, command };
+  return { handlers, entries, statuses, notifications, sent, ctx, turn, read, command };
 }
 
 const branchOf = (...entries) => ({ sessionManager: { getBranch: () => entries } });
+const custom = (customType, data) => ({ type: "custom", customType, data });
 
-test("the extension registers every hook the mode needs", async () => {
+test("the extension registers every hook it needs", async () => {
   const { handlers, command } = await load();
-  for (const event of ["session_start", "input", "before_agent_start"]) {
+  for (const event of ["session_start", "input", "tool_result", "before_agent_start"]) {
     assert.equal(typeof handlers.get(event), "function", `${event} has a handler`);
   }
   assert.equal(typeof command?.handler, "function", "/pstack is a registered command");
   assert.match(command.description, /off/, "the description names the way out");
 });
 
-test("the writing rules go into a section on every turn, mode or not", async () => {
+test("the writing rules go into a section on every turn, and nothing else does until pstack is used", async () => {
   const { turn } = await load();
   const sections = turn();
-  assert.equal(Object.keys(sections).join(), "prose_rules");
+  assert.deepEqual(Object.keys(sections), ["prose_rules"], "a session that never touches pstack pays for the rules only");
 
-  const name = "prose_rules";
   // Pi throws on a section name that is not `^[a-z][a-z0-9_-]*$` or that is
-  // "preamble", and it throws inside the handler, so a bad name would report an
-  // extension error on every turn.
-  assert.match(name, /^[a-z][a-z0-9_-]*$/);
-  assert.notEqual(name, "preamble");
-
-  const bullets = sections[name].split("\n").filter((line) => line.startsWith("- "));
-  assert.ok(bullets.length >= 10, `the rule list survived intact (${bullets.length} bullets)`);
-  assert.match(sections[name], /No em dashes/);
-  assert.match(sections[name], /Active voice/);
-  assert.match(sections[name], /did not watch you work/, "the plain-speech rules are on by default");
-  assert.doesNotMatch(sections[name], /\*\*|—/, "the injected text does not break its own rules");
-
-  for (const skill of ["pstack-unslop", "pstack-technical-writing"]) {
-    const path = join(repoRoot, "skills", skill, "SKILL.md");
-    assert.ok(existsSync(path), `${skill} ships with the package`);
-    assert.ok(sections[name].includes(path), `the section names the absolute path to ${skill}`);
+  // "preamble", inside the handler, so a bad name would fail every turn.
+  for (const name of ["prose_rules", "pstack_adapter", "pstack_mode"]) {
+    assert.match(name, /^[a-z][a-z0-9_-]*$/);
   }
+
+  const text = sections.prose_rules;
+  const bullets = text.split("\n").filter((line) => line.startsWith("- "));
+  assert.ok(bullets.length >= 10, `the rule list survived intact (${bullets.length} bullets)`);
+  assert.match(text, /did not watch you work/, "the plain-speech rules are on by default");
+  assert.match(text, /No em dashes/);
+  assert.doesNotMatch(text, /\*\*|—/, "the injected text does not break its own rules");
+  for (const skill of ["unslop", "technical-writing"]) {
+    const path = join(skillsDir, skill, "SKILL.md");
+    assert.ok(existsSync(path), `${skill} ships with the package`);
+    assert.ok(text.includes(path), `the section names the absolute path to ${skill}`);
+  }
+});
+
+test("any pstack skill command turns the adapter on, and it stays on", async () => {
+  for (const text of ["/skill:pstack fix it", "/skill:pstack-how what does X do", "/skill:pstack-principle-fix-root-causes"]) {
+    const { handlers, turn, entries } = await load();
+    handlers.get("input")({ text, source: "interactive" });
+    const sections = turn();
+    assert.ok(sections.pstack_adapter, `"${text}" injects the adapter`);
+    assert.ok(turn().pstack_adapter, "and it stays on later turns");
+    assert.ok(entries.some((e) => e.customType === "pstack-adapter"), "the adapter flag is persisted");
+  }
+
+  for (const text of ["tell me about /skill:pstack", "/skill:pstackish", "/skill:other-skill"]) {
+    const { handlers, turn } = await load();
+    handlers.get("input")({ text, source: "interactive" });
+    assert.equal(turn().pstack_adapter, undefined, `"${text}" is not a pstack skill command`);
+  }
+});
+
+test("the adapter carries the overrides and the platform map with every path filled in", async () => {
+  const { handlers, turn } = await load();
+  handlers.get("input")({ text: "/skill:pstack-how x", source: "interactive" });
+  const text = turn().pstack_adapter;
+
+  assert.match(text, /^# Operator overrides/, "the overrides come first, so they frame the map");
+  assert.match(text, /Fix only what the request needs/);
+  assert.match(text, /# pstack on Pi/);
+  assert.doesNotMatch(text, /\{\{\w+\}\}/, "no placeholder is left unfilled");
+
+  const paths = [...text.matchAll(/(\/[^\s`,;)]+\.md)\b/g)]
+    .map((m) => m[1])
+    .filter((p) => p.startsWith(`${repoRoot}/`) && !p.includes("<"));
+  assert.ok(paths.length >= 5, `the map names the package's own files (${paths.length} found)`);
+  for (const path of paths) assert.ok(existsSync(path), `${path} exists`);
+});
+
+test("the first read of a pstack skill file carries the adapter; later reads and other files do not", async () => {
+  const { read, turn, entries } = await load();
+
+  assert.equal(read("/etc/hosts"), undefined, "a file outside the package is untouched");
+  assert.equal(read(join(repoRoot, "..", "skills", "how", "SKILL.md")), undefined, "a look-alike path outside the package is untouched");
+
+  const first = read(join(skillsDir, "how", "SKILL.md"));
+  assert.equal(first.content[0].text, "file body", "the file's own content is kept first");
+  assert.match(first.content[1].text, /Operator overrides/, "the adapter rides along in the same result");
+  assert.ok(entries.some((e) => e.customType === "pstack-adapter"));
+
+  assert.equal(read(join(skillsDir, "why", "SKILL.md")), undefined, "the adapter is attached once, not on every read");
+  assert.ok(turn().pstack_adapter, "from the next prompt on, the adapter is a section");
+});
+
+test("a relative read path is resolved against the session's cwd", async () => {
+  const { handlers } = await load();
+  const result = handlers.get("tool_result")(
+    { toolName: "read", input: { path: "skills/how/SKILL.md" }, content: [], isError: false },
+    { cwd: repoRoot },
+  );
+  assert.match(result.content[0].text, /Operator overrides/);
+});
+
+test("a failed read is left alone", async () => {
+  const { handlers } = await load();
+  const result = handlers.get("tool_result")({
+    toolName: "read",
+    input: { path: join(skillsDir, "how", "SKILL.md") },
+    content: [{ type: "text", text: "ENOENT" }],
+    isError: true,
+  });
+  assert.equal(result, undefined);
 });
 
 test("the mode section is absent until the mode is on, then present, then gone", async () => {
   const { turn, command, ctx } = await load();
-
   assert.equal(turn().pstack_mode, undefined, "a fresh session carries no mode reminder");
 
   await command.handler("", ctx);
   const on = turn();
   assert.match(on.pstack_mode, /pstack mode is on/);
-  assert.ok(
-    on.pstack_mode.includes(join(repoRoot, "skills", "pstack", "SKILL.md")),
-    "the reminder names the entry skill by absolute path, so the model can read it",
-  );
-  assert.match(on.prose_rules, /No em dashes/, "turning the mode on does not drop the writing rules");
+  assert.ok(on.pstack_mode.includes(ENTRY_SKILL), "the reminder names the entry skill by absolute path");
+  assert.ok(existsSync(ENTRY_SKILL));
+  assert.ok(on.pstack_adapter, "the mode brings the adapter with it");
+  assert.ok(on.prose_rules, "turning the mode on does not drop the writing rules");
 
   await command.handler("off", ctx);
-  assert.equal(turn().pstack_mode, undefined, "turning the mode off removes the section");
+  const off = turn();
+  assert.equal(off.pstack_mode, undefined, "turning the mode off removes the reminder");
+  assert.ok(off.pstack_adapter, "the adapter stays: the session already used pstack");
 });
 
 test("the reminder stays small instead of resending the entry skill", async () => {
   const { turn, command, ctx } = await load();
   await command.handler("", ctx);
   const text = turn().pstack_mode;
-  assert.ok(text.length < 2000, `the reminder stays short (${text.length} chars)`);
-  assert.match(text, /Evidence, not assertion/, "the every-turn rules apply without loading the skill");
-  assert.match(text, /do not read it again/, "the skill is read once, not every turn");
+  assert.ok(text.length < 1000, `the reminder stays short (${text.length} chars)`);
+  assert.match(text, /Read it once/, "the skill is read once, not every turn");
   assert.doesNotMatch(text, /^# |\n## /, "the skill body is not pasted into the prompt");
 });
 
@@ -116,15 +191,15 @@ test("/pstack <task> turns the mode on and runs the entry skill in one step", as
   await command.handler("fix the retry regression", ctx);
 
   assert.deepEqual(sent, [
-    {
-      text: "/skill:pstack fix the retry regression",
-      options: { expandPromptTemplates: true },
-    },
+    { text: "/skill:pstack fix the retry regression", options: { expandPromptTemplates: true } },
   ]);
   assert.deepEqual(
-    entries.map((entry) => entry.data),
-    [{ enabled: true }],
-    "the mode is persisted so a resume brings it back",
+    entries.map((entry) => [entry.customType, entry.data]),
+    [
+      ["pstack-mode", { enabled: true }],
+      ["pstack-adapter", { enabled: true }],
+    ],
+    "both flags are persisted so a resume brings them back",
   );
 });
 
@@ -137,52 +212,48 @@ test("naming /pstack off is not treated as a task", async () => {
   assert.equal(notifications.length, 5, "each one reports the mode is off");
 });
 
-test("a resumed session restores the mode from the branch, and the last entry wins", async () => {
-  const { handlers, turn, statuses } = await load();
+test("a resumed session restores both flags from the branch, and the last mode entry wins", async () => {
+  const { handlers, turn } = await load();
   const start = handlers.get("session_start");
+  const ui = { ui: { setStatus: () => {} } };
+  const on = custom("pstack-mode", { enabled: true });
+  const off = custom("pstack-mode", { enabled: false });
+  const adapter = custom("pstack-adapter", { enabled: true });
 
-  start({}, { ui: { setStatus: (k, v) => statuses.push([k, v]) } });
-  assert.equal(turn().pstack_mode, undefined, "no entry means the mode is off");
+  start({}, ui);
+  assert.deepEqual(Object.keys(turn()), ["prose_rules"], "no entries means neither is on");
 
-  const on = { type: "custom", customType: "pstack-mode", data: { enabled: true } };
-  const off = { type: "custom", customType: "pstack-mode", data: { enabled: false } };
+  start({}, { ...ui, ...branchOf({ type: "message" }, adapter) });
+  assert.ok(turn().pstack_adapter, "an adapter entry restores the adapter");
+  assert.equal(turn().pstack_mode, undefined);
 
-  start({}, { ui: { setStatus: () => {} }, ...branchOf({ type: "message" }, on) });
+  start({}, { ...ui, ...branchOf(on) });
   assert.match(turn().pstack_mode, /pstack mode is on/, "an enabled entry restores the mode");
 
-  start({}, { ui: { setStatus: () => {} }, ...branchOf(on, { type: "message" }, off) });
+  start({}, { ...ui, ...branchOf(on, { type: "message" }, off) });
   assert.equal(turn().pstack_mode, undefined, "a later disable wins");
 
-  start({}, { ui: { setStatus: () => {} }, ...branchOf(on, { type: "message" }, off, on) });
+  start({}, { ...ui, ...branchOf(on, off, on) });
   assert.match(turn().pstack_mode, /pstack mode is on/, "turning it back on is remembered");
 });
 
 test("typing the entry skill the usual way also enters the mode", async () => {
   const { handlers, turn, entries } = await load();
-  const input = handlers.get("input");
-
-  input({ text: "/skill:pstack fix this", source: "interactive" });
+  handlers.get("input")({ text: "/skill:pstack fix this", source: "interactive" });
   assert.match(turn().pstack_mode, /pstack mode is on/);
-  assert.equal(entries.length, 1, "the direct route is persisted too");
+  assert.equal(entries.filter((e) => e.customType === "pstack-mode").length, 1);
 
-  // /pstack <task> sends this same text itself, after already setting the flag.
-  // Re-entering on that echo would append a second, pointless session entry.
+  // /pstack <task> sends this same text itself, after already setting the flags.
   const echo = await load();
   echo.handlers.get("input")({ text: "/skill:pstack fix this", source: "extension" });
   assert.equal(echo.entries.length, 0, "the extension's own message does not re-enter the mode");
 
-  for (const text of ["/skill:pstack-how what does X do", "tell me about /skill:pstack"]) {
-    const fresh = await load();
-    fresh.handlers.get("input")({ text, source: "interactive" });
-    assert.equal(
-      fresh.turn().pstack_mode,
-      undefined,
-      `"${text}" is a different skill or a mention, not the entry`,
-    );
-  }
+  const other = await load();
+  other.handlers.get("input")({ text: "/skill:pstack-how what does X do", source: "interactive" });
+  assert.equal(other.turn().pstack_mode, undefined, "another pstack skill is not the entry");
 });
 
-test("a session that cannot be read leaves the mode off instead of throwing", async () => {
+test("a session that cannot be read leaves both off instead of throwing", async () => {
   const { handlers, turn } = await load();
   const broken = {
     sessionManager: {
@@ -193,13 +264,11 @@ test("a session that cannot be read leaves the mode off instead of throwing", as
     ui: { setStatus: () => {} },
   };
   assert.doesNotThrow(() => handlers.get("session_start")({}, broken));
-  assert.equal(turn().pstack_mode, undefined);
+  assert.deepEqual(Object.keys(turn()), ["prose_rules"]);
 });
 
 test("re-injecting on later turns is idempotent, so Pi's section diff skips the resend", async () => {
   const { turn, command, ctx } = await load();
   await command.handler("", ctx);
-  const first = turn();
-  const second = turn();
-  assert.deepEqual(second, first);
+  assert.deepEqual(turn(), turn());
 });

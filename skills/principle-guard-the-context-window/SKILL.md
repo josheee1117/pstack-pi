@@ -1,6 +1,6 @@
 ---
 name: pstack-principle-guard-the-context-window
-description: "Apply when context is filling up: large outputs, long files, repeated reads, fan-out planning. Route bulk to subagents; keep summaries in the main thread, not raw payloads."
+description: "守住上下文：上下文快满时使用，比如大量输出、长文件、反复读取、规划并行分工。把大块内容交给子代理，主线程只留摘要。"
 disable-model-invocation: true
 ---
 

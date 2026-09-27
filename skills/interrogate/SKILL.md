@@ -1,6 +1,6 @@
 ---
 name: pstack-interrogate
-description: "Use for \"interrogate\", \"adversarial review\", \"multi-model review\", \"challenge this\", \"stress test this code\", \"find blind spots\", or \"tear this apart\". Multiple LLM reviewers challenge changes from independent angles."
+description: "多模型独立审查：从不同角度质疑改动，找出缺陷、设计漏洞、安全与可维护性问题，汇总为必须处理、值得考虑和已排除三类结论。适用于审查 diff、查盲点、对抗式评审，或交付有争议的设计之前。"
 disable-model-invocation: true
 ---
 

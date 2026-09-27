@@ -1,6 +1,6 @@
 ---
 name: pstack-principle-exhaust-the-design-space
-description: "Apply when facing a novel UI interaction or architectural decision with no precedent in the codebase. Build 2-3 competing prototypes and compare side by side before committing."
+description: "穷尽设计空间：遇到代码库里没有先例的新交互或架构决定时使用。先做两三个互相竞争的原型并排比较，再做决定。"
 disable-model-invocation: true
 ---
 

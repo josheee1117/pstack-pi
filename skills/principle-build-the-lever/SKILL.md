@@ -1,6 +1,6 @@
 ---
 name: pstack-principle-build-the-lever
-description: "Apply to any non-trivial work, not just bulk work: edits, migrations, analyses, checks. Build the tool that does it or proves it (codemod, script, generator, or a skill your subagents follow) instead of working by hand. The tool is the artifact a reviewer can rerun."
+description: "先造工具：任何不小的工作都适用，包括修改、迁移、分析和检查。写一个能完成或证明它的工具（codemod、脚本、生成器，或子代理照做的技能），而不是手工做。这个工具就是审查者可以重跑的产物。"
 disable-model-invocation: true
 ---
 # Build the Lever

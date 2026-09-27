@@ -1,6 +1,6 @@
 ---
 name: pstack-architect
-description: "Sketch types, signatures, and module structure before code, then stay in the loop while implementation fills in. Use for /architect, 'architect this', 'design this', or non-trivial work where jumping to code would lock in the wrong shape."
+description: "先设计再实现：明确类型、函数签名与模块结构，并在实现过程中持续校准。适用于架构设计、要求先出方案，或跨函数边界且贸然编码容易固化错误结构的改动。"
 disable-model-invocation: true
 ---
 

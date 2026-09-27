@@ -1,6 +1,6 @@
 ---
 name: pstack-principle-experience-first
-description: "Apply when product, UX, or feature-scope tradeoffs come up. Choose user delight over implementation convenience; ship fewer polished features over more rough ones."
+description: "体验优先：权衡产品、体验或功能范围时使用。选用户满意而不是实现方便；宁可少做几个打磨好的功能，也不多做粗糙的。"
 disable-model-invocation: true
 ---
 

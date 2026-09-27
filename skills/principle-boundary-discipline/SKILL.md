@@ -1,6 +1,6 @@
 ---
 name: pstack-principle-boundary-discipline
-description: "Apply when wiring validation, error handling, or framework adapters. Concentrate guards at system boundaries (CLI, config, network, external APIs); trust internal types and keep business logic in pure functions."
+description: "守住边界：编写校验、错误处理或框架适配时使用。把防护集中在系统边界（CLI、配置、网络、外部 API），内部信任类型，业务逻辑保持纯函数。"
 disable-model-invocation: true
 ---
 

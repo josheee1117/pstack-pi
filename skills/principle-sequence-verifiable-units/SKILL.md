@@ -1,6 +1,6 @@
 ---
 name: pstack-principle-sequence-verifiable-units
-description: "Apply to multi-step work (sweeps, migrations, runs of similar edits) and to how you stack commits and PRs. Break work into small units that each end in a verifiable state, check each before the next, and order delivery so the sequence proves itself to a reviewer."
+description: "拆成可验证的小步：多步工作（批量扫描、迁移、一连串相似修改）以及安排提交和 PR 顺序时使用。每一小步都停在可验证的状态，验证后再做下一步，交付顺序本身就能向审查者证明正确。"
 disable-model-invocation: true
 ---
 

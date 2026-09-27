@@ -1,6 +1,6 @@
 ---
 name: pstack-setup
-description: Configure which models pstack uses per role and at what reasoning budget. Detects your available models and writes an always-applied rule that overrides the skill defaults. Use for /setup-pstack, "configure pstack models", "pstack budget", or changing pstack's model choices.
+description: "配置角色模型与推理预算：选择各角色使用的模型或审查者，并记录已确认的配置供后续会话读取。适用于首次安装后配置 pstack、调整预算，或查看各角色使用哪些模型。"
 ---
 
 # Setup pstack

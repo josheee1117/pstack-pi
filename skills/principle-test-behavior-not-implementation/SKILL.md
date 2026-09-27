@@ -1,6 +1,6 @@
 ---
 name: pstack-principle-test-behavior-not-implementation
-description: "Apply when you write, change, or keep a test. Call the code the way its users do and assert the result they observe against a literal expected value. If the test would still pass when every imported function returns undefined, rewrite the assertion or delete the test."
+description: "测行为不测实现：编写、修改或保留测试时使用。像用户那样调用代码，用字面量断言用户看到的结果。如果所有导入的函数都返回 undefined 测试仍能通过，就改断言或删掉这个测试。"
 disable-model-invocation: true
 ---
 

@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/cursor/plugins",
+  "path": "pstack",
+  "ref": "main",
+  "copy": {
+    "skills": "skills",
+    "agents": "agents",
+    "LICENSE": "LICENSE.upstream"
+  },
+  "drop": ["skills/make-bot-ui"],
+  "namePrefix": "pstack-",
+  "rename": {
+    "poteto-mode": "pstack",
+    "setup-pstack": "pstack-setup",
+    "teach": "pstack-teach-me"
+  }
+}

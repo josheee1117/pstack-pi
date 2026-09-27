@@ -1,6 +1,6 @@
 ---
 name: pstack-bro
-description: Restate the last message in plain human language, with no jargon.
+description: "用大白话重说上一条回复：去掉术语，把话讲清楚。适用于上条回答太密、太绕，或希望换成容易理解的解释。"
 disable-model-invocation: true
 ---
 

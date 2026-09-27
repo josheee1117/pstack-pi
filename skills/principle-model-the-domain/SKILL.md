@@ -1,6 +1,6 @@
 ---
 name: pstack-principle-model-the-domain
-description: "Apply when writing stateful logic, or when code branches a lot or repeats a shape assumption across files. Encode the domain in a structure instead of scattered conditionals."
+description: "为领域建模：写有状态的逻辑，或代码分支很多、同一种形状假设散落在多个文件时使用。用一个结构表达领域，而不是到处写条件判断。"
 disable-model-invocation: true
 ---
 

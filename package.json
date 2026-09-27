@@ -1,7 +1,7 @@
 {
   "name": "pstack-pi",
-  "version": "0.1.0",
-  "description": "Rigorous engineering workflows for Pi: understand, design, implement, verify independently, ship, recover. A Pi-native port of pstack.",
+  "version": "0.2.0",
+  "description": "Rigorous engineering workflows for Pi: upstream pstack's skills with a Pi adapter. Understand, design, implement, verify independently, ship, recover.",
   "type": "module",
   "license": "MIT",
   "keywords": [
@@ -22,16 +22,19 @@
   },
   "files": [
     "skills",
+    "agents",
+    "adapter",
     "extensions",
-    "tests",
+    "docs",
     "README.md",
     "AGENTS.md",
     "LICENSE",
+    "LICENSE.upstream",
     "NOTICE.md",
-    "docs"
+    "upstream.lock"
   ],
   "scripts": {
-    "test": "node --test"
+    "test": "node --test \"tests/*.test.js\""
   },
   "engines": {
     "node": ">=20"

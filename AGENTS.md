@@ -47,4 +47,4 @@ pstack 的技能规定所需能力和包内默认实现。使用者可以在自�
 
 上表是给**使用本包的项目**用的模板。pstack-pi 自己怎么开发不受它约束：这个仓库的开发不需要 Herdr，不需要任何特定 subagent 扩展，也不需要 MCP。
 
-包内技能的默认执行方式是 Herdr 优先。那是**产品的包内默认**，通过使用者的 `AGENTS.md` 映射落地，不是本仓库的开发要求，也不是任何环境都应该有的前提。这条默认写在包内的 `skills/pstack/references/execution.md`：入口技能以及会委派或替换的技能都先读它，所以单独调一个 `/skill:pstack-swarm` 也会拿到这条策略，不依赖本文件的示例被加载。
+包内的默认执行方式写在 `adapter/platform.md` 和 `adapter/notes/`：子代理用 pi-subagents，长期存在的工作者用 Herdr。那是**产品的包内默认**，你项目的 `AGENTS.md` 映射可以替换它，不是本仓库的开发要求，也不是任何环境都应该有的前提。适配层在会话第一次用到 pstack 时就注入，所以单独调一个 `/skill:pstack-swarm` 也会拿到这些默认。

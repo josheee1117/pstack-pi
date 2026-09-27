@@ -1,6 +1,6 @@
 ---
 name: pstack-blast-radius
-description: "Find what a change could break somewhere else before it ships, beyond the diff, and prove the one fact it's safe because of by running real code instead of writing it up. Use for 'blast radius of X', 'what could this break', or reviewing a small diff you don't trust."
+description: "检查改动的影响范围：跳出 diff，找出可能被连带破坏的地方，并实际运行代码验证安全性依赖的关键事实。适用于交付前评估影响，或审查看似很小却不放心的改动。"
 disable-model-invocation: true
 ---
 

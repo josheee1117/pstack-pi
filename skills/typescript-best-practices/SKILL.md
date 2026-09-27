@@ -1,6 +1,6 @@
 ---
 name: pstack-typescript-best-practices
-description: TypeScript best practices. Use when reading or editing any .ts or .tsx file.
+description: "遵循 TypeScript 类型与建模规范：可辨识联合、品牌类型、构造式建模、用 unknown 代替 any、避免类型强转、穷尽匹配与边界解析。读取、编写或审查 .ts、.tsx 文件前使用。"
 paths: ["**/*.ts", "**/*.tsx"]
 disable-model-invocation: true
 ---

@@ -1,6 +1,6 @@
 ---
 name: pstack-principle-attack-the-premise
-description: "Apply when two or more fixes that share one premise have failed the same gate. Take a census of which actors hold the imbalance before the next fix, then question the premise instead of writing another fix that assumes it."
+description: "质疑前提：基于同一前提的两次以上修复都在同一关卡失败时使用。先弄清哪些参与方造成了失衡，再质疑前提本身，而不是再写一个依赖它的修复。"
 disable-model-invocation: true
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: pstack-principle-separate-before-serializing-shared-state
-description: "Apply when concurrent actors might write to the same file, branch, key, or state object. Eliminate the sharing first; serialize structurally only when one shared writer is a real invariant."
+description: "先拆开共享再谈串行：多个并发参与方可能写同一个文件、分支、键或状态对象时使用。先消除共享；只有“只有一个写入者”确实是不变量时，才在结构上串行化。"
 disable-model-invocation: true
 ---
 

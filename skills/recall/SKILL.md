@@ -1,6 +1,6 @@
 ---
 name: pstack-recall
-description: "Reconstruct your recent working context from your own chat history, live state, and the shared record (user reports, prior fixes, incidents), then hand back a tight current-state brief. Use for 'recall my work on X', 'catch me up', 'what have I been working on', 'where did I leave off', before starting or resuming work."
+description: "恢复工作上下文：从本项目的会话记录、当前 git 与 PR 状态，以及共享记录（用户反馈、历史修复、事故）重建主题现状，给出简短交接说明。适用于开工、接着干、回顾最近工作或查找上次停在哪里。"
 disable-model-invocation: true
 ---
 

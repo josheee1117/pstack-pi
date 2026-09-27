@@ -10,16 +10,6 @@ export function readJson(path) {
   return JSON.parse(readFileSync(path, "utf8"));
 }
 
-export function listFiles(dir, filter) {
-  const out = [];
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const full = join(dir, entry.name);
-    if (entry.isDirectory()) out.push(...listFiles(full, filter));
-    else if (!filter || filter(full)) out.push(full);
-  }
-  return out.sort();
-}
-
 /**
  * Locate the installed Pi package so the tests exercise the real loader instead
  * of a reimplementation. Returns the package root, or undefined when Pi is not
@@ -66,114 +56,33 @@ export async function loadPi() {
   return import(pathToFileURL(join(root, "dist", "index.js")).href);
 }
 
-/** Every skill directory shipped by this package, by skill name. */
-export function skillNamesOnDisk() {
+/** Skill directories shipped by this package. */
+export function skillDirsOnDisk() {
   return readdirSync(skillsDir)
     .filter((entry) => existsSync(join(skillsDir, entry, "SKILL.md")))
     .sort();
 }
 
-export const expectedPublicSkills = [
-  "pstack",
-  "pstack-architect",
-  "pstack-arena",
-  "pstack-automate-me",
-  "pstack-blast-radius",
-  "pstack-bro",
-  "pstack-create-verification-skill",
-  "pstack-figure-it-out",
-  "pstack-how",
-  "pstack-interrogate",
-  "pstack-maintain-verification-skill",
-  "pstack-no-comments",
-  "pstack-recall",
-  "pstack-reflect",
-  "pstack-setup",
-  "pstack-show-me-your-work",
-  "pstack-swarm",
-  "pstack-tdd",
-  "pstack-teach",
-  "pstack-technical-writing",
-  "pstack-typescript-best-practices",
-  "pstack-unslop",
-  "pstack-why",
-];
+/** The name the package gives each upstream skill directory, per upstream.json. */
+export function expectedName(dir) {
+  const config = readJson(join(repoRoot, "upstream.json"));
+  return config.rename[dir] ?? `${config.namePrefix}${dir}`;
+}
 
-export const upstreamPlaybooks = [
-  "investigation",
-  "bug-fix",
-  "perf-issue",
-  "hillclimb",
-  "runtime-forensics",
-  "trace-forensics",
-  "feature",
-  "refactoring",
-  "prototype",
-  "visual-parity",
-  "authoring-a-skill",
-  "eval",
-  "babysit",
-  "shipping",
-  "autonomous-run",
-  "orchestrate",
-  "autopilot-full",
-  "autopilot-stack",
-  "session-pickup",
-  "pause-safely",
-  "multi-phase-plan",
-  "worktree-cleanup",
-  "opening-a-pr",
-];
-
-export const upstreamPublicSkills = [
-  "poteto-mode",
-  "how",
-  "why",
-  "recall",
-  "blast-radius",
-  "architect",
-  "arena",
-  "swarm",
-  "interrogate",
-  "tdd",
-  "bro",
-  "unslop",
-  "technical-writing",
-  "no-comments",
-  "typescript-best-practices",
-  "figure-it-out",
-  "show-me-your-work",
-  "create-verification-skill",
-  "maintain-verification-skill",
-  "setup-pstack",
-  "reflect",
-  "automate-me",
-  "teach",
-  "make-bot-ui",
-];
-
-export const upstreamPrinciples = [
-  "laziness-protocol",
-  "foundational-thinking",
-  "redesign-from-first-principles",
-  "attack-the-premise",
-  "subtract-before-you-add",
-  "minimize-reader-load",
-  "outcome-oriented-execution",
-  "experience-first",
-  "exhaust-the-design-space",
-  "build-the-lever",
-  "model-the-domain",
-  "boundary-discipline",
-  "type-system-discipline",
-  "make-operations-idempotent",
-  "migrate-callers-then-delete-legacy-apis",
-  "separate-before-serializing-shared-state",
-  "prove-it-works",
-  "fix-root-causes",
-  "sequence-verifiable-units",
-  "test-behavior-not-implementation",
-  "guard-the-context-window",
-  "never-block-on-the-human",
-  "encode-lessons-in-structure",
-];
+// Upstream pstack 0.15.5's skills, minus make-bot-ui (Cursor's Grok Bot runtime).
+export const upstreamSkillDirs = [
+  "architect", "arena", "automate-me", "blast-radius", "bro", "create-verification-skill",
+  "figure-it-out", "how", "interrogate", "maintain-verification-skill", "no-comments", "poteto-mode",
+  "recall", "reflect", "setup-pstack", "show-me-your-work", "swarm", "tdd", "teach",
+  "technical-writing", "typescript-best-practices", "unslop", "why",
+  ...[
+    "attack-the-premise", "boundary-discipline", "build-the-lever", "encode-lessons-in-structure",
+    "exhaust-the-design-space", "experience-first", "fix-root-causes", "foundational-thinking",
+    "guard-the-context-window", "laziness-protocol", "make-operations-idempotent",
+    "migrate-callers-then-delete-legacy-apis", "minimize-reader-load", "model-the-domain",
+    "never-block-on-the-human", "outcome-oriented-execution", "prove-it-works",
+    "redesign-from-first-principles", "separate-before-serializing-shared-state",
+    "sequence-verifiable-units", "subtract-before-you-add", "test-behavior-not-implementation",
+    "type-system-discipline",
+  ].map((p) => `principle-${p}`),
+].sort();

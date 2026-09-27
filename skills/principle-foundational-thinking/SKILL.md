@@ -1,6 +1,6 @@
 ---
 name: pstack-principle-foundational-thinking
-description: "Apply before writing logic: choosing core types and data structures, sequencing scaffold-vs-feature work, asking what concurrent actors share. Get the data structures right so downstream code becomes obvious."
+description: "打好地基：写逻辑之前使用。先选核心类型和数据结构，安排先搭骨架还是先做功能，弄清并发参与方共享什么。数据结构对了，后面的代码自然清楚。"
 disable-model-invocation: true
 ---
 

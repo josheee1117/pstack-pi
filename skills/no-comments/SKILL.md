@@ -1,6 +1,6 @@
 ---
 name: pstack-no-comments
-description: "Spawn Comment Sicko, fix accepted findings, and offer encodings for claimed constraints."
+description: "精简无价值注释：把口头约束变成代码结构，只保留代码无法表达、且不显而易见的原因说明。适用于审查或开 PR 前，或 diff 中堆积了过多注释时。"
 disable-model-invocation: true
 ---
 

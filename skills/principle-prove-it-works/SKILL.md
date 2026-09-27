@@ -1,6 +1,6 @@
 ---
 name: pstack-principle-prove-it-works
-description: "Apply after completing a task, before declaring done. Verify against the real artifact (run the feature, read the actual value, inspect the diff), not a proxy, self-report, or 'it compiles.'"
+description: "证明它能用：任务做完、宣布完成之前使用。用真实产物验证（跑功能、读实际值、看 diff），不用替代品、自述或“能编译”充数。"
 disable-model-invocation: true
 ---
 

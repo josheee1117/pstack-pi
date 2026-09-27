@@ -1,6 +1,6 @@
 ---
 name: pstack-maintain-verification-skill
-description: "Periodic pass that keeps a project's verification skill and feature map honest: parallel source readers per feature, one live session driving every feature, at most one PR of proven corrections. Use for /maintain-verification-skill or \"audit the verify skill\"."
+description: "维护验证技能与功能地图：按功能分别核查源码，再用一个真实会话逐项驱动验证，最多形成一个包含已证实修正的 PR。适用于定期检查验证技能是否仍与应用实际行为一致。"
 disable-model-invocation: true
 ---
 

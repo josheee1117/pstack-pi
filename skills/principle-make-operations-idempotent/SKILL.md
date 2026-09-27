@@ -1,6 +1,6 @@
 ---
 name: pstack-principle-make-operations-idempotent
-description: "Apply when designing commands, lifecycle steps, or processing loops that run amid crashes, restarts, and retries. Converge to the same end state regardless of partial prior runs."
+description: "操作幂等：设计会遇到崩溃、重启和重试的命令、生命周期步骤或处理循环时使用。不论之前跑到哪一步，最终都收敛到同一个结果。"
 disable-model-invocation: true
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: pstack-principle-migrate-callers-then-delete-legacy-apis
-description: "Apply when introducing a new internal API while old callers still exist. Migrate callers and delete the old API in the same wave instead of preserving compatibility layers."
+description: "迁完调用方就删旧接口：新增内部 API 而旧调用方还在时使用。同一轮里迁移所有调用方并删掉旧接口，不保留兼容层。"
 disable-model-invocation: true
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: pstack-principle-never-block-on-the-human
-description: "Apply when tempted to ask 'should I do X?' on reversible work. Proceed, present the result, let the human course-correct after the fact; reserve confirmation for irreversible actions."
+description: "不卡在人身上：想问“要不要做 X”而这件事可以撤回时使用。直接做，给出结果，让人事后纠正；只有不可撤回的操作才先确认。"
 disable-model-invocation: true
 ---
 
