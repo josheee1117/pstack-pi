@@ -7,7 +7,7 @@ The pstack skills were written for Cursor. On Pi, read them through this map. Pa
 - A skill named in bold or as a command (**how**, `/tdd`) is {{skills}}/<name>/SKILL.md. `**<x>** principle skill` and `principle-<x>` are {{skills}}/principle-<x>/SKILL.md. The mode's skill (poteto-mode, `/poteto-mode`) is {{skills}}/poteto-mode/SKILL.md.
 - A playbook named in bold (**Feature**, **Opening a PR**, **Babysit**) is {{skills}}/poteto-mode/playbooks/<kebab-case name>.md. **Writing the reply** and **Comments** are sections of the mode's skill.
 - `pstack/skills/<x>`, `git show origin/main:pstack/skills/<x>`, and `~/.cursor/plugins/.../pstack` all mean files in this package. Read them from disk.
-- `.cursor/skills/` is `.pi/skills/`. `~/.cursor/skills/` is `~/.pi/agent/skills/`.
+- `.cursor/skills/` is `.pi/skills/`. `~/.cursor/skills/` is `{{agentDir}}/skills/`.
 - Before you follow one of these, read the note it names:
   - Chat transcripts, `agent-transcripts/` (recall, reflect, automate-me, eval, show-me-your-work audits, worktree-cleanup): {{adapter}}/notes/sessions.md.
   - Cloud agents, `environment: "cloud"`, long-lived owners (swarm, autopilot-full, autopilot-stack, shipping, orchestrate, figure-it-out): {{adapter}}/notes/cloud-agents.md.
@@ -26,7 +26,7 @@ The pstack skills were written for Cursor. On Pi, read them through this map. Pa
 
 ## Models
 
-- The `/setup-pstack` rule `~/.cursor/rules/pstack-models.mdc` is `~/.pi/agent/pstack-models.md` (installs of the earlier port wrote `~/.pi/agent/pstack-roles.md`; read that when the first is missing). The setup skill writes the first. A role line's value is a Pi model, `provider/id` with an optional `:thinking` suffix, passed as `model`.
+- The `/setup-pstack` rule `~/.cursor/rules/pstack-models.mdc` is `{{agentDir}}/pstack-models.md` (installs of the earlier port wrote `{{agentDir}}/pstack-roles.md`; read that when the first is missing). The setup skill writes the first. A role line's value is a Pi model, `provider/id` with an optional `:thinking` suffix, passed as `model`.
 - Upstream default slugs (grok-…, claude-…-max, gpt-…-max) do not exist here. When a role has no line, or its value is `auto` or `inherit-parent`, pass `model: "inherit"`. Omitting `model` uses the agent's configured default, which is not the session model.
 - A panel meant to span models (arena, architect, interrogate, reflect) may run on one model in fresh contexts. Say that model diversity was lost. Independence was not.
 

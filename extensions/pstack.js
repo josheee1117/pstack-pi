@@ -25,6 +25,7 @@
  * catalog for long-form work. Keep the two in sync.
  */
 import { readFileSync, realpathSync } from "node:fs";
+import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -32,6 +33,8 @@ const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const SKILLS = join(ROOT, "skills");
 const ADAPTER = join(ROOT, "adapter");
 const ENTRY_SKILL = join(SKILLS, "poteto-mode", "SKILL.md");
+// Pi's config directory, where user settings, skills, and sessions live.
+const AGENT_DIR = process.env.PI_CODING_AGENT_DIR || join(homedir(), ".pi", "agent");
 
 const PROSE_SECTION = "prose_rules";
 const ADAPTER_SECTION = "pstack_adapter";
@@ -56,7 +59,11 @@ const inSkills = (path, cwd) => {
 };
 
 const fill = (text) =>
-  text.replaceAll("{{root}}", ROOT).replaceAll("{{skills}}", SKILLS).replaceAll("{{adapter}}", ADAPTER);
+  text
+    .replaceAll("{{root}}", ROOT)
+    .replaceAll("{{skills}}", SKILLS)
+    .replaceAll("{{adapter}}", ADAPTER)
+    .replaceAll("{{agentDir}}", AGENT_DIR);
 
 const ADAPTER_TEXT = fill(
   [readFileSync(join(ADAPTER, "overrides.md"), "utf8"), readFileSync(join(ADAPTER, "platform.md"), "utf8")].join("\n"),
