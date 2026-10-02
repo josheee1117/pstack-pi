@@ -13,9 +13,10 @@ test("the manifest declares the skills and the one extension, and nothing that w
   assert.deepEqual(pkg.pi.skills, ["./skills"]);
   assert.deepEqual(pkg.pi.extensions, ["./extensions/pstack.js"]);
   assert.deepEqual(readdirSync(join(repoRoot, "extensions")), ["pstack.js"]);
-  for (const key of ["prompts", "themes", "subagents", "mcp"]) {
+  for (const key of ["prompts", "themes", "mcp"]) {
     assert.equal(pkg.pi[key], undefined, `no ${key}: optional components stay the user's choice`);
   }
+  assert.deepEqual(pkg.pi.subagents, { agents: ["./adapter/agents"] }, "optional investigator metadata does not install a runtime");
   assert.equal(pkg.dependencies, undefined, "no runtime dependencies");
   assert.equal(pkg.peerDependencies, undefined, "no required peer packages");
 });

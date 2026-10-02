@@ -1,39 +1,23 @@
 #!/usr/bin/env node
-/**
- * Import a snapshot of upstream pstack onto the `upstream` branch.
- *
- * The branch holds upstream as this package lays it out, nothing else: the
- * copy map, the dropped paths, and the skill names from `upstream.json` are
- * applied here, so they never show up as conflicts. Everything Pi-specific
- * lives on the working branch as ordinary commits, and `git merge upstream`
- * carries upstream changes across them. See docs/sync.md.
- *
- * Usage:
- *   node tools/sync-upstream.mjs [--ref <branch|tag|sha>] [--source <checkout>] [--dry-run <dir>]
- */
+// Import committed upstream files on a separate branch. Never merge into the
+// working branch automatically; review the delta first (docs/sync.md).
 import { execFileSync } from "node:child_process";
-import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { parseArgs } from "node:util";
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const BRANCH = "upstream";
-
-// Cursor-only vocabulary the adapter map has to cover. A new hit in an upstream
-// diff means the map may need a line; the sync reports it instead of guessing.
-const CURSOR_TERMS = [
-  /\bTask\b(?: tool| call)/g, /subagent_type/g, /\breadonly\b/g, /environment: ?"cloud"/g, /cloud_base_branch/g,
-  /\/loop\b/g, /\/goal\b/g, /\bAskQuestion\b/g, /cursor-team-kit/g, /control-(?:ui|cli)/g, /\.cursor\//g,
-  /agent-transcripts/g, /pstack-models\.mdc/g, /\bcreate-skill\b/g, /\btodolist\b/g, /Cursor cloud/g,
-  /\bmcps\//g, /\bbun\b/g, /\bgt\b /g, /\bOrigin\b/g, /grok-[\w.-]+|claude-[\w.-]+|gpt-[\w.-]+/g,
-];
-
-const git = (cwd, ...args) =>
-  execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+const git = (cwd, ...args) => execFileSync("git", args, {
+  cwd, encoding: "utf8", timeout: 120000, maxBuffer: 32 * 1024 * 1024,
+  stdio: ["ignore", "pipe", "pipe"],
+}).trim();
 
 export function renameSkill(text, dirName, config) {
   const name = config.rename[dirName] ?? `${config.namePrefix}${dirName}`;
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name) || name.length > 64) throw new Error(`Invalid skill name: ${name}`);
   const lines = text.split("\n");
   if (lines[0] !== "---") throw new Error(`${dirName}/SKILL.md has no frontmatter`);
   const end = lines.indexOf("---", 1);
@@ -44,101 +28,104 @@ export function renameSkill(text, dirName, config) {
   return lines.join("\n");
 }
 
-export function buildSnapshot(sourceRoot, config, outDir, lock) {
-  const from = join(sourceRoot, config.path);
-  for (const [src, dest] of Object.entries(config.copy)) {
-    cpSync(join(from, src), join(outDir, dest), { recursive: true });
+function relativePath(path) {
+  if (typeof path !== "string" || !path || isAbsolute(path) || path.includes("\\") || path.includes(":") ||
+      path.split("/").some((part) => !part || part === "." || part === ".." || part === ".git")) {
+    throw new Error(`Expected a safe relative path: ${path}`);
   }
+}
+
+function rejectLinks(dir) {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (entry.isSymbolicLink()) throw new Error(`Snapshot contains a symlink: ${join(dir, entry.name)}`);
+    if (entry.isDirectory()) rejectLinks(join(dir, entry.name));
+  }
+}
+
+export function buildSnapshot(sourceRoot, config, outDir, lock) {
+  for (const path of [config.path, ...Object.keys(config.copy), ...Object.values(config.copy), ...config.drop]) relativePath(path);
+  if (existsSync(outDir) && readdirSync(outDir).length) throw new Error(`Output directory must be empty: ${outDir}`);
+  const from = join(sourceRoot, config.path);
+  rejectLinks(from);
+  mkdirSync(outDir, { recursive: true });
+  for (const [src, dest] of Object.entries(config.copy)) cpSync(join(from, src), join(outDir, dest), { recursive: true });
   for (const path of config.drop) rmSync(join(outDir, path), { recursive: true, force: true });
-  const skills = join(outDir, "skills");
-  for (const dir of readdirSync(skills)) {
-    const file = join(skills, dir, "SKILL.md");
+  for (const dir of readdirSync(join(outDir, "skills"))) {
+    const file = join(outDir, "skills", dir, "SKILL.md");
     if (existsSync(file)) writeFileSync(file, renameSkill(readFileSync(file, "utf8"), dir, config));
   }
   writeFileSync(join(outDir, "upstream.lock"), `${JSON.stringify(lock, null, 2)}\n`);
 }
 
-function fetchUpstream(config, ref) {
-  const dir = mkdtempSync(join(tmpdir(), "pstack-upstream-"));
-  git(dir, "clone", "--quiet", "--filter=blob:none", "--sparse", "--no-checkout", config.repo, ".");
-  git(dir, "sparse-checkout", "set", config.path);
-  git(dir, "checkout", "--quiet", ref);
-  return dir;
-}
-
-function upstreamVersion(sourceRoot, config) {
-  try {
-    return JSON.parse(readFileSync(join(sourceRoot, config.path, ".cursor-plugin", "plugin.json"), "utf8")).version;
-  } catch {
-    return undefined;
+export function commitSnapshot(repository, snapshotDir, message) {
+  let previous = git(repository, "branch", "--list", BRANCH) ? git(repository, "rev-parse", BRANCH) : undefined;
+  if (!previous && git(repository, "branch", "-r", "--list", `origin/${BRANCH}`)) {
+    git(repository, "branch", "--track", BRANCH, `origin/${BRANCH}`);
+    previous = git(repository, "rev-parse", BRANCH);
   }
-}
-
-function reportCursorTerms(diffText) {
-  const added = diffText.split("\n").filter((l) => l.startsWith("+") && !l.startsWith("+++")).join("\n");
-  const hits = new Map();
-  for (const re of CURSOR_TERMS) {
-    for (const m of added.matchAll(re)) hits.set(m[0], (hits.get(m[0]) ?? 0) + 1);
+  if (!previous && existsSync(join(repository, "upstream.lock"))) {
+    throw new Error("Missing upstream branch. Fetch origin/upstream or restore the recorded snapshot ancestor first; refusing an unrelated history.");
   }
-  if (!hits.size) return console.log("No Cursor-only terms in the added lines.");
-  console.log("Cursor-only terms in added lines. Check adapter/platform.md covers each:");
-  for (const [term, n] of [...hits].sort((a, b) => b[1] - a[1])) console.log(`  ${n}\t${term}`);
-}
-
-function commitSnapshot(snapshotDir, message) {
-  const exists = git(repoRoot, "branch", "--list", BRANCH) !== "";
-  const previous = exists ? git(repoRoot, "rev-parse", BRANCH) : undefined;
-  const work = mkdtempSync(join(tmpdir(), "pstack-upstream-branch-"));
-  try {
-    if (exists) {
-      git(repoRoot, "worktree", "add", "--quiet", work, BRANCH);
-    } else {
-      git(repoRoot, "worktree", "add", "--quiet", "--detach", work);
-      git(work, "checkout", "--quiet", "--orphan", BRANCH);
+  if (previous) {
+    let prior;
+    try { prior = JSON.parse(git(repository, "show", `${previous}:upstream.lock`)); } catch {
+      throw new Error("Existing upstream branch is not a pstack snapshot; refusing to replace its files.");
     }
+    const next = JSON.parse(readFileSync(join(snapshotDir, "upstream.lock"), "utf8"));
+    if (prior.repo !== next.repo || prior.path !== next.path) throw new Error("Upstream snapshot provenance changed; review the source before importing.");
+  }
+  const temp = mkdtempSync(join(tmpdir(), "pstack-import-"));
+  const work = join(temp, "work");
+  let attached = false;
+  try {
+    git(repository, "worktree", "add", "--quiet", ...(previous ? [] : ["--detach"]), work, previous ? BRANCH : "HEAD");
+    attached = true;
+    if (!previous) git(work, "checkout", "--quiet", "--orphan", BRANCH);
     git(work, "rm", "-r", "-q", "-f", "--ignore-unmatch", ".");
     cpSync(snapshotDir, work, { recursive: true });
     git(work, "add", "-A");
-    if (git(work, "status", "--porcelain") === "") {
-      console.log(`${BRANCH} is already at this snapshot.`);
-      return;
-    }
+    if (!git(work, "status", "--porcelain")) return console.log(`${BRANCH} is already at this snapshot.`);
     git(work, "commit", "--quiet", "-m", message);
-    const head = git(work, "rev-parse", "--short", "HEAD");
-    console.log(`Committed ${head} on ${BRANCH}: ${message}`);
+    console.log(`Imported ${git(work, "rev-parse", "--short", "HEAD")} on ${BRANCH}.`);
     if (previous) {
       console.log(git(work, "diff", "--stat", previous, "HEAD"));
-      reportCursorTerms(git(work, "diff", previous, "HEAD"));
+      const added = git(work, "diff", previous, "HEAD").split("\n").filter((l) => /^\+[^+]/.test(l)).join("\n");
+      const terms = [...new Set(added.match(/Task|subagent_type|readonly|cloud_base_branch|\/loop|\/goal|AskQuestion|cursor-team-kit|control-(?:ui|cli)|\.cursor\/|agent-transcripts|pstack-models\.mdc|create-skill|todolist|Cursor|\bbun\b|\bgt\b/g) ?? [])];
+      console.log(`Known platform terms in additions: ${terms.join(", ") || "none"}. This is a hint, not a compatibility check.`);
     }
-    console.log(`\nNext: git merge ${BRANCH}   (resolve conflicts, then npm test)`);
+    console.log("Next: review git diff HEAD...upstream, then merge on a clean integration branch, or selectively port changes. Nothing was merged or pushed.");
   } finally {
-    git(repoRoot, "worktree", "remove", "--force", work);
+    // Only this disposable worktree is removed. A failed worktree add must
+    // never trigger cleanup of someone else's checkout of the branch.
+    if (attached) git(repository, "worktree", "remove", "--force", work);
+    rmSync(temp, { recursive: true, force: true });
   }
 }
 
-function main() {
-  const args = process.argv.slice(2);
-  const opt = (flag) => {
-    const i = args.indexOf(flag);
-    return i >= 0 ? args[i + 1] : undefined;
-  };
+export function main(args = process.argv.slice(2)) {
+  const { values } = parseArgs({ args, options: { ref: { type: "string" }, source: { type: "string" }, "dry-run": { type: "string" } } });
   const config = JSON.parse(readFileSync(join(repoRoot, "upstream.json"), "utf8"));
-  const ref = opt("--ref") ?? config.ref;
-  const given = opt("--source");
-  const source = given ?? fetchUpstream(config, ref);
+  const temp = mkdtempSync(join(tmpdir(), "pstack-source-"));
+  const source = values.source ? resolve(values.source) : join(temp, "repo");
+  const checkout = join(temp, "checkout");
+  let attached = false;
   try {
-    const commit = git(source, "rev-parse", "HEAD");
-    const version = upstreamVersion(source, config);
-    const lock = { repo: config.repo, path: config.path, commit, version };
-    const dryRun = opt("--dry-run");
-    const out = dryRun ?? mkdtempSync(join(tmpdir(), "pstack-snapshot-"));
-    buildSnapshot(source, config, out, lock);
-    if (dryRun) return console.log(`Snapshot of ${commit} written to ${out}`);
-    commitSnapshot(out, `upstream: ${config.repo}/${config.path} ${version ?? ""} ${commit.slice(0, 12)}`.replace(/\s+/g, " "));
-    rmSync(out, { recursive: true, force: true });
+    if (!values.source) git(temp, "clone", "--quiet", "--filter=blob:none", "--no-checkout", "--", config.repo, source);
+    const ref = values.ref ?? (values.source ? "HEAD" : config.ref);
+    const commit = git(source, "rev-parse", "--verify", "--end-of-options", `${ref}^{commit}`);
+    git(source, "worktree", "add", "--detach", "--quiet", checkout, commit);
+    attached = true;
+    const version = JSON.parse(readFileSync(join(checkout, config.path, ".cursor-plugin", "plugin.json"), "utf8")).version;
+    const out = values["dry-run"] ? resolve(values["dry-run"]) : join(temp, "snapshot");
+    buildSnapshot(checkout, config, out, { repo: config.repo, path: config.path, commit, version });
+    if (values["dry-run"]) console.log(`Snapshot of committed ${commit} written to ${out}`);
+    else commitSnapshot(repoRoot, out, `upstream: pstack ${version} ${commit.slice(0, 12)}`);
   } finally {
-    if (!given) rmSync(source, { recursive: true, force: true });
+    if (attached) git(source, "worktree", "remove", "--force", checkout);
+    rmSync(temp, { recursive: true, force: true });
   }
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) main();
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  try { main(); } catch (error) { console.error(error.message); process.exitCode = 1; }
+}

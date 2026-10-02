@@ -59,6 +59,13 @@ test("the sessions note encodes a project directory the way Pi does", async (t) 
   const { findPiPackageRoot } = await import("./helpers.js");
   const root = findPiPackageRoot();
   if (!root) return t.skip("the Pi package is not installed on this machine");
-  const source = readFileSync(join(root, "dist", "core", "session-manager.js"), "utf8");
-  assert.match(source, /`--\$\{resolvedCwd\.replace\(\/\^\[\/\\\\\]\/, ""\)\.replace\(\/\[\/\\\\:\]\/g, "-"\)\}--`/, "Pi still encodes cwd as the note says");
+  const { pathToFileURL } = await import("node:url");
+  const { mkdtempSync, rmSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { getDefaultSessionDir } = await import(pathToFileURL(join(root, "dist/core/session-manager.js")).href);
+  const temp = mkdtempSync(join(tmpdir(), "pstack-path-check-"));
+  t.after(() => rmSync(temp, { recursive: true, force: true }));
+  const cwd = process.platform === "win32" ? "C:\\Users\\you\\project" : "/Users/you/proj";
+  const key = `--${cwd.replace(/^[/\\]/, "").replace(/[/\\:]/g, "-")}--`;
+  assert.equal(getDefaultSessionDir(cwd, temp), join(temp, "sessions", key));
 });

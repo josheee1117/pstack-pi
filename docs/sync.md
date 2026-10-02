@@ -1,62 +1,74 @@
 # 跟上游同步，以及自己演进
 
-## 这套结构怎么保证改动最小
+## 当前分工
 
-仓库里有两条线：
+- `upstream` 是转换后的上游快照分支。`upstream.json` 决定来源、复制范围、排除项、注册名；`upstream.lock` 记录实际读过的上游提交。
+- 产品分支保留中文描述、Pi 适配、行为边界和脚本补丁。当前开发在 `upstream-base`；只有验收并获准后才合入 `main`。
+- `adapter/`、`extensions/`、本包文档和测试由我们维护。它们通常不会与上游机械合并冲突，但上游行为变了仍需检查语义。
+- `skills/` 保留上游目录结构及大部分正文。中文描述是一行本地补丁；worktree 审计入口是本地替换，真正实现位于 `adapter/worktree-audit.mjs`。
 
-- **`upstream` 分支**：只放上游 pstack 的快照，由脚本生成，从不手改。脚本在生成时顺手做完三件机械的事：删掉不适用的技能（`make-bot-ui`），把技能名改成 `pstack-` 开头，记下上游的 commit（`upstream.lock`）。这些都写在 `upstream.json` 里。
-- **`main` 分支**：`upstream` 加上我们自己的提交。我们的东西大多放在上游没有的文件里（`adapter/`、`extensions/`、`docs/`、`tests/`），永远不会和上游冲突。改到上游文件的只有两类：技能描述的中文翻译（每个 `SKILL.md` 的 `description` 那一行），和 `worktree-audit.sh` 里的会话路径。
+同步器只导入快照、提交到本地 `upstream`。**不会合并产品分支、不会推送、不会发布，也不会安装依赖。**维护工具在源码仓库中，不随 Pi 安装包交付。
 
-同步就是把新的上游快照提交到 `upstream` 分支，再合并进 `main`。git 按三方合并处理：上游改了、我们没改的地方直接合进来；我们改了、上游没改的地方保留我们的；只有两边都改了同一处，才需要人看。
+## 先固定目标，再决定是否需要更新
 
-## 同步步骤
+上游是 monorepo。不能只看插件版本号，也不能因为整个仓库 HEAD 变了就升级。
 
 ```bash
-git switch main
-node tools/sync-upstream.mjs            # 拉上游 main 的最新版，生成快照，提交到 upstream 分支
-git merge upstream                      # 合进 main
-npm test                                # 必须全过
+# 在已有 cursor/plugins 克隆里获取候选版本；网络读取由操作者发起
+git -C /path/to/cursor-plugins fetch origin
+# 记录输出的完整 SHA 为 TARGET
+ git -C /path/to/cursor-plugins rev-parse origin/main
+# BASE 是本包 upstream.lock 的 commit；两者都替换为真实 SHA
+git -C /path/to/cursor-plugins diff --stat BASE TARGET -- pstack
+git -C /path/to/cursor-plugins diff --quiet BASE TARGET -- pstack
 ```
 
-- 想同步到某个具体版本：`node tools/sync-upstream.mjs --ref <tag 或 commit>`。
-- 已经有本地的上游 clone：`--source <路径>`，跳过下载。
-- 只想看看会生成什么、先不提交：`--dry-run <目录>`。
+最后一条退出码 0 表示 pstack 目录没变：**不导入、不合并，不为 monorepo 的其他改动制造升级提交**。非零先分清是真有差异，还是提交未获取等命令错误。以上是人工检查步骤，不是脚本内部的自动更新检测器。
 
-脚本提交后会打印两样东西：这次上游改了哪些文件，以及新增内容里出现了哪些 Cursor 专有的说法（比如 `Task tool`、`/loop`、`.cursor/`、具体的模型名）。第二样是给你检查对照说明用的，见下面"合并之后要检查的"。
+## 有更新时
 
-多人协作时，把 `upstream` 分支也推上去（`git push origin upstream`），别人才能在同一个基点上合并。
+先保证产品工作区干净，在已经包含旧上游快照的产品分支上创建集成分支：
 
-## 合并时的冲突怎么处理
+```bash
+git status --short
+git switch -c integrate/pstack-update
+node tools/sync-upstream.mjs --source /path/to/cursor-plugins --ref TARGET
+# 查看上游这次改动，三方差异不是最终合并结果
+git diff HEAD...upstream --stat
+git merge --no-commit --no-ff upstream
+# 解决冲突，检查暂存区及未暂存改动，再运行
+npm test
+```
 
-| 冲突位置 | 意思 | 怎么处理 |
-|---|---|---|
-| 某个 `SKILL.md` 的 `description:` 行 | 上游改了这个技能的描述 | 按上游新的英文意思重新翻译，保留中文 |
-| `skills/poteto-mode/scripts/worktree-audit.sh` | 上游改了这个脚本 | 保留上游的改动，再把会话路径那几行改回 Pi 的写法（`adapter/notes/sessions.md` 有说明） |
-| 你自己改过的其他技能正文 | 上游也改了同一段 | 读懂上游为什么改，再决定取哪边或合在一起 |
+没有本地克隆时，可省略 `--source`，脚本克隆 `upstream.json` 指定仓库。省略 `--ref` 时：有 `--source` 就读取它的 **HEAD 提交**，否则读取配置的默认 ref。无论哪种，都只导出指定提交的文件，不夹带源目录的未提交改动。
 
-## 合并之后要检查的
+只预览：
 
-1. **`npm test` 全过。** 测试会拦住这些情况：技能加载有警告或重名、`/skill:` 命令展开失败、对照说明引用的文件不存在、NOTICE 里记的上游 commit 和 `upstream.lock` 不一致、覆盖表漏了技能。
-2. **脚本报出的 Cursor 说法**，对照 `adapter/platform.md` 看每一个是否已经有 Pi 的对应说法。没有的就补一行。这是唯一需要人判断的地方。
-3. **上游新增了技能**：脚本已经给它起好了 `pstack-` 名字。你需要：
-   - 在它的 `description` 写中文翻译；
-   - 在 `docs/coverage.md` 加一行，写明在 Pi 上怎么用；
-   - 在 `tests/helpers.js` 的 `upstreamSkillDirs` 里加上它；
-   - 如果它完全依赖 Cursor、在 Pi 上没法用，就加进 `upstream.json` 的 `drop`，重跑同步脚本。
-4. **上游删了技能**：合并会自动删掉它。同步更新覆盖表和 `tests/helpers.js`。
-5. **上游改了技能的目录名**：在 `upstream.json` 的 `rename` 里给新目录配上原来的注册名，免得 `/skill:` 命令变了。
-6. **更新 `NOTICE.md`** 里的上游 commit 和版本号（测试会检查）。
-7. 改动大的话，按 `pstack` 的 eval 流程重跑一遍实测，确认效果没有退步。
+```bash
+node tools/sync-upstream.mjs --source /path/to/cursor-plugins --ref TARGET --dry-run /path/to/new-empty-directory
+```
 
-## 自己演进：从"不影响同步"到"要维护"
+目标目录必须不存在或为空，避免覆盖文件、夹带旧快照。预览不改变本包的分支；脚本在源仓库建临时 detached worktree，结束后移除。
 
-我们不必完整照搬上游，可以吸收精华、自己往前走。按以后同步的成本从低到高，有这几种改法：
+本地缺 `upstream`、远端有它时，脚本会跟踪 `origin/upstream`。新克隆也可以先 `git fetch origin upstream`。若两者都没有但产品已有 `upstream.lock`，脚本拒绝凭空重建无关历史：从 `git log --graph --all --oneline` 找到原快照提交，用 `git branch upstream <快照提交>` 恢复。不要把产品 HEAD 当成快照。已有同名分支若没有快照标记或来源不一致，也会拒绝覆盖。
 
-1. **改行为规矩，写进 `adapter/overrides.md`。** 对所有技能生效，优先级高于上游原文，而且上游永远不会碰这个文件。例如"只修请求需要的"就在这里。能写成一条通用规矩的，都优先放这里。
-2. **改 Pi 上的做法，写进 `adapter/platform.md` 或 `adapter/notes/`。** 同样零同步成本。
-3. **加我们自己的技能。** 在 `skills/` 下建一个上游没有的目录，名字用 `pstack-` 开头。上游不会有同名目录，永远不冲突。记得加进覆盖表和测试清单。
-4. **直接改上游技能的正文。** 这是普通的提交，以后上游只要没改同一段，合并照样自动。改动尽量小、集中，并在提交说明里写清原因，方便以后冲突时判断。
-5. **不要上游的某个改动。** 合并时冲突里选我们的版本；或者合并后用一个普通提交改回来。git 记得这次合并，以后不会再把它带回来。
-6. **彻底放弃上游的某个文件。** 在 `main` 上删掉它，并把路径加进 `upstream.json` 的 `drop`。以后同步就不会再出现。
+## 冲突和验收
 
-一个判断标准：如果一条改进对所有技能都成立，放适配层（1、2）；如果只对某个技能成立、而且上游那段写得确实不对，才去改正文（4）；觉得上游的方向本身就不对，可以回头给上游提 PR，合进去之后两边就一致了。
+| 位置 | 应保留的意思 |
+|---|---|
+| `description:` | 理解上游新描述后更新中文翻译，不机械取一边 |
+| worktree 审计入口 | 保留 Pi 会话识别、跨平台实现和人工删除门槛；评估上游改动是否也应移植到 helper |
+| 技能正文 | 检查新增授权、工具要求、独立性要求是否与本包政策冲突 |
+| 新增/删除/改名的技能 | 更新 `upstream.json`、测试清单、覆盖表和中文描述；检查相对链接及注册名 |
+
+脚本只提示新增行里命中的**已知**平台词，不会发现所有新 API 或规则冲突。没有提示不等于兼容，也不是唯一的人工审查点。更新 `NOTICE.md` 与锁定提交一致，再运行测试、打包安装检查和受影响路径的最小 smoke。原版 Pi 的已知目录名警告与真正的技能重名错误分开处理，见 `install.md`。
+
+失败就留在集成分支修复，或在未开始本地修改前用 `git merge --abort` 取消合并。不要默认重置工作区。测试通过后也仍需人工批准提交、合并产品分支和发布；分支推送不是同步器的一部分。
+
+## 选择性吸收，不必整包跟随
+
+1. 通用偏好放 `adapter/overrides.md`；平台做法放 `adapter/platform.md` 或对应 note。
+2. 只属于一个技能的改进可以直接改正文，用小提交说明理由。以后上游碰同一段，按含义合并。
+3. 只想要一个修复时，先导入目标快照，然后按两个快照之间的 diff 手工移植或挑选文件，附上来源 SHA。**不要把一次选择性移植写成已全量升级，也不要单独把产品的 `upstream.lock` 改到新版本。**记录选择及遗漏，待全量升级时复核。
+4. 整次合并后拒绝某项改动，用明确的回退提交说明原因；将来上游再次修改该区域仍可能重新出现冲突，不保证永远无需处理。
+5. 本包独有技能可以直接新增，同时更新测试清单和覆盖表。彻底排除上游某路径时再更新 `drop`。不为这些选择另造调度器或注册表。

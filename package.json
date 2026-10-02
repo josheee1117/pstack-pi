@@ -18,7 +18,10 @@
     ],
     "extensions": [
       "./extensions/pstack.js"
-    ]
+    ],
+    "subagents": {
+      "agents": ["./adapter/agents"]
+    }
   },
   "files": [
     "skills",

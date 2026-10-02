@@ -1,6 +1,8 @@
 # 技能清单
 
-每个技能在 Pi 上能不能用、要装什么。"可选组件"一栏的安装方法见 [`install.md`](install.md)。没列组件的，只装 Pi 和本包就能用。
+下面列的是**适配后的预期用途和前置条件**，不是逐项端到端验收报告。全部技能已做加载/展开检查；日常合成任务的历史记录见 [evaluation.md](evaluation.md)。真实 Herdr 多工作者、带认证 MCP、浏览器、远端 PR/长期编排尚未完整验收。表中的“可用”均以组件存在、已认证、获准且实际验证为条件；缺口必须明确报告。
+
+可选组件的安装方法见 [install.md](install.md)。本包不会自动安装它们，也不保证各版本接口一致。
 
 ## 技能
 
@@ -41,7 +43,7 @@
 | bug-fix、perf-issue、runtime-forensics、visual-parity | 可用。命令行和服务用 bash 驱动；网页和 Electron 用 Chrome DevTools MCP；像素对比写 Playwright 脚本 | Chrome DevTools MCP（界面类问题） |
 | opening-a-pr、babysit、shipping | 可用，只在你要求时开 PR。盯 CI 用上游脚本（要 bun）或 `gh pr checks --watch` | gh；bun（可选）；Herdr（shipping 的逐 PR 验证者） |
 | autopilot-full、autopilot-stack、orchestrate | 可用。每个 PR 或工作单元的负责人用 Herdr 起独立 Pi 会话；orchestrate 的 PR 栈计算要 Graphite | Herdr、pi-intercom、gh；bun 和 gt（orchestrate） |
-| worktree-cleanup | 可用。"最近哪个会话动过这个 worktree"改为读 Pi 的会话记录 | gh（查 PR 状态） |
+| worktree-cleanup | 已做本地只读审计测试。按 Pi 会话头核对项目，未知证据不判 safe，不 fetch、不删除 | Node + git；`--prs` 才使用 gh |
 
 ## 已去掉
 

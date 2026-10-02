@@ -14,9 +14,8 @@
  *    skill once has to keep applying on later turns. The mode holds a session
  *    flag and injects a short reminder while it is on.
  *
- * All three use system prompt sections, never a `systemPrompt` return: Pi
- * diffs sections per turn, so unchanged text is not resent and a section that
- * stops being added is patched out of the prompt.
+ * Newer Pi versions support structured sections; original Pi versions use
+ * the systemPrompt fallback below. Neither path repeats a full skill body.
  *
  * The first rules are plain speech, from the bro skill and the entry skill's
  * "Writing the reply", on by default so nobody has to ask for them.
@@ -26,7 +25,7 @@
  */
 import { readFileSync, realpathSync } from "node:fs";
 import { homedir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -52,7 +51,8 @@ const ANY_COMMAND = /^\/skill:pstack(?:-[a-z0-9-]+)?(?:\s|$)/;
 // real path, so compare real paths.
 const inSkills = (path, cwd) => {
   try {
-    return realpathSync(resolve(cwd, path)).startsWith(`${SKILLS}/`);
+    const child = relative(realpathSync(SKILLS), realpathSync(resolve(cwd, path)));
+    return child !== "" && child !== ".." && !child.startsWith(`..${sep}`) && !isAbsolute(child);
   } catch {
     return false;
   }
@@ -103,12 +103,21 @@ const PROSE_TEXT = [
 const MODE_TEXT = [
   "pstack mode is on for this session.",
   "",
-  `On a new task, if a playbook matches or the work needs rigor, apply the mode's skill, ${ENTRY_SKILL}. Read it once, unless its text is already in your context, then follow it. On a casual turn, or when the user opts out, work normally.`,
+  `On a new task, if a playbook matches or the work needs rigor, apply the mode's skill, ${ENTRY_SKILL}. Read it if its text is missing from your current context, including after compaction. Reuse it while present. On a casual turn, or when the user opts out, work normally.`,
   "",
-  "Say `/pstack off`, or just ask to leave the mode, to turn this off.",
+  "Use `/pstack off` to turn the persistent mode off.",
 ].join("\n");
 
 const OFF_WORDS = /^(off|disable|stop|exit)$/i;
+
+function sessionNote(ctx) {
+  try {
+    const file = ctx?.sessionManager?.getSessionFile();
+    return file ? `\nCurrent Pi session file: ${JSON.stringify(file)}. Read only this project's records.` : "\nNo persisted session file is available from this context. Do not guess a transcript path.";
+  } catch {
+    return "\nSession record unavailable. Report that gap instead of searching other projects.";
+  }
+}
 
 export default function pstack(pi) {
   let modeOn = false;
@@ -145,16 +154,14 @@ export default function pstack(pi) {
     showMode(ctx);
   });
 
-  // Entering the entry skill the usual way is entering the mode. Without this
-  // the mode only works for people who learned the new command, which is not
-  // the habit it is meant to replace. Messages the extension sends itself are
-  // skipped: /pstack already set the flag before sending one.
-  pi.on("input", (event) => {
-    if (event.source === "extension") return;
+  // Direct entry and extension-sent commands share the same idempotent state
+  // change, so /pstack's own message does not append the flags twice.
+  pi.on("input", (event, ctx) => {
     if (ANY_COMMAND.test(event.text)) useAdapter();
-    if (ENTRY_COMMAND.test(event.text)) {
+    if (ENTRY_COMMAND.test(event.text) && !modeOn) {
       modeOn = true;
       pi.appendEntry(MODE_ENTRY, { enabled: true });
+      showMode(ctx);
     }
   });
 
@@ -162,17 +169,37 @@ export default function pstack(pi) {
   // reference) has not had the adapter yet. The section only lands on the next
   // prompt, so the first such read carries the adapter in its own result.
   pi.on("tool_result", (event, ctx) => {
-    if (adapterOn || event.toolName !== "read" || event.isError) return;
-    if (!inSkills(String(event.input?.path ?? ""), ctx?.cwd ?? process.cwd())) return;
+    if (event.toolName !== "read" || event.isError) return;
+    const path = String(event.input?.path ?? "");
+    const cwd = ctx?.cwd ?? process.cwd();
+    // A child may read the map directly, without loading this extension's
+    // system sections. Resolve only our map's own placeholders in that result.
+    if (resolve(cwd, path) === join(ADAPTER, "platform.md")) {
+      useAdapter();
+      return { content: event.content.map((block) => block.type === "text" ? { ...block, text: fill(block.text) } : block) };
+    }
+    if (adapterOn || !inSkills(path, cwd)) return;
     useAdapter();
-    return { content: [...event.content, { type: "text", text: `\n\n${ADAPTER_TEXT}` }] };
+    return { content: [...event.content, { type: "text", text: `\n\n${ADAPTER_TEXT}${sessionNote(ctx)}` }] };
   });
 
-  pi.on("before_agent_start", (event) => {
-    const sections = event.systemPromptOptions.sections;
-    sections[PROSE_SECTION] = PROSE_TEXT;
-    if (adapterOn || modeOn) sections[ADAPTER_SECTION] = ADAPTER_TEXT;
-    if (modeOn) sections[MODE_SECTION] = MODE_TEXT;
+  pi.on("before_agent_start", (event, ctx) => {
+    const own = { [PROSE_SECTION]: PROSE_TEXT };
+    if (adapterOn || modeOn) own[ADAPTER_SECTION] = ADAPTER_TEXT + sessionNote(ctx);
+    if (modeOn) own[MODE_SECTION] = MODE_TEXT;
+    const sections = event.systemPromptOptions?.sections;
+    if (sections) {
+      for (const key of [PROSE_SECTION, ADAPTER_SECTION, MODE_SECTION]) {
+        if (own[key]) sections[key] = own[key];
+        else delete sections[key];
+      }
+      return;
+    }
+    // Original Pi exposes only systemPrompt, not the fork's structured
+    // sections. Rebuild our own block from this turn's base; never accumulate.
+    const base = (event.systemPrompt ?? "").replace(/\n*<pstack-runtime>[\s\S]*?<\/pstack-runtime>/g, "");
+    const body = Object.entries(own).map(([key, text]) => `<${key}>\n${text}\n</${key}>`).join("\n");
+    return { systemPrompt: `${base}\n\n<pstack-runtime>\n${body}\n</pstack-runtime>` };
   });
 
   pi.registerCommand("pstack", {

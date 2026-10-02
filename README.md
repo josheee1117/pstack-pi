@@ -1,92 +1,84 @@
 # pstack-pi
 
-把 pstack 的工程工作流装进 Pi：理解、设计、实现、独立审查、真实验证、交付、恢复。
+把 pstack 的理解、设计、实现、独立审查、验证和交付流程带到 Pi。保留上游大部分正文和目录结构，用独立适配层处理工具、路径和执行差异；支持选择性吸收上游改进，不要求完整照搬。
 
-技能正文直接用上游 pstack（Cursor 版）的原文，只改了技能名。Pi 和 Cursor 的差异由一层适配补上：一份对照说明，把 Cursor 的工具、路径、模型翻译成 Pi 的说法；一份行为补丁，保留我们实测更好的几条规矩。上游更新时用 git 合并，改动我们没碰过的地方会自动合进来。
+当前基于上游 pstack 0.15.5。包含 23 个公共技能、23 个原则、23 个 playbook，以及一个无 npm 运行时依赖的扩展。去掉完全依赖 Cursor Grok Bot 的 `make-bot-ui`。注册名和中文描述是本地改动，worktree 审计使用 Pi 专用实现。
 
-- 技能清单和每个技能在 Pi 上怎么用：[`docs/coverage.md`](docs/coverage.md)
-- 可选组件怎么装（子代理、Herdr、浏览器、MCP 数据源）：[`docs/install.md`](docs/install.md)
-- 怎么跟上游同步、怎么自己演进：[`docs/sync.md`](docs/sync.md)
-- 包的结构和适配层怎么工作：[`docs/architecture.md`](docs/architecture.md)
-
-## 准备
-
-只需要两样东西，都不随本包安装：
-
-1. **一个能用的 Pi。** 没装的话：
-
-   ```bash
-   npm install -g --ignore-scripts @earendil-works/pi-coding-agent
-   ```
-
-   Pi 对 Node 版本有自己的要求，以你装的 Pi 版本为准。安装、认证与 provider 配置见 Pi 官方文档：<https://github.com/earendil-works/pi/tree/main/packages/coding-agent>。
-
-2. **至少一个已认证的模型。** 启动 `pi`，用 `/login` 登录或录入 API key，`/model` 选一个可用的模型。
-
-从 GitHub 这类 git 源安装时，机器上还要有 git。
+- [安装范围、可选插件和配置](docs/install.md)
+- [技能清单及适用条件](docs/coverage.md)
+- [同步上游与独立演进](docs/sync.md)
+- [适配层结构](docs/architecture.md)
+- [第二轮测试记录及证据边界](docs/evaluation.md)
 
 ## 安装
 
-推荐装进**你要用它干活的项目**。`-l` 把包写进该项目的 `.pi/settings.json`，不碰全局设置：
+已有 Pi 和一个可用模型即可使用基础功能。不需要复制开发者的 provider、密钥或全局配置。
 
 ```bash
 cd /path/to/your-project
-pi install -l git:github.com/josheee1117/pstack-pi
+pi install -l /path/to/pstack-pi
 pi
 ```
 
-其他装法：
+已发布到远端的版本可用：
 
 ```bash
-pi install git:github.com/josheee1117/pstack-pi   # 装进全局用户设置
-pi -e git:github.com/josheee1117/pstack-pi        # 只在本会话临时加载
-pi install -l /path/to/pstack-pi                  # 本地路径安装，适合自己改技能
+pi install -l git:github.com/josheee1117/pstack-pi
 ```
 
-更新与卸载用同一个来源：`pi update git:github.com/josheee1117/pstack-pi`，`pi remove -l git:github.com/josheee1117/pstack-pi`。
+**本地分支没有推送时，远端命令不会安装本地的新改动。**固定版本使用该 Pi 支持的 git ref 安装语法。已打开的 Pi 在安装后 `/reload` 或重启；遵守宿主的项目信任提示。不要同时安装同一包的旧版和新版，它们都注册 `/pstack`。
 
-**信任。** Pi 只在受信任的项目里加载项目级的包。首次在项目里启动 `pi` 会询问是否信任；不信任时，项目里的包不会加载。
+当前检查覆盖 earendil Pi 0.87.0 和原版 Pi 0.73.1。后者会报告目录名与注册名不同的已知警告，但命令仍能展开。不承诺任意历史版本、任意 OS、任意可选插件组合均零警告可用。详见安装说明。
 
-本包没有任何必装依赖。只装 Pi 和本包，普通任务、只读提问就能跑。用到独立审查、并行写入、浏览器、外部数据源时，再按 [`docs/install.md`](docs/install.md) 装对应组件；缺了的话，对应步骤会停下来说明缺什么，不会假装做完。
+## 使用
 
-## 怎么用
-
+```text
+/pstack                          开启本会话的持续工作模式
+/pstack 修复这个问题：……          开启并执行任务
+/pstack off                      关闭持续路由提醒
+/pstack status                   查看状态
+/skill:pstack-how 这个模块怎么工作
+/skill:pstack-why 当时为什么这样设计
+/skill:pstack-recall 最近做到哪里了
+/skill:pstack-teach-me 讲明白这段设计
+/skill:pstack-setup               提出模型配置建议，确认后再写入
 ```
-/skill:pstack 修一下这个 bug：……        进入工作流并直接开始这个任务
-/pstack                                开启模式，之后每一轮它自己判断要不要走流程
-/pstack 修一下这个 bug：……              开启模式并直接开始这个任务
-/pstack off                            关闭模式
-/skill:pstack-how 这个模块怎么工作       直接用某一个技能
-/skill:pstack-setup                    配置各角色用哪个模型
-```
 
-输入 `/skill:pstack` 会看到全部技能。除了 `pstack-setup`，其他技能不会出现在系统提示的技能列表里，只在你点名或流程需要时才读取，平时不占上下文。
+输入 `/skill:pstack` 前缀看补全，提交 `/skill:pstack <任务>` 会加载入口并开启模式。默认只有 setup 的描述列入模型技能目录，其他正文按需读取。
 
-**写作规则常开。** 每一轮都注入一小段写作规则：先说结论、说人话、不堆术语、不用 AI 腔。不需要你提醒。
+写作规则每轮生效：先讲结论，解释术语，保留数字、路径、决定和证据。适配说明首次用到 pstack 后才加载；用过的正文仍占上下文，缓存也不一定免费。压缩丢掉正文后，需要时重新读取。
 
-**适配层按需注入。** 会话里第一次用到 pstack（任意 `/skill:pstack-*`、`/pstack` 模式，或模型自己去读了本包的技能文件）时，才注入对照说明和行为补丁。没用 pstack 的会话一点都不多花。
+## 默认做事方式
 
-**模型配置。** 跑一次 `/skill:pstack-setup`，它会列出本机真正可用的模型，问你各角色用哪个，写进 `~/.pi/agent/pstack-models.md`。不配也能用：没配置的角色一律用当前会话的模型。
+- 小任务直接完成并做最小真实检查，不为流程而派子代理。
+- 只修请求需要的问题，额外发现先说明，不擅自扩展范围。
+- 用户要求独立审查时保留独立性，缺后端就说明，不自评充数。
+- 默认不向用户念原则名和流程表；用户要解释过程时照实解释。
+- 按用户语言回复。提交、推送、PR、部署、安装可选依赖和修改全局设置都遵守明确授权。
 
-## 行为补丁
+这些是模型指令，不是权限沙箱或正确性保证。
 
-上游原文在 Pi 上直接跑，结果是对的，但我们实测发现它在小任务上也会开子代理、回复里列原则名和流程步骤、顺手修用户没提的问题，token 用量是旧移植版的 3 到 4 倍。所以适配层带一份补丁（`adapter/overrides.md`），优先级高于上游原文：
+## 按需接入
 
-- 先判断任务大小。范围清楚、有现成做法、能真跑一下验证的，直接做，不走完整流程。
-- 只修请求需要的。发现别的问题，在回复里记一行，不擅自动手。
-- 只在真需要并行或独立性时才派子代理。需要独立结论又没有独立上下文时，停下说明缺口，不拿自评冒充。
-- 回复里不列原则名、流程步骤，只说改了什么、你会看到什么、证据是什么。
-- 用你说话的语言回复。
-- 没有你的要求，不 push、不开 PR、不升版本号。
+why 使用已有 `pi-mcp-adapter` 接入工单、文档、聊天及遥测，另有可选 `pstack-investigator` 角色供后台查询；没有 MCP 时保留 git/gh 能做的部分并报告缺口。无需再维护一个 MCP 客户端。
 
-## 测试
+recall 读取当前项目的 Pi 会话，支持自定义配置目录；不会因为路径编码相同就读取另一个项目。
+
+长期工作者优先 Herdr + 独立 Pi 会话 + 独占 worktree。Playwright MCP 可用于浏览器交互；Chrome DevTools MCP 可用于性能和内存取证。Bun、Graphite、调度器均可选，缺失时不能宣称重型流程已完整执行。配置、命令及未验证部分见 [install.md](docs/install.md)。
+
+## 开发验证
+
+在源码仓库执行：
 
 ```bash
 npm test
+npm pack --dry-run
+# 针对另一个已安装的 Pi 运行相同测试
+PSTACK_TEST_PI_ROOT=/path/to/pi-package npm test
 ```
 
-用 Node 自带的测试框架，没有依赖。装了 Pi 的机器上会调用 Pi 真实的技能加载器和安装流程：包装进一个空的 Pi 能否干净加载、技能名有没有冲突、每个 `/skill:` 命令能否展开、适配层引用的文件是否都在。
+测试包括真实 Pi 的资源加载与命令展开、提示注入/退出、隔离 worktree 审计、固定上游 ref 导入和重复同步。模拟数据、供应商调用、真实外部服务验收分别记录，不混成一个“全通过”。测试与维护脚本不随最终 Pi 包安装。
 
-## 许可与来源
+## 来源
 
-MIT。技能正文来自 pstack（作者 Lauren Tan），见 [`NOTICE.md`](NOTICE.md)、[`LICENSE`](LICENSE) 和上游原许可 [`LICENSE.upstream`](LICENSE.upstream)。
+MIT。上游作者 Lauren Tan，来源与本地差异见 [NOTICE.md](NOTICE.md)，原许可保留在 [LICENSE.upstream](LICENSE.upstream)。

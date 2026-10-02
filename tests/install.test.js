@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { expectedName, loadPi, repoRoot, upstreamSkillDirs } from "./helpers.js";
+import { expectedName, loadPi, repoRoot, upstreamSkillDirs, unexpectedSkillDiagnostics } from "./helpers.js";
 
 /**
  * Install the package the way a user does, through a settings file pointing at
@@ -27,7 +27,7 @@ test("into an empty Pi, the package contributes exactly its skills with no diagn
   const { loader, fromPackage } = await freshInstall(pi);
   const { skills, diagnostics } = loader.getSkills();
   assert.deepEqual(fromPackage(skills).map((s) => s.name).sort(), upstreamSkillDirs.map(expectedName).sort());
-  assert.deepEqual(diagnostics.map((d) => d.message), [], "no diagnostics, including no name collisions");
+  assert.deepEqual(unexpectedSkillDiagnostics(diagnostics).map((d) => d.message), [], "no unexpected diagnostics or name collisions");
 });
 
 test("the package contributes one extension that loads without optional packages, and no prompts or themes", async (t) => {

@@ -16,6 +16,11 @@ export function readJson(path) {
  * installed on this machine.
  */
 export function findPiPackageRoot() {
+  if (process.env.PSTACK_TEST_PI_ROOT) {
+    const root = realpathSync(process.env.PSTACK_TEST_PI_ROOT);
+    if (!existsSync(join(root, "dist", "index.js"))) throw new Error("PSTACK_TEST_PI_ROOT is not a Pi package");
+    return root;
+  }
   const candidates = [];
   const pushIfPackage = (dir) => {
     if (existsSync(join(dir, "dist", "index.js")) && existsSync(join(dir, "package.json"))) {
@@ -67,6 +72,13 @@ export function skillDirsOnDisk() {
 export function expectedName(dir) {
   const config = readJson(join(repoRoot, "upstream.json"));
   return config.rename[dir] ?? `${config.namePrefix}${dir}`;
+}
+
+// Original Pi warns about directory/name mismatch but still registers these
+// namespaced commands. Do not suppress collisions or any other diagnostic.
+export function unexpectedSkillDiagnostics(diagnostics) {
+  const allowed = new Set(upstreamSkillDirs.map((dir) => `name "${expectedName(dir)}" does not match parent directory "${dir}"`));
+  return diagnostics.filter((d) => !allowed.has(d.message));
 }
 
 // Upstream pstack 0.15.5's skills, minus make-bot-ui (Cursor's Grok Bot runtime).

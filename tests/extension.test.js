@@ -182,7 +182,7 @@ test("the reminder stays small instead of resending the entry skill", async () =
   await command.handler("", ctx);
   const text = turn().pstack_mode;
   assert.ok(text.length < 1000, `the reminder stays short (${text.length} chars)`);
-  assert.match(text, /Read it once/, "the skill is read once, not every turn");
+  assert.match(text, /after compaction/, "read again when compaction removed the skill, not every turn");
   assert.doesNotMatch(text, /^# |\n## /, "the skill body is not pasted into the prompt");
 });
 
@@ -245,8 +245,10 @@ test("typing the entry skill the usual way also enters the mode", async () => {
 
   // /pstack <task> sends this same text itself, after already setting the flags.
   const echo = await load();
+  await echo.command.handler("fix this", echo.ctx);
+  const count = echo.entries.length;
   echo.handlers.get("input")({ text: "/skill:pstack fix this", source: "extension" });
-  assert.equal(echo.entries.length, 0, "the extension's own message does not re-enter the mode");
+  assert.equal(echo.entries.length, count, "the extension's own message does not re-enter the mode");
 
   const other = await load();
   other.handlers.get("input")({ text: "/skill:pstack-how what does X do", source: "interactive" });
@@ -271,4 +273,55 @@ test("re-injecting on later turns is idempotent, so Pi's section diff skips the 
   const { turn, command, ctx } = await load();
   await command.handler("", ctx);
   assert.deepEqual(turn(), turn());
+});
+
+test("original Pi systemPrompt API stays stable and removes mode on exit", async () => {
+  const { handlers, command, ctx } = await load();
+  const start = handlers.get("before_agent_start");
+  const fresh = start({ systemPrompt: "Existing host instructions" }).systemPrompt;
+  assert.ok(fresh.startsWith("Existing host instructions"));
+  assert.doesNotMatch(fresh, /<pstack_mode>/);
+  assert.equal(start({ systemPrompt: fresh }).systemPrompt, fresh, "replay does not append duplicate blocks");
+  await command.handler("", ctx);
+  const on = start({ systemPrompt: fresh }).systemPrompt;
+  assert.match(on, /<pstack_mode>/);
+  await command.handler("off", ctx);
+  const off = start({ systemPrompt: on }).systemPrompt;
+  assert.doesNotMatch(off, /<pstack_mode>/);
+  assert.equal((off.match(/<pstack-runtime>/g) ?? []).length, 1);
+});
+
+test("structured prompts remove a stale mode section and retain other extensions", async () => {
+  const { turn, command, ctx } = await load();
+  await command.handler("", ctx);
+  const sections = turn({ other_extension: "keep me" });
+  await command.handler("off", ctx);
+  turn(sections);
+  assert.equal(sections.pstack_mode, undefined);
+  assert.equal(sections.other_extension, "keep me");
+});
+
+test("direct platform reads resolve paths even without prior skill entry", async () => {
+  const { handlers } = await load();
+  const result = handlers.get("tool_result")({
+    toolName: "read", input: { path: join(repoRoot, "adapter", "platform.md") },
+    content: [{ type: "text", text: "{{skills}}/how/SKILL.md {{agentDir}}" }],
+  });
+  assert.ok(result.content[0].text.includes(join(skillsDir, "how", "SKILL.md")));
+  assert.doesNotMatch(result.content[0].text, /\{\{/);
+});
+
+test("original Pi receives its actual session path without a bash environment variable", async () => {
+  const { handlers, command, ctx } = await load();
+  await command.handler("", ctx);
+  const event = { systemPromptOptions: { sections: {} } };
+  handlers.get("before_agent_start")(event, { sessionManager: { getSessionFile: () => "/custom project/sessions/current.jsonl" } });
+  assert.match(event.systemPromptOptions.sections.pstack_adapter, /\/custom project\/sessions\/current\.jsonl/);
+});
+
+test("a command queued by another extension still loads the adapter", async () => {
+  const { handlers, turn } = await load();
+  handlers.get("input")({ text: "/skill:pstack-why why?", source: "extension" });
+  assert.ok(turn().pstack_adapter);
+  assert.equal(turn().pstack_mode, undefined);
 });

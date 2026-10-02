@@ -4,8 +4,8 @@ Upstream reads Cursor chat transcripts at `~/.cursor/projects/<slug>/agent-trans
 
 ## Where they live
 
-- The current session's file is `$PI_SESSION_FILE`. It is set inside the bash tool.
-- A project's sessions are in `<agent dir>/sessions/<encoded cwd>/`:
+- Use the current session path supplied by the pstack adapter (from Pi's `sessionManager.getSessionFile()`). Some Pi distributions also set `$PI_SESSION_FILE` inside bash; original Pi 0.73.1 does not. If no persisted path is available, report that limitation rather than guessing a session from its timestamp.
+- A project's default sessions are in `<agent dir>/sessions/<encoded cwd>/`; an explicit `--session-dir` takes precedence. Prefer the parent directory of the known current session and check each file's header before reading its contents.
   - The agent dir is `$PI_CODING_AGENT_DIR` if set, else `~/.pi/agent`.
   - The encoded cwd is `--` + the absolute path with the leading `/` dropped and every `/`, `\`, or `:` turned into `-` + `--`. So `/Users/you/proj` becomes `--Users-you-proj--`.
   - Compute it with `printf -- '--%s--' "$(pwd -P | sed 's#^/##; s#[/\\:]#-#g')"`.
@@ -24,6 +24,7 @@ Upstream reads Cursor chat transcripts at `~/.cursor/projects/<slug>/agent-trans
 ## Mapping upstream steps
 
 - "The workspace's transcripts" and `agent-transcripts/` mean the project session directory above. The Cursor layouts (flat, nested, `subagents/`) mean the session files plus the pi-subagents child directories.
-- "Find the active transcript by its first line" means use `$PI_SESSION_FILE`.
-- Search with `rg -l '<term>' <session dir>`, then read only the matching files, from the end.
+- "Find the active transcript by its first line" means use the explicit current session path from the adapter, or `$PI_SESSION_FILE` where supported.
+- Encoded directories are not unique: confirm the header's `cwd` belongs to this project before searching messages. Do not follow symlinks into unrelated records. Modification time selects recency, not ownership.
+- Search only the validated project corpus with `rg -l '<term>' <session dir>`, then read bounded matching portions. Do not glob the entire user sessions root.
 - worktree-cleanup: `scripts/worktree-audit.sh` already reads these directories for its LAST_CHAT column.

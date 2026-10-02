@@ -1,62 +1,43 @@
 # 结构
 
-## 目录
+## 上游与本地内容
 
-```
-skills/            上游技能原文（目录名和上游一致），只改了技能名和中文描述
-  poteto-mode/     入口技能，注册名 pstack；playbooks/ 是 23 个流程
-  principle-*/     23 条原则
-agents/            上游的两个子代理说明（poteto-agent、comment-sicko），供对照说明引用
-adapter/
-  overrides.md     行为补丁，优先级高于上游原文
-  platform.md      对照说明：Cursor 的工具、路径、模型在 Pi 上是什么
-  notes/           按需读取的补充说明：会话记录、云端 agent、浏览器、数据源
-extensions/pstack.js   唯一的 extension，负责把上面的东西放进系统提示
-tools/sync-upstream.mjs  同步脚本，见 docs/sync.md
-upstream.json      同步规则：从哪拉、删什么、怎么改名
-upstream.lock      当前基于的上游 commit
-```
+- `skills/` 保留上游目录、正文及相对引用。注册名加 `pstack-` 前缀，description 本地翻译成中文。
+- `agents/` 保留上游角色说明，按路径作为任务材料使用，不直接冒充 Pi 内置角色。
+- `adapter/platform.md` 对照工具与路径；`adapter/overrides.md` 规定本包偏好；`adapter/notes/` 放会话、Herdr、浏览器、数据源的按需说明。
+- `adapter/agents/pstack-investigator.md` 是可选 pi-subagents 角色元数据，提供 MCP 调查所需的工具选择；它不安装 MCP 服务，也不是安全沙箱。
+- `adapter/worktree-audit.mjs` 用 Node 做只读工作区审计，旧 shell 入口转交它。
+- `extensions/pstack.js` 是唯一必需加载的扩展，没有 npm 运行时依赖。
+- `upstream.json`、`upstream.lock` 和 `tools/sync-upstream.mjs` 管导入，不管理发布。详见 `sync.md`。
 
-## 技能名
+## 注册名
 
-目录名保持上游原样，这样同步时路径对得上。注册给 Pi 的名字统一加 `pstack-` 前缀，你在 `/skill:` 里敲的是这个名字。这样做的原因是 Pi 在重名时保留先找到的那个，而包排在所有用户技能和项目技能之后，`how`、`why`、`teach` 这类通用名很容易被别人的同名技能盖掉。
+`poteto-mode` 注册为 `pstack`，`setup-pstack` 为 `pstack-setup`，`teach` 为 `pstack-teach-me`，其余按 `pstack-<上游名>` 注册。前缀减少与项目同名技能冲突，但不是所有冲突都能消除。
 
-三个例外写在 `upstream.json` 的 `rename` 里：入口 `poteto-mode` 叫 `pstack`，`setup-pstack` 叫 `pstack-setup`，`teach` 叫 `pstack-teach-me`。
+正文之间的相对路径保持原样；按名字提到的技能由平台说明映射到包内路径。原版 Pi 0.73.1 会对目录名和注册名不同发出警告，命令仍可加载；earendil 0.87.0 允许这种结构。这个兼容边界没有被隐藏，见 `install.md`。
 
-上游正文里互相引用时写的是上游名字（比如"the **how** skill"）。对照说明告诉模型按目录去读文件，不走注册名，所以改名不影响流程内部的跳转。
+## 提示注入
 
-## extension 往系统提示里放什么
+| 内容 | 生效时机 |
+|---|---|
+| `prose_rules` | 每轮；先给结果、说清术语、保留重要事实 |
+| `pstack_adapter` | 首次 `/pstack`、`/skill:pstack-*` 或通过 `read` 读取包内技能后 |
+| `pstack_mode` | 持续模式开启时；只提醒需要时读取入口，不常驻整份正文 |
 
-三段，都用 Pi 的系统提示段落（sections）注入。Pi 每轮只发变化的段，没变的不重发，关掉的段会被清掉。
+适配文本中的包路径来自 `import.meta.url`；Pi 配置目录来自 `PI_CODING_AGENT_DIR` 或当前用户家目录，不绑定开发者路径。读取适配文件本身时也会展开占位路径。
 
-| 段 | 内容 | 什么时候有 | 大小 |
-|---|---|---|---|
-| `prose_rules` | 写作规则：说人话、先说结论、不用 AI 腔 | 每一轮 | 约 2.4k 字符 |
-| `pstack_adapter` | `overrides.md` + `platform.md`，路径已换成本机真实路径 | 会话第一次用到 pstack 之后 | 约 6.8k 字符 |
-| `pstack_mode` | 模式提醒：新任务匹配流程就套用入口技能 | `/pstack` 模式开着时 | 约 0.5k 字符 |
+支持 sections 的 Pi 直接修改自己的三个段；不支持时返回带 `<pstack-runtime>` 标记的 systemPrompt。回退路径保留其他宿主文本、替换自己的旧块，避免每轮叠加。缓存和计费由实际提供商决定，段落不变不等于免费。
 
-"第一次用到 pstack"包括三种情况：
-- 输入了任意 `/skill:pstack` 或 `/skill:pstack-*` 命令；
-- 开了 `/pstack` 模式；
-- 模型自己读了本包 `skills/` 下的文件，比如子代理、或者顺着引用读过去。
+首次技能读取发生在工具执行中间时，适配说明随该次结果返回，下轮再进入系统段。只拦截 `read`，不解析任意 bash 命令。禁用扩展或只用 shell 读取技能时，应明确读适配说明；不能假设后者已自动注入。
 
-前两种从这一轮就有。第三种发生在一轮中间，系统提示要到下一轮才更新，所以 extension 把适配层直接附在那次读取的结果后面，让模型当场看到。
+模式及适配启用记录保存在当前会话 custom entry。`/pstack off` 只关持续路由提醒，保留已用技能的工具说明和写作规则；新会话重新开始。读过的技能被压缩出上下文后，需要时应重读，不是“一生只读一次”。
 
-两个开关（适配层、模式）都记在会话记录里，`--continue` 或 `--resume` 回到同一个会话时会恢复。
+## 约束边界
 
-为什么不把入口技能整份常驻：它有 19 KB，而大部分对话用不上。模型在需要时读一次，读过的内容留在上下文里，不会重复读。
+这些行为规则是提示，不是执行权限。用户请求、项目配置和宿主权限优先；不能靠技能里的“全自主”跳过 Herdr 授权、OAuth、全局设置确认或发布批准。
 
-## 适配层为什么放在技能之外
+独立性来自 fresh context、固定产物和不接触作者自述，而不是某个 agent 名字。默认 worker 常会 fork；即使改用 delegate/scout，也要显式设 fresh 并核对实际启动信息。外部来源当数据而非指令。
 
-上游的技能是为 Cursor 写的，里面到处是 Cursor 的工具名（`Task`、`subagent_type`）、路径（`~/.cursor/...`）和模型名。如果逐个改正文，每次上游更新都得重改一遍。现在正文不动，由一份对照说明告诉模型"看到 X 就用 Pi 的 Y"，上游再怎么改，只要不引入新的 Cursor 说法，对照说明就不用动。同步脚本会报出新出现的 Cursor 说法，提醒你补。
+子会话未必加载父会话的扩展，所以 brief 必须包含相关适配规则、包文件路径、任务范围、选定模型和预算。缺少独立后端时停止需要独立性的步骤，不能由主会话自评替代。
 
-行为补丁同理：它写的是"不管哪个技能怎么说，都按这几条来"，所以对上游新增的技能也自动生效。
-
-## 独立性
-
-有些步骤的产物本身就是独立结论：审查者的判词、并行工作者的结果、验证者的签字。这些步骤需要一个没参与过工作的新上下文。对照说明规定：
-- 用 pi-subagents 的 `delegate` 或 `scout`，并显式要求新上下文（`context: "fresh"`）；
-- 不能用 `worker`，它默认会继承父会话的整段对话；
-- 连子代理都起不了时，这一步停下并说明缺口，不能由主会话自己审一遍冒充独立。
-
-长期存在的工作者（上游的云端 agent）用 Herdr 起独立的 Pi 会话，见 `adapter/notes/cloud-agents.md`。
+长期负责人优先 Herdr。短期后台子代理是否可替代，要看生命周期、worktree 保留、认证及唤醒机制，不能把本地临时进程宣称为云端持久工作者。

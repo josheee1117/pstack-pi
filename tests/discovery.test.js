@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { expectedName, loadPi, skillDirsOnDisk, skillsDir, upstreamSkillDirs } from "./helpers.js";
+import { expectedName, loadPi, skillDirsOnDisk, skillsDir, upstreamSkillDirs, unexpectedSkillDiagnostics } from "./helpers.js";
 
 const NAME_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const expectedNames = upstreamSkillDirs.map(expectedName).sort();
@@ -26,9 +26,9 @@ test("the real Pi loader discovers every skill with no diagnostics", async (t) =
 
   const result = pi.loadSkillsFromDir({ dir: skillsDir, source: "pstack-pi" });
   assert.deepEqual(
-    result.diagnostics.map((d) => `${d.type ?? "diagnostic"}: ${d.message}`),
+    unexpectedSkillDiagnostics(result.diagnostics).map((d) => `${d.type ?? "diagnostic"}: ${d.message}`),
     [],
-    "the real loader reports no skill diagnostics",
+    "no unexpected diagnostics; original Pi's documented directory-name warnings are tolerated",
   );
   assert.deepEqual(result.skills.map((s) => s.name).sort(), expectedNames);
 

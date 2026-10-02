@@ -16,7 +16,7 @@
 - 技能正文原样使用。改动只有：
   - 技能名加 `pstack-` 前缀，`poteto-mode` 注册为 `pstack`，`setup-pstack` 为 `pstack-setup`，`teach` 为 `pstack-teach-me`；
   - 每个技能的 `description` 翻译成中文；
-  - `skills/poteto-mode/scripts/worktree-audit.sh` 改为读取 Pi 的会话记录，而不是 Cursor 的。
+  - `skills/poteto-mode/scripts/worktree-audit.sh` 转交本包的 `adapter/worktree-audit.mjs`，读取 Pi 会话并保守判定；不自动 fetch 或删除。
 - 没有带上 `make-bot-ui`：它依赖 Cursor 的 Grok Bot webhook 和 Tailscale，在 Pi 上没有对应物。
 - 没有带上上游的 `docs/`、`assets/`、`automations/`（Cursor 的 automation 运行时专属）。
 - 新增 Pi 适配层：`adapter/`（行为补丁、对照说明、补充说明）和 `extensions/pstack.js`。

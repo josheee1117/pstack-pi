@@ -8,7 +8,7 @@ Check first:
 - `command -v herdr` succeeds.
 - `herdr session list --json` shows the session to use. If more than one exists and the user named none, ask which.
 
-Running swarm, autopilot-full, autopilot-stack, shipping, orchestrate, or figure-it-out with Herdr available authorizes this, inside one verified session and this repository only: create one worktree workspace and one Pi agent per worker. Close only what you created. Never run `herdr server stop`, reuse an existing pane, or use `--current`. Every command carries `--session <S>`.
+Herdr is the preferred backend for these workflows, not automatic authorization. Read its installed skill/command help, confirm the exact session and repository, and obtain any approval required by that host before creating a bounded set of worker resources. An explicit fleet request may cover the named topology, but not unrelated sessions. Close only what you created after preserving its work. Never run `herdr server stop`, reuse an existing pane, or use `--current`. Every command carries `--session <S>`.
 
 Start a worker:
 
@@ -34,7 +34,9 @@ herdr --session <S> worktree remove --workspace <workspace_id>
 git -C <repo> branch -d pstack/<name>       # remove keeps the branch
 ```
 
-`worktree remove` refuses a dirty worktree. Push or save the work first, and use `--force` only after that.
+`worktree remove` refuses a dirty worktree. Preserve the diff and untracked files first. Do not push or force-remove merely to make cleanup succeed; obtain explicit approval for either. Inspect branch/worktree ownership and work retention before removing anything.
+
+Pass each worker the package's absolute skill paths, applicable operator overrides, selected model, fixed input revision, evidence/output paths, and budget. Verify that Pi and pstack are loaded in that worker: a project-local package or trust decision does not automatically carry into every new worktree. Herdr's `idle` status means it is waiting, not that the requested task passed. Require the promised evidence before accepting completion.
 
 ## Mapping
 
@@ -42,16 +44,15 @@ git -C <repo> branch -d pstack/<name>       # remove keeps the branch
 |---|---|---|
 | swarm worker, `environment: "cloud"` | one worktree and one Pi agent per worker; `agent wait` each | `runs.all([...])` in a `workflowScript`, each item `worktree: true`, `context: "fresh"` |
 | `cloud_base_branch` | `worktree create --base <ref>` | `baseRef` (named refs only, clean checkout) |
-| autopilot PR owner | long-lived pane; the owner pushes and runs `gh`; reports over intercom | async `delegate` that pushes before it exits; `resume` for later turns; set `timeoutMs`, the default cap is 30 minutes |
+| autopilot PR owner | long-lived pane; the owner uses gh and pushes only as authorized; reports over intercom | bounded async `delegate` with exported diff/evidence before exit; not a durable owner |
 | shipping or autopilot verifier | a separate fresh pane per PR, at the PR head | `runs.run` with `baseRef: refs/heads/<pr-branch>`, `context: "fresh"` |
 | orchestrate worker or verifier | a pane per unit, state tracked by branch and PR | workflow lanes |
 | figure-it-out owner | persistent pane plus intercom | none that is durable; say so |
 | Cursor dashboard | `agent list`, `agent get` | `subagent({ action: "status" })` |
 
 pi-subagents limits to state when you use the fallback:
-- Its worktrees are removed when the run ends, after it captures a patch. A worker that must own a branch or PR pushes before it exits.
-- Runs end with the parent session.
-- Nesting stops at two levels.
-- `baseRef` rejects raw SHAs and expressions like `HEAD~1`.
+- Worktree retention, timeouts, nesting and parent-lifetime behavior depend on the installed version. Inspect the backend's handoff/patch before cleanup. A durable PR owner must not silently become a temporary child.
+- If a named base ref is required, create/resolve it only within the authorized repository. Verify its exact SHA before starting each writer.
+- Missing Herdr is not permission to silently switch execution tools. Offer the bounded fallback only when it preserves the requested product and the host allows it; otherwise stop and name the missing capability.
 
 With neither Herdr nor pi-subagents, a step that needs parallel owners or an independent verifier stops and names the gap. Do not play several workers in one context.
