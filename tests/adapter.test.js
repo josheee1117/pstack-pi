@@ -42,6 +42,7 @@ test("the overrides keep the behaviors the eval showed upstream text lacks", () 
   assert.match(overrides, /names no principles, playbook steps/);
   assert.match(overrides, /language the user writes in/);
   assert.match(overrides, /only when the user asked/);
+  assert.match(overrides, /already accepted/);
 });
 
 test("worktree-audit reads Pi session records, not Cursor transcripts", () => {

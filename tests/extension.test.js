@@ -124,8 +124,8 @@ test("the adapter carries the overrides and the platform map with every path fil
   for (const path of paths) assert.ok(existsSync(path), `${path} exists`);
 });
 
-test("the first read of a pstack skill file carries the adapter; later reads and other files do not", async () => {
-  const { read, turn, entries } = await load();
+test("the first read of a pstack skill file carries the adapter; later reads keep only the overrides", async () => {
+  const { read, turn, entries, handlers } = await load();
 
   assert.equal(read("/etc/hosts"), undefined, "a file outside the package is untouched");
   assert.equal(read(join(repoRoot, "..", "skills", "how", "SKILL.md")), undefined, "a look-alike path outside the package is untouched");
@@ -135,8 +135,32 @@ test("the first read of a pstack skill file carries the adapter; later reads and
   assert.match(first.content[1].text, /Operator overrides/, "the adapter rides along in the same result");
   assert.ok(entries.some((e) => e.customType === "pstack-adapter"));
 
-  assert.equal(read(join(skillsDir, "why", "SKILL.md")), undefined, "the adapter is attached once, not on every read");
+  const later = read(join(skillsDir, "why", "SKILL.md"));
+  assert.match(later.content.at(-1).text, /Operator overrides/, "a later skill read still ends with the overrides");
+  assert.doesNotMatch(later.content.at(-1).text, /# pstack on Pi/, "a later skill read does not repeat the platform map");
+  assert.equal(handlers.get("tool_result")({
+    toolName: "read",
+    input: { path: join(skillsDir, "why", "SKILL.md") },
+    content: later.content,
+    isError: false,
+  }), undefined, "the override is not appended again onto itself");
   assert.ok(turn().pstack_adapter, "from the next prompt on, the adapter is a section");
+});
+
+test("a pstack skill command ends with the overrides once, after Pi would expand the skill", async () => {
+  const { handlers } = await load();
+  const first = handlers.get("input")({ text: "/skill:pstack fix the March total", source: "interactive" });
+  assert.equal(first.action, "transform");
+  assert.match(first.text, /^\/skill:pstack fix the March total\n\n# Operator overrides/);
+  assert.doesNotMatch(first.text, /# pstack on Pi/);
+  assert.match(first.text, /already accepted/);
+  const again = handlers.get("input")({ text: first.text, source: "extension" });
+  assert.equal(again, undefined, "a second pass does not stack another copy");
+
+  const other = handlers.get("input")({ text: "/skill:pstack-how what does X do", source: "interactive" });
+  assert.equal(other.action, "transform");
+  assert.match(other.text, /# Operator overrides/);
+  assert.equal(handlers.get("input")({ text: "tell me about /skill:pstack", source: "interactive" }), undefined);
 });
 
 test("a relative read path is resolved against the session's cwd", async () => {

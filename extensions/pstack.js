@@ -65,9 +65,13 @@ const fill = (text) =>
     .replaceAll("{{adapter}}", ADAPTER)
     .replaceAll("{{agentDir}}", AGENT_DIR);
 
-const ADAPTER_TEXT = fill(
-  [readFileSync(join(ADAPTER, "overrides.md"), "utf8"), readFileSync(join(ADAPTER, "platform.md"), "utf8")].join("\n"),
-);
+const OVERRIDES_TEXT = fill(readFileSync(join(ADAPTER, "overrides.md"), "utf8")).trim();
+const PLATFORM_TEXT = fill(readFileSync(join(ADAPTER, "platform.md"), "utf8")).trim();
+const ADAPTER_TEXT = `${OVERRIDES_TEXT}\n\n${PLATFORM_TEXT}`;
+
+const hasOverrides = (text) => String(text ?? "").includes(OVERRIDES_TEXT);
+
+const appendOverrides = (text) => (hasOverrides(text) ? text : `${text}\n\n${OVERRIDES_TEXT}`);
 
 const RULES = [
   "- Talk like one person explaining to another. Assume the reader did not watch you work.",
@@ -156,6 +160,9 @@ export default function pstack(pi) {
 
   // Direct entry and extension-sent commands share the same idempotent state
   // change, so /pstack's own message does not append the flags twice.
+  // Pi expands /skill:pstack after this hook and places the command arguments
+  // after the skill body. Ending that text with the operator overrides lets
+  // those rules follow the upstream skill instead of being buried by it.
   pi.on("input", (event, ctx) => {
     if (ANY_COMMAND.test(event.text)) useAdapter();
     if (ENTRY_COMMAND.test(event.text) && !modeOn) {
@@ -163,6 +170,8 @@ export default function pstack(pi) {
       pi.appendEntry(MODE_ENTRY, { enabled: true });
       showMode(ctx);
     }
+    if (!ANY_COMMAND.test(event.text) || hasOverrides(event.text)) return;
+    return { action: "transform", text: appendOverrides(event.text) };
   });
 
   // A skill file read without a command (a subagent, or the model following a
@@ -178,9 +187,14 @@ export default function pstack(pi) {
       useAdapter();
       return { content: event.content.map((block) => block.type === "text" ? { ...block, text: fill(block.text) } : block) };
     }
-    if (adapterOn || !inSkills(path, cwd)) return;
-    useAdapter();
-    return { content: [...event.content, { type: "text", text: `\n\n${ADAPTER_TEXT}${sessionNote(ctx)}` }] };
+    if (!inSkills(path, cwd)) return;
+    if (!adapterOn) {
+      useAdapter();
+      return { content: [...event.content, { type: "text", text: `\n\n${ADAPTER_TEXT}${sessionNote(ctx)}` }] };
+    }
+    const seen = event.content.map((block) => block.type === "text" ? block.text : "").join("\n");
+    if (hasOverrides(seen)) return;
+    return { content: [...event.content, { type: "text", text: `\n\n${OVERRIDES_TEXT}` }] };
   });
 
   pi.on("before_agent_start", (event, ctx) => {
