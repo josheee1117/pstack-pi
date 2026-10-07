@@ -71,7 +71,8 @@ const ADAPTER_TEXT = `${OVERRIDES_TEXT}\n\n${PLATFORM_TEXT}`;
 
 const hasOverrides = (text) => String(text ?? "").includes(OVERRIDES_TEXT);
 
-const appendOverrides = (text) => (hasOverrides(text) ? text : `${text}\n\n${OVERRIDES_TEXT}`);
+// Pi splits skill names at a literal space, including commands without args.
+const appendOverrides = (text) => (hasOverrides(text) ? text : `${text.replace(/^(\S+)(?:\s|$)/, "$1 ")}\n\n${OVERRIDES_TEXT}`);
 
 const RULES = [
   "- Talk like one person explaining to another. Assume the reader did not watch you work.",
@@ -142,7 +143,7 @@ export default function pstack(pi) {
   // custom entry is what makes "enter once" true across a resume, and the flag
   // is rebuilt from the branch rather than from a file this extension owns.
   // The adapter flag rides along the same way.
-  pi.on("session_start", (_event, ctx) => {
+  const restoreState = (_event, ctx) => {
     modeOn = false;
     adapterOn = false;
     try {
@@ -156,7 +157,9 @@ export default function pstack(pi) {
       // and the first skill read still turn them on for this session.
     }
     showMode(ctx);
-  });
+  };
+  pi.on("session_start", restoreState);
+  pi.on("session_tree", restoreState);
 
   // Direct entry and extension-sent commands share the same idempotent state
   // change, so /pstack's own message does not append the flags twice.

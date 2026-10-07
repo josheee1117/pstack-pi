@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { repoRoot, skillsDir } from "./helpers.js";
+import { loadPi, repoRoot, skillsDir } from "./helpers.js";
 
 const extensionPath = join(repoRoot, "extensions", "pstack.js");
 const ENTRY_SKILL = join(skillsDir, "poteto-mode", "SKILL.md");
@@ -163,6 +163,31 @@ test("a pstack skill command ends with the overrides once, after Pi would expand
   assert.equal(handlers.get("input")({ text: "tell me about /skill:pstack", source: "interactive" }), undefined);
 });
 
+test("Pi expands transformed skill commands with or without arguments", async (t) => {
+  const pi = await loadPi();
+  if (!pi) return t.skip("the Pi package is not installed on this machine");
+  const skills = pi.loadSkillsFromDir({ dir: skillsDir, source: "pstack-pi" });
+  const context = {
+    resourceLoader: { getSkills: () => skills },
+    _extensionRunner: { emitError: (event) => { throw new Error(event.error); } },
+  };
+
+  for (const skill of skills.skills) {
+    for (const suffix of ["", " explain this", "\nexplain this"]) {
+      const { handlers } = await load();
+      const input = `/skill:${skill.name}${suffix}`;
+      const transformed = handlers.get("input")({ text: input, source: "interactive" }).text;
+      const expanded = pi.AgentSession.prototype._expandSkillCommand.call(context, transformed);
+      assert.ok(expanded.startsWith(`<skill name="${skill.name}" `), `${JSON.stringify(input)} expands`);
+      const args = expanded.slice(expanded.indexOf("</skill>\n\n") + "</skill>\n\n".length);
+      assert.ok(args.startsWith(suffix.trim()), "the task stays after the skill body");
+      assert.equal((args.match(/# Operator overrides/g) ?? []).length, 1);
+      assert.ok(expanded.endsWith(transformed.slice(transformed.indexOf("# Operator overrides"))));
+      assert.equal(handlers.get("input")({ text: transformed, source: "extension" }), undefined);
+    }
+  }
+});
+
 test("a relative read path is resolved against the session's cwd", async () => {
   const { handlers } = await load();
   const result = handlers.get("tool_result")(
@@ -259,6 +284,38 @@ test("a resumed session restores both flags from the branch, and the last mode e
 
   start({}, { ...ui, ...branchOf(on, off, on) });
   assert.match(turn().pstack_mode, /pstack mode is on/, "turning it back on is remembered");
+});
+
+test("tree navigation restores branch flags, status and prompts without adding entries", async () => {
+  const { handlers, turn, entries, command, ctx, statuses, notifications } = await load();
+  await command.handler("", ctx);
+  const count = entries.length;
+  const sections = turn({ other_extension: "keep me" });
+  const before = handlers.get("before_agent_start");
+  let prompt = before({ systemPrompt: "Host instructions" }, ctx).systemPrompt;
+  const adapter = custom("pstack-adapter", { enabled: true });
+  const on = custom("pstack-mode", { enabled: true });
+  const off = custom("pstack-mode", { enabled: false });
+
+  for (const [branch, mode, adapted] of [
+    [[], false, false],
+    [[adapter], false, true],
+    [[adapter, on], true, true],
+    [[adapter, on, off], false, true],
+  ]) {
+    handlers.get("session_tree")({ type: "session_tree" }, { ...ctx, ...branchOf(...branch) });
+    turn(sections);
+    prompt = before({ systemPrompt: prompt }, ctx).systemPrompt;
+    assert.equal(Boolean(sections.pstack_mode), mode);
+    assert.equal(Boolean(sections.pstack_adapter), adapted);
+    assert.equal(prompt.includes("<pstack_mode>"), mode);
+    assert.equal(prompt.includes("<pstack_adapter>"), adapted);
+    assert.equal(sections.other_extension, "keep me");
+    assert.deepEqual(statuses.at(-1), ["pstack", mode ? "pstack: mode on" : undefined]);
+    await command.handler("status", ctx);
+    assert.equal(notifications.at(-1), mode ? "pstack mode on." : "pstack mode off.");
+    assert.equal(entries.length, count, "navigation does not write flags to the selected branch");
+  }
 });
 
 test("typing the entry skill the usual way also enters the mode", async () => {
