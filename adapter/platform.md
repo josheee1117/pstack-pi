@@ -27,7 +27,7 @@ The pstack skills were written for Cursor. On Pi, read them through this map. Pa
 ## Models
 
 - The `/setup-pstack` rule `~/.cursor/rules/pstack-models.mdc` is `{{agentDir}}/pstack-models.md` (installs of the earlier port wrote `{{agentDir}}/pstack-roles.md`; read that when the first is missing). The setup skill writes the first. A role line's value is a Pi model, `provider/id` with an optional `:thinking` suffix, passed as `model`.
-- Upstream default slugs (grok-…, claude-…-max, gpt-…-max) do not exist here. When a role has no line, or its value is `auto` or `inherit-parent`, pass `model: "inherit"`. Omitting `model` uses the agent's configured default, which is not the session model.
+- Upstream default slugs (claude-…-xhigh, grok-…, gpt-…) do not exist here. When a role has no line, or its value is `auto` or `inherit-parent`, pass `model: "inherit"`. Omitting `model` uses the agent's configured default, which is not the session model.
 - A panel meant to span models (arena, architect, interrogate, reflect) may run on one model in fresh contexts. Say that model diversity was lost. Independence was not.
 
 ## Cursor tools and commands
@@ -41,4 +41,6 @@ The pstack skills were written for Cursor. On Pi, read them through this map. Pa
 - Image generation (teach): a mermaid diagram or an ASCII sketch.
 - `paths:` auto-attach does not exist. When you edit `.ts` or `.tsx` files, read the typescript-best-practices skill.
 - `scripts/watch-pr` and `scripts/orch` need `bun`. The orch frontier needs Graphite's `gt`. If one is missing, say so and use `gh pr checks --watch` and `gh pr view --json`, or the playbook's own fallback.
+- The help skill (poteto-help, typed here as `/skill:pstack-help`) answers for Cursor. On Pi, install is `pi install -l <package>` then `/reload`. The mode that stays on is `/pstack`, left with `/pstack off`; Custom Modes and Option+Enter do not exist. Users type a skill as `/skill:pstack-<name>`, except `/skill:pstack` (poteto-mode), `/skill:pstack-setup`, and `/skill:pstack-teach-me`. Its README and `docs/guide/` links are not shipped: point to {{root}}/README.md, {{root}}/docs/install.md, and {{root}}/docs/coverage.md, and give the upstream guide's public URL only as Cursor background. `make-bot-ui` is not in this package.
+- A run's built-in PR tool does not exist here. Use the resolved forge.
 - "Cursor restart" is a Pi restart or `/reload`. "Cursor dashboard" is `subagent({ action: "status" })` or `herdr agent list`.

@@ -81,15 +81,16 @@ export function unexpectedSkillDiagnostics(diagnostics) {
   return diagnostics.filter((d) => !allowed.has(d.message));
 }
 
-// Upstream pstack 0.15.5's skills, minus make-bot-ui (Cursor's Grok Bot runtime).
+// Upstream pstack 0.15.15's skills, minus make-bot-ui (Cursor's Grok Bot runtime).
 export const upstreamSkillDirs = [
-  "architect", "arena", "automate-me", "blast-radius", "bro", "create-verification-skill",
-  "figure-it-out", "how", "interrogate", "maintain-verification-skill", "no-comments", "poteto-mode",
+  "architect", "arena", "automate-me", "benchmark-checklist", "blast-radius", "bro", "correct",
+  "create-verification-skill", "figure-it-out", "how", "interrogate", "maintain-verification-skill",
+  "no-comments", "poteto-help", "poteto-mode",
   "recall", "reflect", "setup-pstack", "show-me-your-work", "swarm", "tdd", "teach",
   "technical-writing", "typescript-best-practices", "unslop", "why",
   ...[
     "attack-the-premise", "boundary-discipline", "build-the-lever", "encode-lessons-in-structure",
-    "exhaust-the-design-space", "experience-first", "fix-root-causes", "foundational-thinking",
+    "exhaust-the-design-space", "experience-first", "explain-the-number", "fix-root-causes", "foundational-thinking",
     "guard-the-context-window", "laziness-protocol", "make-operations-idempotent",
     "migrate-callers-then-delete-legacy-apis", "minimize-reader-load", "model-the-domain",
     "never-block-on-the-human", "outcome-oriented-execution", "prove-it-works",

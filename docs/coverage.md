@@ -9,6 +9,7 @@
 | 命令 | 做什么 | 在 Pi 上 | 可选组件 |
 |---|---|---|---|
 | `/skill:pstack` | 工作流入口：判断任务大小，匹配 23 个流程之一 | 可用。另见下面的"流程" | 看具体流程 |
+| `/skill:pstack-help` | 使用向导：怎么配置、怎么开模式、该用哪个技能 | 可用。上游按 Cursor 写（Custom Mode、插件安装、指南页），对照说明把这些换成 Pi 的命令和本包文档 | 无 |
 | `/skill:pstack-setup` | 配置各角色用哪个模型 | 可用。写入 `~/.pi/agent/pstack-models.md` | 无 |
 | `/skill:pstack-how` | 讲清系统怎么工作 | 可用。简单问题直接答，复杂问题并行探查 | pi-subagents（并行探查） |
 | `/skill:pstack-why` | 追查代码为什么这样写 | 可用。代码历史用 git 和 gh；工单、文档、聊天、错误追踪、监控通过 MCP 接入，没接的类别在结论里写明未覆盖 | gh；pi-mcp-adapter 和对应 MCP 服务；pi-subagents（并行查） |
@@ -18,6 +19,8 @@
 | `/skill:pstack-arena` | 多方案竞赛，选底版再嫁接 | 可用 | pi-subagents |
 | `/skill:pstack-swarm` | 并行分工再汇总 | 可用。工作者用 Herdr 起独立 Pi 会话；没有 Herdr 用 pi-subagents 的后台子代理 | Herdr 或 pi-subagents；pi-intercom |
 | `/skill:pstack-interrogate` | 多模型对抗式审查 | 可用。只有一个模型时仍在独立上下文里审，结论注明少了模型多样性 | pi-subagents |
+| `/skill:pstack-correct` | 把反复出现的同类错误变成架构、类型、lint 或测试层面的硬约束 | 可用 | 无 |
+| `/skill:pstack-benchmark-checklist` | 报告性能数字前逐项核对测量是否可信 | 可用。部分命令（`nproc`、`strace`）只在 Linux 上有，macOS 用 `sysctl -n hw.ncpu`、`dtruss` 等对应工具 | 无 |
 | `/skill:pstack-tdd` | 先写失败测试再修 | 可用 | 无 |
 | `/skill:pstack-bro` | 用大白话重说上一条回复 | 可用 | 无 |
 | `/skill:pstack-unslop` | 去掉文字里的机器腔 | 可用。高频规则由 extension 常驻注入 | 无 |
@@ -31,7 +34,7 @@
 | `/skill:pstack-reflect` | 复盘并把教训落到技能里 | 可用。读本项目的 Pi 会话记录 | pi-subagents（三个审查视角） |
 | `/skill:pstack-automate-me` | 把个人习惯做成技能 | 可用。挖掘本项目的 Pi 会话记录 | pi-subagents |
 | `/skill:pstack-teach-me` | 把改动或子系统讲明白 | 可用。上游用生图工具画空间类的图，这里改用 mermaid 或文字示意图。改名是为了不被项目里的同名 `teach` 技能盖掉 | 无 |
-| `/skill:pstack-principle-*` | 23 条原则，如 `pstack-principle-fix-root-causes` | 可用，原样 | 无 |
+| `/skill:pstack-principle-*` | 24 条原则，如 `pstack-principle-fix-root-causes` | 可用，原样 | 无 |
 
 ## 流程（入口技能的 23 个 playbook）
 

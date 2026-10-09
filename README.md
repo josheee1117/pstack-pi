@@ -2,7 +2,7 @@
 
 把 pstack 的理解、设计、实现、独立审查、验证和交付流程带到 Pi。保留上游大部分正文和目录结构，用独立适配层处理工具、路径和执行差异；支持选择性吸收上游改进，不要求完整照搬。
 
-当前基于上游 pstack 0.15.5。包含 23 个公共技能、23 个原则、23 个 playbook，以及一个无 npm 运行时依赖的扩展。去掉完全依赖 Cursor Grok Bot 的 `make-bot-ui`。注册名和中文描述是本地改动，worktree 审计使用 Pi 专用实现。
+当前基于上游 pstack 0.15.15。包含 26 个公共技能、24 个原则、23 个 playbook，以及一个无 npm 运行时依赖的扩展。去掉完全依赖 Cursor Grok Bot 的 `make-bot-ui`。注册名和中文描述是本地改动，worktree 审计使用 Pi 专用实现。
 
 - [安装范围、可选插件和配置](docs/install.md)
 - [技能清单及适用条件](docs/coverage.md)

@@ -12,6 +12,7 @@
   "rename": {
     "poteto-mode": "pstack",
     "setup-pstack": "pstack-setup",
-    "teach": "pstack-teach-me"
+    "teach": "pstack-teach-me",
+    "poteto-help": "pstack-help"
   }
 }

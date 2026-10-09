@@ -3,7 +3,7 @@
 ## 上游
 
 - 项目：`pstack`（作者 Lauren Tan / poteto），位于 `cursor/plugins` 仓库的 `pstack/` 目录。
-- 当前基于：`fadd23794c0075468eb8964b0fd93e06e09486ad`（插件版本 0.15.5），见 `upstream.lock`。
+- 当前基于：`ccb5507cec1546dc88135c1139c811e6c59115ba`（插件版本 0.15.15），见 `upstream.lock`。
 - 站点：https://github.com/cursor/plugins/tree/main/pstack
 - 许可：MIT，Copyright (c) 2026 Lauren Tan。原文见 `LICENSE.upstream`。
 
@@ -14,7 +14,7 @@
 ## 对上游做了什么
 
 - 技能正文原样使用。改动只有：
-  - 技能名加 `pstack-` 前缀，`poteto-mode` 注册为 `pstack`，`setup-pstack` 为 `pstack-setup`，`teach` 为 `pstack-teach-me`；
+  - 技能名加 `pstack-` 前缀，`poteto-mode` 注册为 `pstack`，`setup-pstack` 为 `pstack-setup`，`teach` 为 `pstack-teach-me`，`poteto-help` 为 `pstack-help`；
   - 每个技能的 `description` 翻译成中文；
   - `skills/poteto-mode/scripts/worktree-audit.sh` 转交本包的 `adapter/worktree-audit.mjs`，读取 Pi 会话并保守判定；不自动 fetch 或删除。
 - 没有带上 `make-bot-ui`：它依赖 Cursor 的 Grok Bot webhook 和 Tailscale，在 Pi 上没有对应物。

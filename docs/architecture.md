@@ -12,7 +12,7 @@
 
 ## 注册名
 
-`poteto-mode` 注册为 `pstack`，`setup-pstack` 为 `pstack-setup`，`teach` 为 `pstack-teach-me`，其余按 `pstack-<上游名>` 注册。前缀减少与项目同名技能冲突，但不是所有冲突都能消除。
+`poteto-mode` 注册为 `pstack`，`setup-pstack` 为 `pstack-setup`，`teach` 为 `pstack-teach-me`，`poteto-help` 为 `pstack-help`，其余按 `pstack-<上游名>` 注册。前缀减少与项目同名技能冲突，但不是所有冲突都能消除。
 
 正文之间的相对路径保持原样；按名字提到的技能由平台说明映射到包内路径。原版 Pi 0.73.1 会对目录名和注册名不同发出警告，命令仍可加载；earendil 0.87.0 允许这种结构。这个兼容边界没有被隐藏，见 `install.md`。
 
