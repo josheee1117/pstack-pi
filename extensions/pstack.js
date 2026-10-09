@@ -95,6 +95,7 @@ const PLAN_TOOL = "pstack_plan";
 const WIDGET = "pstack";
 const STEP_LINES = 7;
 const NUDGE_EVERY = 6;
+const NUDGE_LIMIT = 2;
 const FINISHED = new Set(["done", "skipped"]);
 const ICON = { done: "✓", active: "▶", pending: "○", skipped: "–" };
 // ponytail: counts every non-ASCII character as two columns, so CJK text fits;
@@ -208,8 +209,15 @@ export default function pstack(pi) {
   // pstack skills this session used. Both feed the console widget.
   let plan = { playbook: "", steps: [] };
   let recent = [];
-  // Tool results since the model last reported the plan.
+  // Tool results and reminders since the model last reported the plan. A
+  // plan whose reminders go unanswered NUDGE_LIMIT times counts as abandoned.
   let sincePlan = 0;
+  let nudges = 0;
+  const noPlan = () => ({ playbook: "", steps: [] });
+  const resetNudges = () => {
+    sincePlan = 0;
+    nudges = 0;
+  };
 
   const showMode = (ctx) => {
     if (!ctx?.ui?.setStatus) return;
@@ -269,7 +277,7 @@ export default function pstack(pi) {
     defaultActive: false,
     async execute(_id, params, _signal, _onUpdate, ctx) {
       plan = { playbook: params.playbook ?? "", steps: params.steps };
-      sincePlan = 0;
+      resetNudges();
       showWidget(ctx);
       const finished = plan.steps.filter((s) => FINISHED.has(s.status)).length;
       const next = plan.steps.find((s) => s.status === "active") ?? plan.steps.find((s) => !FINISHED.has(s.status));
@@ -284,12 +292,12 @@ export default function pstack(pi) {
   // custom entry is what makes "enter once" true across a resume, and the flag
   // is rebuilt from the branch rather than from a file this extension owns.
   // The adapter flag rides along the same way, and the plan comes back from
-  // the branch's last pstack_plan result.
+  // the branch's last pstack_plan result unless /pstack off came after it.
   const restoreState = (_event, ctx) => {
     modeOn = false;
     adapterOn = false;
-    plan = { playbook: "", steps: [] };
-    sincePlan = 0;
+    plan = noPlan();
+    resetNudges();
     // ponytail: the recent-skills line starts empty after a resume or branch
     // switch; rebuild it from the branch's read calls if that gap matters.
     recent = [];
@@ -299,7 +307,10 @@ export default function pstack(pi) {
           if (Array.isArray(entry.message.details?.steps)) plan = entry.message.details;
         }
         if (entry.type !== "custom") continue;
-        if (entry.customType === MODE_ENTRY) modeOn = entry.data?.enabled === true;
+        if (entry.customType === MODE_ENTRY) {
+          modeOn = entry.data?.enabled === true;
+          if (!modeOn) plan = noPlan();
+        }
         if (entry.customType === ADAPTER_ENTRY) adapterOn = true;
       }
     } catch {
@@ -359,12 +370,14 @@ export default function pstack(pi) {
 
   // Models tend to report a plan at its start and end and skip the steps in
   // between. While a step is open, every NUDGE_EVERY-th other tool result
-  // reminds the model which step the user sees as current.
+  // reminds the model which step the user sees as current, at most
+  // NUDGE_LIMIT times per report, so an abandoned plan stops nagging.
   const planNudge = (event) => {
     if (event.toolName === PLAN_TOOL) return;
     const current = plan.steps.find((s) => s.status === "active") ?? plan.steps.find((s) => !FINISHED.has(s.status));
-    if (!current || ++sincePlan < NUDGE_EVERY) return;
+    if (!current || nudges >= NUDGE_LIMIT || ++sincePlan < NUDGE_EVERY) return;
     sincePlan = 0;
+    nudges += 1;
     return `\n\n[pstack] The user's console still shows step ${JSON.stringify(current.text)} as current. If it finished, call ${PLAN_TOOL} before you continue.`;
   };
 
@@ -403,7 +416,10 @@ export default function pstack(pi) {
       if (OFF_WORDS.test(text)) {
         modeOn = false;
         pi.appendEntry(MODE_ENTRY, { enabled: false });
+        plan = noPlan();
+        resetNudges();
         showMode(ctx);
+        showWidget(ctx);
         ctx.ui.notify("pstack mode off.", "info");
         return;
       }

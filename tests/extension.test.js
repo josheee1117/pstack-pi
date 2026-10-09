@@ -524,3 +524,24 @@ test("an open step is named again after every sixth other tool result, until the
   await plan({ playbook: "bug-fix", steps: [{ text: "复现问题", status: "done" }, { text: "修复", status: "done" }] });
   for (let i = 0; i < 12; i += 1) assert.ok(!nudged(result()), "a finished plan asks for nothing");
 });
+
+test("an abandoned plan stops reminding after two ignored reminders, and /pstack off clears it for good", async () => {
+  const { handlers, ctx, plan, widget, command, entries } = await load();
+  const result = () => handlers.get("tool_result")({ toolName: "bash", input: {}, content: [{ type: "text", text: "ok" }], isError: false }, ctx);
+  const reminders = (calls) => Array.from({ length: calls }, result).filter((r) => r?.content.at(-1).text.includes("still shows step")).length;
+
+  await plan({ playbook: "feature", steps: [{ text: "建模", status: "active" }] });
+  assert.equal(reminders(60), 2, "an unanswered plan is reminded twice, then left alone");
+  await plan({ playbook: "feature", steps: [{ text: "建模", status: "active" }] });
+  assert.equal(reminders(12), 2, "a new report earns two more reminders");
+
+  await command.handler("off", ctx);
+  assert.equal(widget(), undefined, "turning the mode off removes the plan from the console");
+  assert.equal(reminders(30), 0, "and stops its reminders");
+
+  const reported = { type: "message", message: { role: "toolResult", toolName: "pstack_plan", details: { playbook: "feature", steps: [{ text: "建模", status: "active" }] } } };
+  handlers.get("session_start")({}, { ...ctx, ...branchOf(reported, ...entries) });
+  assert.equal(widget(), undefined, "a resumed session does not bring back a plan the user turned off");
+  handlers.get("session_start")({}, { ...ctx, ...branchOf(...entries, reported) });
+  assert.equal(widget()[0], "pstack · feature · 0/1", "a plan reported after turning off still shows");
+});

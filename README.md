@@ -35,7 +35,7 @@ pi install -l git:github.com/josheee1117/pstack-pi
 ```text
 /pstack                          开启本会话的持续工作模式
 /pstack 修复这个问题：……          开启并执行任务
-/pstack off                      关闭持续路由提醒
+/pstack off                      关闭持续路由提醒，清掉控制台里的计划
 /pstack status                   查看状态
 /skill:pstack-how 这个模块怎么工作
 /skill:pstack-why 当时为什么这样设计
