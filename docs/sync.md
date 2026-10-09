@@ -3,7 +3,7 @@
 ## 当前分工
 
 - `upstream` 是转换后的上游快照分支。`upstream.json` 决定来源、复制范围、排除项、注册名；`upstream.lock` 记录实际读过的上游提交。
-- 产品分支保留中文描述、Pi 适配、行为边界和脚本补丁。当前开发在 `upstream-base`；只有验收并获准后才合入 `main`。
+- 产品分支保留中文描述、Pi 适配、行为边界和脚本补丁。每次同步在临时集成分支上做，例如 `integrate/pstack-<版本>`；验收并获准后再合入 `main`。
 - `adapter/`、`extensions/`、本包文档和测试由我们维护。它们通常不会与上游机械合并冲突，但上游行为变了仍需检查语义。
 - `skills/` 保留上游目录结构及大部分正文。中文描述是一行本地补丁；worktree 审计入口是本地替换，真正实现位于 `adapter/worktree-audit.mjs`。
 
