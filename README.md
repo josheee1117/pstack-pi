@@ -64,7 +64,7 @@ why 使用已有 `pi-mcp-adapter` 接入工单、文档、聊天及遥测，另�
 
 recall 读取当前项目的 Pi 会话，支持自定义配置目录；不会因为路径编码相同就读取另一个项目。
 
-长期工作者优先 Herdr + 独立 Pi 会话 + 独占 worktree。Playwright MCP 可用于浏览器交互；Chrome DevTools MCP 可用于性能和内存取证。Bun、Graphite、调度器均可选，缺失时不能宣称重型流程已完整执行。配置、命令及未验证部分见 [install.md](docs/install.md)。
+子代理用 pi-subagents，运行中输入 `/subagents-fleet` 可以查看每个子代理、中途调整或停掉它。上游的长期工作者改由当前会话统筹，会话关掉流程就停。Playwright MCP 可用于浏览器交互；Chrome DevTools MCP 可用于性能和内存取证。Bun、Graphite、调度器均可选，缺失时不能宣称重型流程已完整执行。配置、命令及未验证部分见 [install.md](docs/install.md)。
 
 ## 开发验证
 

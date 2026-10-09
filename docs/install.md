@@ -16,9 +16,7 @@
 
 | 功能 | 组件及示例 | 边界 |
 |---|---|---|
-| 短调查、独立审查 | `pi install npm:pi-subagents` | 装后才有子代理工具；需要独立判词而后端缺失时必须停下 |
-| 长期工作者、swarm、autopilot | `brew install herdr`，见 <https://herdr.dev> | 需验证 session、工作区和权限；本机 worktree 不等于云 VM 隔离 |
-| 跨 Pi 会话消息 | `pi install npm:pi-intercom` | 未装时可读取面板输出，不能假装消息已发送 |
+| 子代理：调查、审查、并行工作者 | `pi install npm:pi-subagents` | 装后才有子代理工具，自带子代理向主会话提问的通道；需要独立判词而后端缺失时必须停下 |
 | MCP 数据源及浏览器 | `pi install npm:pi-mcp-adapter` | 接入服务器还需要独立安装、认证和授权 |
 | 自主任务 | 可选 `pi install npm:@narumitw/pi-goal` | 工具名、自动续跑上限按安装版本确认；缺失时不承诺自动唤醒 |
 | PR、CI、代码历史 | Git；GitHub 使用 `gh` 并由用户运行 `gh auth login` | 未授权不创建、修改或合并 PR |
@@ -36,11 +34,15 @@
 
 pi-subagents 的 agentOverrides 可能钉住其他模型。适配说明要求明确选择模型并显式使用 fresh context，但这是给模型的指令，不是运行时强制保证。多模型面板只用单模型时要说明多样性减少；用户明确要求多模型时不能自行降级。
 
-## Herdr
+## 子代理
 
-上游的云端工作者默认映射为“独立 worktree + 独立 Pi 会话”。先读 Herdr 自身的授权规则，确认 session 和拓扑；运行 pstack 技能不能豁免其他工具要求的批准。只操作本轮创建的资源，不能为方便清理就擅自推送或强删工作区。
+所有子代理都走 pi-subagents：每个子代理一次单独的后台调用，写代码的并行工作者各用一个 git worktree。上游的云端工作者、PR 负责人和验证者也这样映射，见 [`../adapter/notes/cloud-agents.md`](../adapter/notes/cloud-agents.md)。
 
-命令示例、交接及能力缺失时的处理见 [`../adapter/notes/cloud-agents.md`](../adapter/notes/cloud-agents.md)。原生独立 Pi 会话不会自动继承父会话的插件、项目信任或模式状态，必须验证工作者加载了本包，并给出具体任务、版本和预算。
+运行中输入 `/subagents-fleet` 打开检查器：看每个子代理的实时对话、模型和花费，按 `s` 给正在运行的子代理发调整指令，按 `D` 停掉它。调整指令在子代理当前那条命令结束后生效。
+
+已验证：pi-subagents 0.76.1、Pi 1.1.0，在 tmux 里真实运行，确认了面板显示、检查器和中途调整。升级 pi-subagents 后按同样方法再试一次。
+
+没有能自己醒来、跨天运行的长期负责人。子代理做完一件事就结束，结果只交给正在运行的主会话。需要 Herdr 之类的长期工作者时，在项目的 `AGENTS.md` 能力映射里自己接入，见本包 [`AGENTS.md`](../AGENTS.md)。
 
 ## 浏览器
 

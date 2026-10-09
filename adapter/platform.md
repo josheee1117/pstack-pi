@@ -17,12 +17,15 @@ The pstack skills were written for Cursor. On Pi, read them through this map. Pa
 ## Subagents
 
 - Cursor's `Task` tool is the `subagent` tool from the pi-subagents package. If this session has no `subagent` tool, do bounded work yourself and say so. A step whose product is an independent verdict stops and names the gap.
+- One child is one call: `subagent({ agent, task, context: "fresh", async: true, model })`. `run_in_background: true` is `async: true`. N parallel children are N such calls in one reply. Do not write workflow scripts. Their interface changes between pi-subagents versions.
 - `subagent_type: "generalPurpose"` and `"poteto-agent"` map to agent `delegate`. `readonly: true` maps to agent `scout` with a read-only task. Always pass `context: "fresh"` for an independent judgment. Agent names and tool allowlists alone are not a security boundary; verify the actual child context and allowed capabilities.
+- `isolation: "worktree"`, and every set of parallel writers: before launching, create one worktree per writer with `git worktree add <path> -b pstack/<name> <base>` and pass `<path>` as `cwd`. Remove only worktrees you created, and only after you kept their diff.
+- An async child's result arrives by itself, after your current tool calls or as a new turn when you are idle. Do not poll for it. `subagent({ action: "status", id })` shows one child, `subagent({ action: "steer", id, message })` redirects a running one, `subagent({ action: "stop", id })` ends one, and `subagent({ action: "resume", id, message })` continues a finished one. A status result does not prove a child completed its task.
+- The user watches and steers children with `/subagents-fleet`. Name it when they ask to see the workers.
 - Every child's brief includes the relevant skill, a fixed artifact, the requested scope, and the applicable overrides. Have it read {{adapter}}/overrides.md and {{adapter}}/platform.md; if it lacks the package extension, give it the already resolved paths and overrides in the brief. Do not assume it inherited mode state or instructions.
 - Comment Sicko maps to `delegate` with `context: "fresh"`, given {{root}}/agents/comment-sicko.md as its instructions. Changes still require the user's scope and authorization.
 - For MCP investigations use the optional packaged `pstack-investigator` agent with `async: true` and `context: "fresh"`. Its tool list includes `mcp`; pi-mcp-adapter must be installed in the child environment. See the source note before launching.
-- `run_in_background` maps to the backend's async option. Collect results with the installed wait/status tools. A status poll alone does not resume a stopped parent or prove a child completed.
-- Skill requirements never widen another tool's authorization. If the host requires explicit delegation or Herdr approval, obtain it before creating workers.
+- Skill requirements never widen another tool's authorization. If the host requires explicit delegation approval, obtain it before creating workers.
 
 ## Models
 
@@ -35,7 +38,7 @@ The pstack skills were written for Cursor. On Pi, read them through this map. Pa
 - `AskQuestion`: ask in your reply.
 - The todolist: a checklist in your reply, or a `todo.md` next to the decision trail for long work.
 - `/goal`: an optional pi-goal command, typed by the user; discover its installed tool names rather than assuming they exist. `/loop` for a fixed interval: use pi-subagents scheduling only if its installed schema exposes it. With neither available, make bounded progress and report that automatic wakeup is unavailable. Never promise a tick that nothing will fire, or add a scheduler dependency merely to handle a small task.
-- `cursor-team-kit`: `/deslop` is the project's own lint and format tools. `control-cli` is bash, with tmux or a herdr pane for interactive TUIs. `control-ui` is in notes/browser.md.
+- `cursor-team-kit`: `/deslop` is the project's own lint and format tools. `control-cli` is bash, with tmux for interactive TUIs. `control-ui` is in notes/browser.md.
 - Cursor's built-in `create-skill`: the Agent Skills format (a directory with `SKILL.md` and `name` and `description` frontmatter) plus playbooks/authoring-a-skill.md. Cursor's built-in `babysit` skill does not exist here. Use playbooks/babysit.md.
 - MCP servers in Cursor's `mcps/` folder: the `mcp` tool from pi-mcp-adapter. See notes/sources.md.
 - Image generation (teach): a mermaid diagram or an ASCII sketch.
@@ -43,4 +46,4 @@ The pstack skills were written for Cursor. On Pi, read them through this map. Pa
 - `scripts/watch-pr` and `scripts/orch` need `bun`. The orch frontier needs Graphite's `gt`. If one is missing, say so and use `gh pr checks --watch` and `gh pr view --json`, or the playbook's own fallback.
 - The help skill (poteto-help, typed here as `/skill:pstack-help`) answers for Cursor. On Pi, install is `pi install -l <package>` then `/reload`. The mode that stays on is `/pstack`, left with `/pstack off`; Custom Modes and Option+Enter do not exist. Users type a skill as `/skill:pstack-<name>`, except `/skill:pstack` (poteto-mode), `/skill:pstack-setup`, and `/skill:pstack-teach-me`. Its README and `docs/guide/` links are not shipped: point to {{root}}/README.md, {{root}}/docs/install.md, and {{root}}/docs/coverage.md, and give the upstream guide's public URL only as Cursor background. `make-bot-ui` is not in this package.
 - A run's built-in PR tool does not exist here. Use the resolved forge.
-- "Cursor restart" is a Pi restart or `/reload`. "Cursor dashboard" is `subagent({ action: "status" })` or `herdr agent list`.
+- "Cursor restart" is a Pi restart or `/reload`. "Cursor dashboard" is `/subagents-fleet` for the user and `subagent({ action: "status" })` for you.
