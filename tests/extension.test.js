@@ -20,6 +20,9 @@ async function load() {
   const statuses = [];
   const notifications = [];
   const sent = [];
+  const tools = new Map();
+  let activeTools = ["read", "bash", "edit", "write"];
+  const widgets = [];
   // The stub mirrors where Pi actually puts each method: sendUserMessage and
   // appendEntry are on the extension API, not on a handler's ctx. Getting this
   // wrong makes a broken call pass here and fail in a real session.
@@ -28,6 +31,12 @@ async function load() {
     appendEntry: (customType, data) => entries.push({ type: "custom", customType, data }),
     registerCommand: (name, command) => commands.set(name, command),
     sendUserMessage: (text, options) => sent.push({ text, options }),
+    registerTool: (tool) => {
+      tools.set(tool.name, tool);
+      if (tool.defaultActive !== false) activeTools = [...activeTools, tool.name];
+    },
+    getActiveTools: () => activeTools,
+    setActiveTools: (names) => { activeTools = names; },
   };
   factory(pi);
   const ctx = {
@@ -36,8 +45,12 @@ async function load() {
     ui: {
       setStatus: (key, value) => statuses.push([key, value]),
       notify: (text) => notifications.push(text),
+      setWidget: (key, lines) => widgets.push([key, lines]),
     },
   };
+  const widget = () => widgets.at(-1)?.[1];
+  const active = () => activeTools;
+  const plan = (params) => tools.get("pstack_plan").execute("call-1", params, undefined, undefined, ctx);
   const turn = (sections = {}) => {
     const event = { systemPromptOptions: { sections } };
     handlers.get("before_agent_start")(event);
@@ -51,7 +64,7 @@ async function load() {
       isError: false,
     });
   const command = commands.get("pstack");
-  return { handlers, entries, statuses, notifications, sent, ctx, turn, read, command };
+  return { handlers, entries, statuses, notifications, sent, ctx, turn, read, command, widget, active, plan };
 }
 
 const branchOf = (...entries) => ({ sessionManager: { getBranch: () => entries } });
@@ -232,6 +245,7 @@ test("the reminder stays small instead of resending the entry skill", async () =
   const text = turn().pstack_mode;
   assert.ok(text.length < 1000, `the reminder stays short (${text.length} chars)`);
   assert.match(text, /after compaction/, "read again when compaction removed the skill, not every turn");
+  assert.match(text, /pstack_plan/, "the reminder keeps the console plan current");
   assert.doesNotMatch(text, /^# |\n## /, "the skill body is not pasted into the prompt");
 });
 
@@ -405,4 +419,108 @@ test("a command queued by another extension still loads the adapter", async () =
   handlers.get("input")({ text: "/skill:pstack-why why?", source: "extension" });
   assert.ok(turn().pstack_adapter);
   assert.equal(turn().pstack_mode, undefined);
+});
+
+const readIn = (handlers, ctx, path) =>
+  handlers.get("tool_result")({ toolName: "read", input: { path }, content: [{ type: "text", text: "body" }], isError: false }, ctx);
+const widgetResult = (result) => result.content[0].text;
+const steps = (...statuses) => statuses.map((status, i) => ({ text: `step ${i + 1}`, status }));
+
+test("the plan tool stays out of the model's tool list until pstack is used, then stays in", async () => {
+  const { handlers, active, ctx, turn } = await load();
+  turn();
+  assert.ok(!active().includes("pstack_plan"), "a session that never uses pstack does not carry the schema");
+  handlers.get("input")({ text: "/skill:pstack-how what is this", source: "interactive" }, ctx);
+  assert.ok(active().includes("pstack_plan"));
+  handlers.get("input")({ text: "/skill:pstack-tdd fix", source: "interactive" }, ctx);
+  assert.equal(active().filter((name) => name === "pstack_plan").length, 1, "activation is idempotent");
+
+  const resumed = await load();
+  resumed.handlers.get("session_start")({}, { ...resumed.ctx, ...branchOf(custom("pstack-adapter", { enabled: true })) });
+  assert.ok(resumed.active().includes("pstack_plan"), "a resumed pstack session gets the tool back");
+});
+
+test("a reported plan shows above the editor, windowed on the current step; finishing collapses it and an empty plan clears it", async () => {
+  const { plan, widget } = await load();
+  const result = await plan({ playbook: "feature", steps: steps("done", "done", "done", "active", "pending", "pending", "pending", "pending", "pending", "pending") });
+  const lines = widget();
+  assert.equal(lines[0], "pstack · feature · 3/10");
+  assert.ok(lines.length <= 10, "Pi shows at most ten widget lines");
+  assert.equal(lines[1], "✓ step 3", "one finished step stays in view before the current one");
+  assert.equal(lines[2], "▶ step 4");
+  assert.match(result.content[0].text, /3\/10/);
+  assert.match(result.content[0].text, /Current step: "step 4"\. When it finishes, call pstack_plan again/, "the result asks for the next update while steps remain");
+  assert.deepEqual(result.details.steps.length, 10, "the plan is kept in the result for resume");
+
+  await plan({ playbook: "feature", steps: [{ text: "write the pin", status: "skipped", note: "no behavior change" }, { text: "ship", status: "done" }] });
+  assert.deepEqual(widget(), ["pstack · feature · 2/2"], "a finished plan is one line");
+  assert.doesNotMatch(widgetResult(await plan({ playbook: "feature", steps: steps("done") })), /call pstack_plan again/, "a finished plan asks for nothing more");
+
+  await plan({ steps: [] });
+  assert.equal(widget(), undefined, "an empty plan with no skills in use removes the widget");
+});
+
+test("reading a pstack file names its skill and what the skill does; a playbook read names the playbook", async () => {
+  const { handlers, ctx, widget } = await load();
+  readIn(handlers, ctx, join(skillsDir, "architect", "SKILL.md"));
+  assert.match(widget()[0], /^skills: pstack-architect$/);
+  assert.match(widget()[1], /^\s+先设计再实现/, "the user sees the skill's own description");
+
+  readIn(handlers, ctx, join(skillsDir, "architect", "references", "design-red-flags.md"));
+  assert.equal(widget()[0], "skills: pstack-architect", "a reference counts as its skill, not a new step");
+
+  readIn(handlers, ctx, join(skillsDir, "interrogate", "references", "rubric.md"));
+  readIn(handlers, ctx, join(skillsDir, "poteto-mode", "playbooks", "feature.md"));
+  readIn(handlers, ctx, join(skillsDir, "tdd", "SKILL.md"));
+  assert.equal(widget()[0], "skills: pstack-interrogate › playbook feature › pstack-tdd", "the last three are kept");
+
+  readIn(handlers, ctx, "/etc/hosts");
+  assert.equal(widget()[0], "skills: pstack-interrogate › playbook feature › pstack-tdd", "files outside the package change nothing");
+});
+
+test("typing a pstack command names its skill, the entry skill included", async () => {
+  const { handlers, ctx, widget } = await load();
+  handlers.get("input")({ text: "/skill:pstack fix the total", source: "interactive" }, ctx);
+  assert.equal(widget()[0], "skills: pstack");
+  handlers.get("input")({ text: "/skill:pstack-teach-me\nthis module", source: "interactive" }, ctx);
+  assert.equal(widget()[0], "skills: pstack › pstack-teach-me");
+});
+
+test("a resumed session or branch switch shows that branch's last reported plan", async () => {
+  const { handlers, ctx, widget } = await load();
+  const reported = (playbook, list) => ({ type: "message", message: { role: "toolResult", toolName: "pstack_plan", details: { playbook, steps: list } } });
+  handlers.get("session_start")({}, { ...ctx, ...branchOf(reported("bug-fix", steps("done", "active")), reported("bug-fix", steps("done", "done", "active"))) });
+  assert.deepEqual(widget(), ["pstack · bug-fix · 2/3", "✓ step 1", "✓ step 2", "▶ step 3"], "a short plan shows every step");
+
+  handlers.get("session_tree")({}, { ...ctx, ...branchOf(reported("bug-fix", steps("active"))) });
+  assert.deepEqual(widget(), ["pstack · bug-fix · 0/1", "▶ step 1"]);
+
+  handlers.get("session_tree")({}, { ...ctx, ...branchOf() });
+  assert.equal(widget(), undefined, "a branch without a plan shows none");
+});
+
+test("an open step is named again after every sixth other tool result, until the model reports the plan", async () => {
+  const { handlers, ctx, plan } = await load();
+  const result = (toolName = "bash", input = {}) =>
+    handlers.get("tool_result")({ toolName, input, content: [{ type: "text", text: "ok" }], isError: false }, ctx);
+  const nudged = (r) => r?.content.at(-1).text.includes("still shows step");
+
+  for (let i = 0; i < 6; i += 1) assert.ok(!nudged(result()), "no plan, no reminder");
+
+  await plan({ playbook: "bug-fix", steps: [{ text: "复现问题", status: "active" }, { text: "修复", status: "pending" }] });
+  for (let i = 0; i < 5; i += 1) assert.ok(!nudged(result()), "five calls stay quiet");
+  const sixth = result();
+  assert.ok(nudged(sixth));
+  assert.match(sixth.content.at(-1).text, /"复现问题" as current\. If it finished, call pstack_plan/);
+  assert.equal(sixth.content[0].text, "ok", "the tool's own output is kept");
+  for (let i = 0; i < 5; i += 1) assert.ok(!nudged(result()), "the count starts over after a reminder");
+
+  await plan({ playbook: "bug-fix", steps: [{ text: "复现问题", status: "done" }, { text: "修复", status: "active" }] });
+  for (let i = 0; i < 5; i += 1) result();
+  const withSkill = result("read", { path: join(skillsDir, "tdd", "SKILL.md") });
+  assert.ok(nudged(withSkill), "a report restarts the count");
+  assert.ok(withSkill.content.some((b) => b.text.includes("# Operator overrides")), "a skill read keeps its own additions next to the reminder");
+
+  await plan({ playbook: "bug-fix", steps: [{ text: "复现问题", status: "done" }, { text: "修复", status: "done" }] });
+  for (let i = 0; i < 12; i += 1) assert.ok(!nudged(result()), "a finished plan asks for nothing");
 });

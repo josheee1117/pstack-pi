@@ -36,7 +36,7 @@ The pstack skills were written for Cursor. On Pi, read them through this map. Pa
 ## Cursor tools and commands
 
 - `AskQuestion`: ask in your reply.
-- The todolist: a checklist in your reply, or a `todo.md` next to the decision trail for long work.
+- The todolist is the `pstack_plan` tool, which shows it above the user's editor. Call it when you open the todolist, with the playbook name and every step in order. Give every playbook step its own short label, in order and without merging steps, in the language the user writes in, such as 梳理现有代码 or 写结论. The full step stays in the playbook file, and you still follow it. Call it again with the full list each time a step starts, finishes, or is skipped, and put a skipped step's reason in its note. Without the tool, keep the checklist in a `todo.md` next to the decision trail.
 - `/goal`: an optional pi-goal command, typed by the user; discover its installed tool names rather than assuming they exist. `/loop` for a fixed interval: use pi-subagents scheduling only if its installed schema exposes it. With neither available, make bounded progress and report that automatic wakeup is unavailable. Never promise a tick that nothing will fire, or add a scheduler dependency merely to handle a small task.
 - `cursor-team-kit`: `/deslop` is the project's own lint and format tools. `control-cli` is bash, with tmux for interactive TUIs. `control-ui` is in notes/browser.md.
 - Cursor's built-in `create-skill`: the Agent Skills format (a directory with `SKILL.md` and `name` and `description` frontmatter) plus playbooks/authoring-a-skill.md. Cursor's built-in `babysit` skill does not exist here. Use playbooks/babysit.md.

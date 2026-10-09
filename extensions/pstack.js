@@ -1,5 +1,5 @@
 /**
- * The package's one extension. Three prompt concerns, all things a skill
+ * The package's one extension. Four concerns, all things a skill
  * cannot carry.
  *
  * 1. Writing rules, always on. They apply to every reply, not to a matched
@@ -13,6 +13,9 @@
  * 3. The pstack mode, opt in. Pi has no mode concept, so entering the entry
  *    skill once has to keep applying on later turns. The mode holds a session
  *    flag and injects a short reminder while it is on.
+ * 4. A console view of the work. Upstream keeps its playbook steps in Cursor's
+ *    todolist, which Pi lacks, so the pstack_plan tool takes that list and a
+ *    widget above the editor shows it with the pstack skills in use.
  *
  * Newer Pi versions support structured sections; original Pi versions use
  * the systemPrompt fallback below. Neither path repeats a full skill body.
@@ -23,7 +26,7 @@
  * the subset that fires on an ordinary reply; the section points at the full
  * catalog for long-form work. Keep the two in sync.
  */
-import { readFileSync, realpathSync } from "node:fs";
+import { readdirSync, readFileSync, realpathSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -48,15 +51,87 @@ const ANY_COMMAND = /^\/skill:pstack(?:-[a-z0-9-]+)?(?:\s|$)/;
 
 // Read paths may be relative or reach the package through a symlink. The
 // package paths above come from import.meta.url, which Node resolves to the
-// real path, so compare real paths.
-const inSkills = (path, cwd) => {
+// real path, so compare real paths. Returns the path inside skills/, if any.
+const skillFile = (path, cwd) => {
   try {
     const child = relative(realpathSync(SKILLS), realpathSync(resolve(cwd, path)));
-    return child !== "" && child !== ".." && !child.startsWith(`..${sep}`) && !isAbsolute(child);
+    return child !== "" && child !== ".." && !child.startsWith(`..${sep}`) && !isAbsolute(child) ? child : undefined;
   } catch {
-    return false;
+    return undefined;
   }
 };
+
+// Registered name and description of every packaged skill, by directory and
+// by name. Read once, on the first skill the console has to label.
+let skillIndex;
+const skillInfo = (key) => {
+  if (!skillIndex) {
+    skillIndex = new Map();
+    for (const dir of readdirSync(SKILLS)) {
+      let head;
+      try { head = readFileSync(join(SKILLS, dir, "SKILL.md"), "utf8").split("\n---")[0]; } catch { continue; }
+      const info = {
+        name: head.match(/^name:\s*(.+)$/m)?.[1].trim() ?? dir,
+        about: head.match(/^description:\s*"?(.*?)"?\s*$/m)?.[1] ?? "",
+      };
+      skillIndex.set(dir, info).set(info.name, info);
+    }
+  }
+  return skillIndex.get(key);
+};
+
+// What a read of a file inside skills/ tells the user: a playbook of the entry
+// skill, or the skill that owns the file (its SKILL.md or a reference).
+const skillOfFile = (child) => {
+  const [dir, sub, file] = child.split(sep);
+  if (dir === "poteto-mode" && sub === "playbooks" && file) return { name: `playbook ${file.replace(/\.md$/, "")}`, about: "" };
+  return skillInfo(dir);
+};
+
+// The console widget. Pi shows at most ten lines of a string widget and wraps
+// long ones, so steps are clipped to the terminal width and windowed around
+// the current step.
+const PLAN_TOOL = "pstack_plan";
+const WIDGET = "pstack";
+const STEP_LINES = 7;
+const NUDGE_EVERY = 6;
+const FINISHED = new Set(["done", "skipped"]);
+const ICON = { done: "✓", active: "▶", pending: "○", skipped: "–" };
+// ponytail: counts every non-ASCII character as two columns, so CJK text fits;
+// switch to a real display-width table if symbols start clipping early.
+const clip = (text) => {
+  const max = Math.max(20, (process.stdout.columns || 80) - 4);
+  let width = 0;
+  let out = "";
+  for (const ch of text.replace(/\s+/g, " ")) {
+    width += ch.charCodeAt(0) > 0x7f ? 2 : 1;
+    if (width > max) return `${out}…`;
+    out += ch;
+  }
+  return out;
+};
+
+function widgetLines(plan, recent) {
+  const lines = [];
+  const { steps } = plan;
+  if (steps.length) {
+    const finished = steps.filter((s) => FINISHED.has(s.status)).length;
+    lines.push(clip(`pstack · ${plan.playbook || "plan"} · ${finished}/${steps.length}`));
+    if (finished < steps.length) {
+      const active = steps.findIndex((s) => s.status === "active");
+      const at = active >= 0 ? active : steps.findIndex((s) => !FINISHED.has(s.status));
+      const start = Math.max(0, Math.min(at - 1, steps.length - STEP_LINES));
+      for (const s of steps.slice(start, start + STEP_LINES)) {
+        lines.push(clip(`${ICON[s.status] ?? ICON.pending} ${s.text}${s.note ? ` (${s.note})` : ""}`));
+      }
+    }
+  }
+  if (recent.length) {
+    lines.push(clip(`skills: ${recent.map((s) => s.name).join(" › ")}`));
+    if (recent.at(-1).about) lines.push(clip(`  ${recent.at(-1).about}`));
+  }
+  return lines;
+}
 
 const fill = (text) =>
   text
@@ -110,6 +185,8 @@ const MODE_TEXT = [
   "",
   `On a new task, if a playbook matches or the work needs rigor, apply the mode's skill, ${ENTRY_SKILL}. Read it if its text is missing from your current context, including after compaction. Reuse it while present. On a casual turn, or when the user opts out, work normally.`,
   "",
+  `While you follow a playbook, the user watches its steps through ${PLAN_TOOL}. Call it again each time a step finishes, before you start the next one.`,
+  "",
   "Use `/pstack off` to turn the persistent mode off.",
 ].join("\n");
 
@@ -127,27 +204,100 @@ function sessionNote(ctx) {
 export default function pstack(pi) {
   let modeOn = false;
   let adapterOn = false;
+  // The playbook the model reported through pstack_plan, and the last few
+  // pstack skills this session used. Both feed the console widget.
+  let plan = { playbook: "", steps: [] };
+  let recent = [];
+  // Tool results since the model last reported the plan.
+  let sincePlan = 0;
 
   const showMode = (ctx) => {
     if (!ctx?.ui?.setStatus) return;
     ctx.ui.setStatus("pstack", modeOn ? "pstack: mode on" : undefined);
   };
 
+  const showWidget = (ctx) => {
+    if (!ctx?.ui?.setWidget) return;
+    const lines = widgetLines(plan, recent);
+    ctx.ui.setWidget(WIDGET, lines.length ? lines : undefined);
+  };
+
+  const noteSkill = (skill, ctx) => {
+    if (!skill) return;
+    if (recent.at(-1)?.name !== skill.name) recent = [...recent, skill].slice(-3);
+    showWidget(ctx);
+  };
+
+  // The plan tool stays out of the model's tool list until the session uses
+  // pstack, so a session that never does pays nothing for its schema.
+  const activatePlan = () => {
+    const active = pi.getActiveTools?.();
+    if (active && !active.includes(PLAN_TOOL)) pi.setActiveTools([...active, PLAN_TOOL]);
+  };
+
   const useAdapter = () => {
     if (adapterOn) return;
     adapterOn = true;
     pi.appendEntry(ADAPTER_ENTRY, { enabled: true });
+    activatePlan();
   };
+
+  pi.registerTool({
+    name: PLAN_TOOL,
+    label: "pstack plan",
+    description:
+      "Show the pstack playbook you are following in the user's console. Call it when you open a playbook's todolist, with every playbook step in order, one short label per step in the user's language. Do not merge steps. Call it again with the full list whenever a step starts, finishes, or is skipped. Pass an empty steps list when the work ends.",
+    parameters: {
+      type: "object",
+      properties: {
+        playbook: { type: "string", description: "The playbook or workflow name, such as feature or bug-fix." },
+        steps: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              text: { type: "string", description: "A short label for the step, in the language the user writes in." },
+              status: { type: "string", enum: ["pending", "active", "done", "skipped"] },
+              note: { type: "string", description: "Optional: the skill the step uses, or why it was skipped." },
+            },
+            required: ["text", "status"],
+          },
+        },
+      },
+      required: ["steps"],
+    },
+    defaultActive: false,
+    async execute(_id, params, _signal, _onUpdate, ctx) {
+      plan = { playbook: params.playbook ?? "", steps: params.steps };
+      sincePlan = 0;
+      showWidget(ctx);
+      const finished = plan.steps.filter((s) => FINISHED.has(s.status)).length;
+      const next = plan.steps.find((s) => s.status === "active") ?? plan.steps.find((s) => !FINISHED.has(s.status));
+      const text = next
+        ? `Plan shown: ${finished}/${plan.steps.length} steps finished. Current step: ${JSON.stringify(next.text)}. When it finishes, call ${PLAN_TOOL} again before you start the next step.`
+        : `Plan shown: ${finished}/${plan.steps.length} steps finished.`;
+      return { content: [{ type: "text", text }], details: plan };
+    },
+  });
 
   // The mode outlives a turn but not by default a session. Persisting it in a
   // custom entry is what makes "enter once" true across a resume, and the flag
   // is rebuilt from the branch rather than from a file this extension owns.
-  // The adapter flag rides along the same way.
+  // The adapter flag rides along the same way, and the plan comes back from
+  // the branch's last pstack_plan result.
   const restoreState = (_event, ctx) => {
     modeOn = false;
     adapterOn = false;
+    plan = { playbook: "", steps: [] };
+    sincePlan = 0;
+    // ponytail: the recent-skills line starts empty after a resume or branch
+    // switch; rebuild it from the branch's read calls if that gap matters.
+    recent = [];
     try {
       for (const entry of ctx.sessionManager.getBranch()) {
+        if (entry.type === "message" && entry.message?.role === "toolResult" && entry.message.toolName === PLAN_TOOL) {
+          if (Array.isArray(entry.message.details?.steps)) plan = entry.message.details;
+        }
         if (entry.type !== "custom") continue;
         if (entry.customType === MODE_ENTRY) modeOn = entry.data?.enabled === true;
         if (entry.customType === ADAPTER_ENTRY) adapterOn = true;
@@ -156,7 +306,9 @@ export default function pstack(pi) {
       // A session manager that cannot be read leaves both off; the commands
       // and the first skill read still turn them on for this session.
     }
+    if (adapterOn) activatePlan();
     showMode(ctx);
+    showWidget(ctx);
   };
   pi.on("session_start", restoreState);
   pi.on("session_tree", restoreState);
@@ -167,7 +319,10 @@ export default function pstack(pi) {
   // after the skill body. Ending that text with the operator overrides lets
   // those rules follow the upstream skill instead of being buried by it.
   pi.on("input", (event, ctx) => {
-    if (ANY_COMMAND.test(event.text)) useAdapter();
+    if (ANY_COMMAND.test(event.text)) {
+      useAdapter();
+      noteSkill(skillInfo(event.text.match(/^\/skill:(\S+)/)[1]), ctx);
+    }
     if (ENTRY_COMMAND.test(event.text) && !modeOn) {
       modeOn = true;
       pi.appendEntry(MODE_ENTRY, { enabled: true });
@@ -180,7 +335,7 @@ export default function pstack(pi) {
   // A skill file read without a command (a subagent, or the model following a
   // reference) has not had the adapter yet. The section only lands on the next
   // prompt, so the first such read carries the adapter in its own result.
-  pi.on("tool_result", (event, ctx) => {
+  const readResult = (event, ctx) => {
     if (event.toolName !== "read" || event.isError) return;
     const path = String(event.input?.path ?? "");
     const cwd = ctx?.cwd ?? process.cwd();
@@ -190,7 +345,9 @@ export default function pstack(pi) {
       useAdapter();
       return { content: event.content.map((block) => block.type === "text" ? { ...block, text: fill(block.text) } : block) };
     }
-    if (!inSkills(path, cwd)) return;
+    const child = skillFile(path, cwd);
+    if (!child) return;
+    noteSkill(skillOfFile(child), ctx);
     if (!adapterOn) {
       useAdapter();
       return { content: [...event.content, { type: "text", text: `\n\n${ADAPTER_TEXT}${sessionNote(ctx)}` }] };
@@ -198,6 +355,24 @@ export default function pstack(pi) {
     const seen = event.content.map((block) => block.type === "text" ? block.text : "").join("\n");
     if (hasOverrides(seen)) return;
     return { content: [...event.content, { type: "text", text: `\n\n${OVERRIDES_TEXT}` }] };
+  };
+
+  // Models tend to report a plan at its start and end and skip the steps in
+  // between. While a step is open, every NUDGE_EVERY-th other tool result
+  // reminds the model which step the user sees as current.
+  const planNudge = (event) => {
+    if (event.toolName === PLAN_TOOL) return;
+    const current = plan.steps.find((s) => s.status === "active") ?? plan.steps.find((s) => !FINISHED.has(s.status));
+    if (!current || ++sincePlan < NUDGE_EVERY) return;
+    sincePlan = 0;
+    return `\n\n[pstack] The user's console still shows step ${JSON.stringify(current.text)} as current. If it finished, call ${PLAN_TOOL} before you continue.`;
+  };
+
+  pi.on("tool_result", (event, ctx) => {
+    const own = readResult(event, ctx);
+    const nudge = planNudge(event);
+    if (!nudge) return own;
+    return { content: [...(own?.content ?? event.content), { type: "text", text: nudge }] };
   });
 
   pi.on("before_agent_start", (event, ctx) => {
