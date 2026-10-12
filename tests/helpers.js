@@ -76,9 +76,11 @@ export function expectedName(dir) {
 
 // Original Pi warns about directory/name mismatch but still registers these
 // namespaced commands. Do not suppress collisions or any other diagnostic.
+// A full resource loader also scans global skill roots (~/.agents/skills,
+// ~/.codex/skills). A diagnostic about a skill outside this package is not ours.
 export function unexpectedSkillDiagnostics(diagnostics) {
   const allowed = new Set(upstreamSkillDirs.map((dir) => `name "${expectedName(dir)}" does not match parent directory "${dir}"`));
-  return diagnostics.filter((d) => !allowed.has(d.message));
+  return diagnostics.filter((d) => String(d.path ?? "").startsWith(skillsDir) && !allowed.has(d.message));
 }
 
 // Upstream pstack 0.15.18's skills, minus make-bot-ui (Cursor's Grok Bot runtime).
