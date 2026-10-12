@@ -149,9 +149,9 @@ async function main() {
   while (args.length) {
     const arg = args.shift();
     if (arg === "--prs") opts.prs = true;
-    else if (arg === "--session-dir" || arg === "--base") {
-      if (!args.length || args[0].startsWith("--")) throw new Error(`${arg} needs a value`);
-      opts[arg === "--base" ? "base" : "sessionDir"] = args.shift();
+    else if (arg === "--session-dir" || arg === "--base" || arg === "-b") {
+      if (!args.length || args[0].startsWith("-")) throw new Error(`${arg} needs a value`);
+      opts[arg === "--session-dir" ? "sessionDir" : "base"] = args.shift();
     } else if (arg.startsWith("-") || repo !== undefined) throw new Error(`Unknown argument: ${arg}`);
     else repo = arg;
   }

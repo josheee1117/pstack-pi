@@ -135,7 +135,7 @@ test("a closed PR is never deletion evidence and audit leaves git and worktree s
   const old = new Date(Date.now() - 20 * 86_400_000);
   utimesSync(oldFile, old, old);
   const before = { refs: git(f.repo, "show-ref"), trees: git(f.repo, "worktree", "list", "--porcelain"), index: readFileSync(join(f.repo, ".git", "index")), file: readFileSync(join(f.work, "file.txt")) };
-  const result = spawnSync("bash", [join(repoRoot, "skills", "poteto-mode", "scripts", "worktree-audit.sh"), f.repo, "--base", "main", "--prs"], {
+  const result = spawnSync("bash", [join(repoRoot, "skills", "poteto-mode", "scripts", "worktree-audit.sh"), "-b", "main", f.repo, "--prs"], {
     encoding: "utf8", env: envFor(f, { PATH: `${bin}${delimiter}${process.env.PATH}` }),
   });
   assert.equal(result.status, 0, result.stderr);
