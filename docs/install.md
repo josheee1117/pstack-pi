@@ -4,7 +4,7 @@
 
 本包没有 npm 运行时依赖，不携带模型密钥、不写死开发者家目录、不自动安装外部工具。
 
-当前版本的测试和真实界面检查都在 `@earendil-works/pi-coding-agent 1.1.0` 上完成，50 个技能加载时没有任何诊断警告。控制台视图用到 `registerTool`、`setActiveTools`、`setWidget` 和工具的 `defaultActive` 选项。按代码推断，不认识 `defaultActive` 的 Pi 会让 `pstack_plan` 一直留在工具列表里，没有 `setWidget` 的 Pi 不显示视图；这两点没有在老版本上实测。有 `systemPromptOptions.sections` 时使用分段提示；缺少它时使用 `systemPrompt` 回退。回退路径有本地测试，不代表所有历史版本都兼容。
+当前版本的测试和真实界面检查都在 `@earendil-works/pi-coding-agent 1.1.0` 上完成，51 个技能加载时没有任何诊断警告。控制台视图用到 `registerTool`、`setActiveTools`、`setWidget` 和工具的 `defaultActive` 选项。按代码推断，不认识 `defaultActive` 的 Pi 会让 `pstack_plan` 一直留在工具列表里，没有 `setWidget` 的 Pi 不显示视图；这两点没有在老版本上实测。有 `systemPromptOptions.sections` 时使用分段提示；缺少它时使用 `systemPrompt` 回退。回退路径有本地测试，不代表所有历史版本都兼容。
 
 **本包早期版本在原版 Pi 0.73.1 上检查时，会提示 name 与目录名不同的警告（当时 46 条），但仍加载并展开这些命令。**这是保留上游目录、使用 `pstack-` 命令前缀的取舍；没有隐藏或篡改宿主诊断。earendil 0.87.0 和 1.1.0 不报这类警告。真正的重名、文件缺失和扩展加载错误仍须修复。不能把这一状态描述成“所有 Pi 版本零警告无缝安装”。
 
