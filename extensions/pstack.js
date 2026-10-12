@@ -82,10 +82,11 @@ const skillInfo = (key) => {
 
 // What a read of a file inside skills/ tells the user: a playbook of the entry
 // skill, or the skill that owns the file (its SKILL.md or a reference).
+const asSeen = (info) => info && { name: shortName(info.name), about: info.about };
 const skillOfFile = (child) => {
   const [dir, sub, file] = child.split(sep);
-  if (dir === "poteto-mode" && sub === "playbooks" && file) return { name: `playbook ${file.replace(/\.md$/, "")}`, about: "" };
-  return skillInfo(dir);
+  if (dir === "poteto-mode" && sub === "playbooks" && file) return { name: `流程 ${file.replace(/\.md$/, "")}`, about: "" };
+  return asSeen(skillInfo(dir));
 };
 
 // The console widget. Pi shows at most ten lines of a string widget and wraps
@@ -100,37 +101,69 @@ const FINISHED = new Set(["done", "skipped"]);
 const ICON = { done: "✓", active: "▶", pending: "○", skipped: "–" };
 // ponytail: counts every non-ASCII character as two columns, so CJK text fits;
 // switch to a real display-width table if symbols start clipping early.
-const clip = (text) => {
-  const max = Math.max(20, (process.stdout.columns || 80) - 4);
-  let width = 0;
+const cols = (text) => [...text].reduce((width, ch) => width + (ch.charCodeAt(0) > 0x7f ? 2 : 1), 0);
+const lineWidth = () => Math.max(20, (process.stdout.columns || 80) - 4);
+const cut = (text, max) => {
+  const flat = text.replace(/\s+/g, " ");
+  if (cols(flat) <= max) return flat;
   let out = "";
-  for (const ch of text.replace(/\s+/g, " ")) {
-    width += ch.charCodeAt(0) > 0x7f ? 2 : 1;
-    if (width > max) return `${out}…`;
+  for (const ch of flat) {
+    if (cols(out + ch) > max - 2) return `${out}…`;
     out += ch;
   }
   return out;
 };
+const clip = (text) => cut(text, lineWidth());
 
-function widgetLines(plan, recent) {
+// A step's skill as the model reported it, shown by its short name: the
+// registered name without the pstack- or pstack-principle- prefix. Names
+// that match no packaged skill keep a "?" so a wrong name stands out.
+const BUILT_IN = "流程自带";
+const BUILT_IN_WORDS = new Set([BUILT_IN, "playbook", "none", "-"]);
+const shortName = (name) => name.replace(/^pstack-(principle-)?/, "");
+const skillTag = (skill) =>
+  String(skill ?? "")
+    .split("+")
+    .map((part) => part.trim().replace(/^\/?(skill:)?/, ""))
+    .filter(Boolean)
+    .map((part) => {
+      if (BUILT_IN_WORDS.has(part.toLowerCase())) return BUILT_IN;
+      const info = skillInfo(part) ?? skillInfo(`pstack-${part}`) ?? skillInfo(`pstack-principle-${part}`);
+      return info ? shortName(info.name) : `${part}?`;
+    })
+    .join(" + ");
+
+// Steps on the left, their skill in a column on the right. The step text is
+// cut first so the skill stays readable on a narrow terminal.
+const table = (rows) => {
+  const max = lineWidth();
+  const tagWidth = Math.min(Math.max(0, ...rows.map(([, tag]) => cols(tag))), Math.floor(max / 2));
+  const lefts = rows.map(([left]) => cut(left, tagWidth ? max - tagWidth - 2 : max));
+  const at = Math.max(...lefts.map(cols)) + 2;
+  return rows.map(([, tag], i) => (tag ? `${lefts[i]}${" ".repeat(at - cols(lefts[i]))}${cut(tag, tagWidth)}` : lefts[i]));
+};
+
+function widgetLines(plan, last) {
   const lines = [];
   const { steps } = plan;
   if (steps.length) {
     const finished = steps.filter((s) => FINISHED.has(s.status)).length;
-    lines.push(clip(`pstack · ${plan.playbook || "plan"} · ${finished}/${steps.length}`));
-    if (finished < steps.length) {
+    const title = `pstack · ${plan.playbook || "plan"} · ${finished}/${steps.length}`;
+    if (finished === steps.length) {
+      lines.push(clip(`${title} ✓`));
+    } else {
       const active = steps.findIndex((s) => s.status === "active");
       const at = active >= 0 ? active : steps.findIndex((s) => !FINISHED.has(s.status));
+      const using = skillTag(steps[at].skill);
+      lines.push(clip(using ? `${title} · 正在用 ${using}` : title));
       const start = Math.max(0, Math.min(at - 1, steps.length - STEP_LINES));
-      for (const s of steps.slice(start, start + STEP_LINES)) {
-        lines.push(clip(`${ICON[s.status] ?? ICON.pending} ${s.text}${s.note ? ` (${s.note})` : ""}`));
-      }
+      lines.push(...table(steps.slice(start, start + STEP_LINES).map((s) => [
+        `${ICON[s.status] ?? ICON.pending} ${s.text}`,
+        s.status === "skipped" ? (s.note ? `跳过：${s.note}` : "跳过") : skillTag(s.skill),
+      ])));
     }
   }
-  if (recent.length) {
-    lines.push(clip(`skills: ${recent.map((s) => s.name).join(" › ")}`));
-    if (recent.at(-1).about) lines.push(clip(`  ${recent.at(-1).about}`));
-  }
+  if (last) lines.push(clip(`刚读取 ${last.name}${last.about ? `：${last.about}` : ""}`));
   return lines;
 }
 
@@ -205,10 +238,10 @@ function sessionNote(ctx) {
 export default function pstack(pi) {
   let modeOn = false;
   let adapterOn = false;
-  // The playbook the model reported through pstack_plan, and the last few
-  // pstack skills this session used. Both feed the console widget.
+  // The playbook the model reported through pstack_plan, and the pstack skill
+  // this session read last. Both feed the console widget.
   let plan = { playbook: "", steps: [] };
-  let recent = [];
+  let last;
   // Tool results and reminders since the model last reported the plan. A
   // plan whose reminders go unanswered NUDGE_LIMIT times counts as abandoned.
   let sincePlan = 0;
@@ -226,13 +259,13 @@ export default function pstack(pi) {
 
   const showWidget = (ctx) => {
     if (!ctx?.ui?.setWidget) return;
-    const lines = widgetLines(plan, recent);
+    const lines = widgetLines(plan, last);
     ctx.ui.setWidget(WIDGET, lines.length ? lines : undefined);
   };
 
   const noteSkill = (skill, ctx) => {
     if (!skill) return;
-    if (recent.at(-1)?.name !== skill.name) recent = [...recent, skill].slice(-3);
+    last = skill;
     showWidget(ctx);
   };
 
@@ -266,7 +299,8 @@ export default function pstack(pi) {
             properties: {
               text: { type: "string", description: "A short label for the step, in the language the user writes in." },
               status: { type: "string", enum: ["pending", "active", "done", "skipped"] },
-              note: { type: "string", description: "Optional: the skill the step uses, or why it was skipped." },
+              skill: { type: "string", description: "The pstack skill this step uses, such as how or tdd. Join several with +. Write 流程自带 when the playbook step itself is the work." },
+              note: { type: "string", description: "Optional: why the step was skipped." },
             },
             required: ["text", "status"],
           },
@@ -298,9 +332,9 @@ export default function pstack(pi) {
     adapterOn = false;
     plan = noPlan();
     resetNudges();
-    // ponytail: the recent-skills line starts empty after a resume or branch
+    // ponytail: the last-read skill line starts empty after a resume or branch
     // switch; rebuild it from the branch's read calls if that gap matters.
-    recent = [];
+    last = undefined;
     try {
       for (const entry of ctx.sessionManager.getBranch()) {
         if (entry.type === "message" && entry.message?.role === "toolResult" && entry.message.toolName === PLAN_TOOL) {
@@ -332,7 +366,7 @@ export default function pstack(pi) {
   pi.on("input", (event, ctx) => {
     if (ANY_COMMAND.test(event.text)) {
       useAdapter();
-      noteSkill(skillInfo(event.text.match(/^\/skill:(\S+)/)[1]), ctx);
+      noteSkill(asSeen(skillInfo(event.text.match(/^\/skill:(\S+)/)[1])), ctx);
     }
     if (ENTRY_COMMAND.test(event.text) && !modeOn) {
       modeOn = true;

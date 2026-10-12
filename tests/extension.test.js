@@ -453,7 +453,7 @@ test("a reported plan shows above the editor, windowed on the current step; fini
   assert.deepEqual(result.details.steps.length, 10, "the plan is kept in the result for resume");
 
   await plan({ playbook: "feature", steps: [{ text: "write the pin", status: "skipped", note: "no behavior change" }, { text: "ship", status: "done" }] });
-  assert.deepEqual(widget(), ["pstack · feature · 2/2"], "a finished plan is one line");
+  assert.deepEqual(widget(), ["pstack · feature · 2/2 ✓"], "a finished plan is one line");
   assert.doesNotMatch(widgetResult(await plan({ playbook: "feature", steps: steps("done") })), /call pstack_plan again/, "a finished plan asks for nothing more");
 
   await plan({ steps: [] });
@@ -463,27 +463,30 @@ test("a reported plan shows above the editor, windowed on the current step; fini
 test("reading a pstack file names its skill and what the skill does; a playbook read names the playbook", async () => {
   const { handlers, ctx, widget } = await load();
   readIn(handlers, ctx, join(skillsDir, "architect", "SKILL.md"));
-  assert.match(widget()[0], /^skills: pstack-architect$/);
-  assert.match(widget()[1], /^\s+先设计再实现/, "the user sees the skill's own description");
+  assert.match(widget()[0], /^刚读取 architect：先设计再实现/, "the user sees the skill's own description");
 
   readIn(handlers, ctx, join(skillsDir, "architect", "references", "design-red-flags.md"));
-  assert.equal(widget()[0], "skills: pstack-architect", "a reference counts as its skill, not a new step");
+  assert.match(widget()[0], /^刚读取 architect：先设计再实现/, "a reference names the same skill");
 
   readIn(handlers, ctx, join(skillsDir, "interrogate", "references", "rubric.md"));
+  assert.match(widget()[0], /^刚读取 interrogate：多模型独立审查/, "a later read replaces the line");
+
   readIn(handlers, ctx, join(skillsDir, "poteto-mode", "playbooks", "feature.md"));
+  assert.equal(widget()[0], "刚读取 流程 feature", "a playbook read names the playbook, with no description");
+
   readIn(handlers, ctx, join(skillsDir, "tdd", "SKILL.md"));
-  assert.equal(widget()[0], "skills: pstack-interrogate › playbook feature › pstack-tdd", "the last three are kept");
+  assert.match(widget()[0], /^刚读取 tdd：测试驱动修复/);
 
   readIn(handlers, ctx, "/etc/hosts");
-  assert.equal(widget()[0], "skills: pstack-interrogate › playbook feature › pstack-tdd", "files outside the package change nothing");
+  assert.match(widget()[0], /^刚读取 tdd：测试驱动修复/, "files outside the package change nothing");
 });
 
 test("typing a pstack command names its skill, the entry skill included", async () => {
   const { handlers, ctx, widget } = await load();
   handlers.get("input")({ text: "/skill:pstack fix the total", source: "interactive" }, ctx);
-  assert.equal(widget()[0], "skills: pstack");
+  assert.match(widget()[0], /^刚读取 pstack：工程工作流入口/);
   handlers.get("input")({ text: "/skill:pstack-teach-me\nthis module", source: "interactive" }, ctx);
-  assert.equal(widget()[0], "skills: pstack › pstack-teach-me");
+  assert.match(widget()[0], /^刚读取 teach-me：把改动或子系统真正讲明白/);
 });
 
 test("a resumed session or branch switch shows that branch's last reported plan", async () => {
