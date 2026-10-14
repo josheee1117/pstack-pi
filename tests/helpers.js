@@ -83,7 +83,7 @@ export function unexpectedSkillDiagnostics(diagnostics) {
   return diagnostics.filter((d) => String(d.path ?? "").startsWith(skillsDir) && !allowed.has(d.message));
 }
 
-// Upstream pstack 0.15.18's skills, minus make-bot-ui (Cursor's Grok Bot runtime).
+// Upstream pstack 0.15.20's skills, minus make-bot-ui (Cursor's Grok Bot runtime).
 export const upstreamSkillDirs = [
   "architect", "arena", "automate-me", "benchmark-checklist", "blast-radius", "bro", "correct",
   "create-verification-skill", "figure-it-out", "how", "interrogate", "maintain-verification-skill",

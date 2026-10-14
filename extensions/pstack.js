@@ -33,6 +33,7 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const SKILLS = join(ROOT, "skills");
+export const SKILL_DIRS = [SKILLS, join(ROOT, "local-skills")];
 const ADAPTER = join(ROOT, "adapter");
 const ENTRY_SKILL = join(SKILLS, "poteto-mode", "SKILL.md");
 // Pi's config directory, where user settings, skills, and sessions live.
@@ -51,13 +52,19 @@ const ANY_COMMAND = /^\/skill:pstack(?:-[a-z0-9-]+)?(?:\s|$)/;
 
 // Read paths may be relative or reach the package through a symlink. The
 // package paths above come from import.meta.url, which Node resolves to the
-// real path, so compare real paths. Returns the path inside skills/, if any.
+// real path, so compare real paths. Returns the path inside a skill root, if any.
 const skillFile = (path, cwd) => {
+  let file;
   try {
-    const child = relative(realpathSync(SKILLS), realpathSync(resolve(cwd, path)));
-    return child !== "" && child !== ".." && !child.startsWith(`..${sep}`) && !isAbsolute(child) ? child : undefined;
+    file = realpathSync(resolve(cwd, path));
   } catch {
     return undefined;
+  }
+  for (const root of SKILL_DIRS) {
+    try {
+      const child = relative(realpathSync(root), file);
+      if (child !== "" && child !== ".." && !child.startsWith(`..${sep}`) && !isAbsolute(child)) return child;
+    } catch { continue; }
   }
 };
 
@@ -67,14 +74,18 @@ let skillIndex;
 const skillInfo = (key) => {
   if (!skillIndex) {
     skillIndex = new Map();
-    for (const dir of readdirSync(SKILLS)) {
-      let head;
-      try { head = readFileSync(join(SKILLS, dir, "SKILL.md"), "utf8").split("\n---")[0]; } catch { continue; }
-      const info = {
-        name: head.match(/^name:\s*(.+)$/m)?.[1].trim() ?? dir,
-        about: head.match(/^description:\s*"?(.*?)"?\s*$/m)?.[1] ?? "",
-      };
-      skillIndex.set(dir, info).set(info.name, info);
+    for (const root of SKILL_DIRS) {
+      let dirs;
+      try { dirs = readdirSync(root); } catch { continue; }
+      for (const dir of dirs) {
+        let head;
+        try { head = readFileSync(join(root, dir, "SKILL.md"), "utf8").split("\n---")[0]; } catch { continue; }
+        const info = {
+          name: head.match(/^name:\s*(.+)$/m)?.[1].trim() ?? dir,
+          about: head.match(/^description:\s*"?(.*?)"?\s*$/m)?.[1] ?? "",
+        };
+        skillIndex.set(dir, info).set(info.name, info);
+      }
     }
   }
   return skillIndex.get(key);

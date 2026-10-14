@@ -57,6 +57,19 @@ test("session keys preserve underscores and encode Windows separators without tr
   assert.equal(sessionKey("/a/b-c"), sessionKey("/a-b/c"), "header checks are necessary because encoding is lossy");
 });
 
+test("CLI accepts a single-dash session directory and -b sets the base", (t) => {
+  const f = fixture(t);
+  session(join(f.repo, "-sessions"), "own.jsonl", f.work);
+  const result = spawnSync(process.execPath, [script, f.repo, "--session-dir", "-sessions", "-b", "main"], {
+    cwd: f.repo, encoding: "utf8", env: envFor(f),
+  });
+  assert.equal(result.status, 0, result.stderr);
+  const [header, line] = result.stdout.trim().split("\n");
+  const row = Object.fromEntries(line.split("\t").map((value, i) => [header.split("\t")[i], value]));
+  assert.equal(row.MERGED, "YES", "-b main overrides the missing default remote ref");
+  assert.equal(row.BUCKET, "verify-recent-chat", "-sessions is consumed as the session directory value");
+});
+
 test("recent own and main-session activity are found with spaces, Unicode, and custom Pi home", (t) => {
   const f = fixture(t);
   const own = join(f.agentDir, "sessions", sessionKey(f.work));
@@ -135,7 +148,7 @@ test("a closed PR is never deletion evidence and audit leaves git and worktree s
   const old = new Date(Date.now() - 20 * 86_400_000);
   utimesSync(oldFile, old, old);
   const before = { refs: git(f.repo, "show-ref"), trees: git(f.repo, "worktree", "list", "--porcelain"), index: readFileSync(join(f.repo, ".git", "index")), file: readFileSync(join(f.work, "file.txt")) };
-  const result = spawnSync("bash", [join(repoRoot, "skills", "poteto-mode", "scripts", "worktree-audit.sh"), f.repo, "--base", "main", "--prs"], {
+  const result = spawnSync("bash", [join(repoRoot, "skills", "poteto-mode", "scripts", "worktree-audit.sh"), "-b", "main", f.repo, "--prs"], {
     encoding: "utf8", env: envFor(f, { PATH: `${bin}${delimiter}${process.env.PATH}` }),
   });
   assert.equal(result.status, 0, result.stderr);
