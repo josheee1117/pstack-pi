@@ -72,7 +72,7 @@ const custom = (customType, data) => ({ type: "custom", customType, data });
 
 test("the extension registers every hook it needs", async () => {
   const { handlers, command } = await load();
-  for (const event of ["session_start", "input", "tool_result", "before_agent_start"]) {
+  for (const event of ["session_start", "input", "tool_result", "before_agent_start", "agent_settled"]) {
     assert.equal(typeof handlers.get(event), "function", `${event} has a handler`);
   }
   assert.equal(typeof command?.handler, "function", "/pstack is a registered command");
@@ -460,38 +460,102 @@ test("a reported plan shows above the editor, windowed on the current step; fini
   assert.equal(widget(), undefined, "an empty plan with no skills in use removes the widget");
 });
 
-test("reading a pstack file names its skill and what the skill does; a playbook read names the playbook", async () => {
+test("a finished plan leaves the console once Pi stops working, and does not come back on resume", async () => {
+  const { handlers, ctx, plan, widget } = await load();
+  readIn(handlers, ctx, join(skillsDir, "tdd", "SKILL.md"));
+  await plan({ playbook: "bug-fix", steps: steps("done", "active") });
+  handlers.get("agent_settled")({ aborted: false }, ctx);
+  assert.equal(widget()[0], "pstack · bug-fix · 1/2", "an open plan stays after the run");
+  await plan({ playbook: "bug-fix", steps: steps("done", "skipped") });
+  assert.equal(widget()[0], "pstack · bug-fix · 2/2 ✓", "the finished plan shows while the reply is written");
+  readIn(handlers, ctx, join(skillsDir, "bro", "SKILL.md"));
+  assert.match(widget()[1], /^正在用 bro：/, "a finished plan can show the current skill until settling");
+  handlers.get("agent_settled")({ aborted: false }, ctx);
+  assert.equal(widget(), undefined, "the plan and the skill line both leave");
+
+  const reported = { type: "message", message: { role: "toolResult", toolName: "pstack_plan", details: { playbook: "bug-fix", steps: steps("done", "done") } } };
+  handlers.get("session_start")({}, { ...ctx, ...branchOf(reported) });
+  assert.equal(widget(), undefined, "a resumed branch whose plan finished shows nothing");
+});
+
+test("only reading a skill entry updates the current skill line", async () => {
   const { handlers, ctx, widget } = await load();
   readIn(handlers, ctx, join(skillsDir, "architect", "SKILL.md"));
-  assert.match(widget()[0], /^刚读取 architect：先设计再实现/, "the user sees the skill's own description");
+  assert.match(widget()[0], /^正在用 architect：先设计再实现/, "the user sees the skill's own description");
+  const first = widget();
 
   readIn(handlers, ctx, join(skillsDir, "architect", "references", "design-red-flags.md"));
-  assert.match(widget()[0], /^刚读取 architect：先设计再实现/, "a reference names the same skill");
+  assert.deepEqual(widget(), first, "a reference of the same skill changes nothing");
 
   readIn(handlers, ctx, join(skillsDir, "interrogate", "references", "rubric.md"));
-  assert.match(widget()[0], /^刚读取 interrogate：多模型独立审查/, "a later read replaces the line");
+  assert.deepEqual(widget(), first, "a reference of another skill changes nothing");
 
   readIn(handlers, ctx, join(skillsDir, "poteto-mode", "playbooks", "feature.md"));
-  assert.equal(widget()[0], "刚读取 流程 feature", "a playbook read names the playbook, with no description");
+  assert.deepEqual(widget(), first, "a playbook changes nothing");
+  readIn(handlers, ctx, join(skillsDir, "principle-laziness-protocol", "SKILL.md"));
+  assert.deepEqual(widget(), first, "a principle entry changes nothing");
+  handlers.get("input")({ text: "/skill:pstack-principle-laziness-protocol", source: "interactive" }, ctx);
+  assert.deepEqual(widget(), first, "a principle command changes nothing");
 
   readIn(handlers, ctx, join(skillsDir, "tdd", "SKILL.md"));
-  assert.match(widget()[0], /^刚读取 tdd：测试驱动修复/);
+  assert.match(widget()[0], /^正在用 tdd：测试驱动修复/, "a second skill entry replaces the line");
 
   readIn(handlers, ctx, "/etc/hosts");
-  assert.match(widget()[0], /^刚读取 tdd：测试驱动修复/, "files outside the package change nothing");
+  assert.match(widget()[0], /^正在用 tdd：测试驱动修复/, "files outside the package change nothing");
 });
 
 test("typing a pstack command names its skill, the entry skill included", async () => {
   const { handlers, ctx, widget } = await load();
   handlers.get("input")({ text: "/skill:pstack fix the total", source: "interactive" }, ctx);
-  assert.match(widget()[0], /^刚读取 pstack：工程工作流入口/);
+  assert.match(widget()[0], /^正在用 pstack：工程工作流入口/);
   handlers.get("input")({ text: "/skill:pstack-teach-me\nthis module", source: "interactive" }, ctx);
-  assert.match(widget()[0], /^刚读取 teach-me：把改动或子系统真正讲明白/);
+  assert.match(widget()[0], /^正在用 teach-me：把改动或子系统真正讲明白/);
+  handlers.get("agent_settled")({ aborted: false }, ctx);
+  assert.equal(widget(), undefined, "settling clears the replacement skill too");
 });
+
+test("references, playbooks and principles never create a current skill line", async () => {
+  const { handlers, ctx, widget } = await load();
+  for (const file of [join(skillsDir, "architect", "references", "design-red-flags.md"), join(skillsDir, "poteto-mode", "playbooks", "feature.md"), join(skillsDir, "principle-laziness-protocol", "SKILL.md")]) {
+    readIn(handlers, ctx, file);
+    assert.equal(widget(), undefined, file);
+  }
+  handlers.get("input")({ text: "/skill:pstack-principle-laziness-protocol", source: "interactive" }, ctx);
+  assert.equal(widget(), undefined, "a principle command also creates no line");
+});
+
+for (const aborted of [false, true]) {
+  test(`settling a skill command without a plan clears its line (aborted=${aborted})`, async () => {
+    const { handlers, ctx, widget, plan } = await load();
+    handlers.get("input")({ text: "/skill:pstack-bro", source: "interactive" }, ctx);
+    assert.match(widget()[0], /^正在用 bro：/);
+    handlers.get("agent_settled")({ aborted }, ctx);
+    assert.equal(widget(), undefined);
+    await plan({ steps: [] });
+    assert.equal(widget(), undefined, "an empty plan cannot revive the previous turn's skill");
+  });
+
+  test(`an unfinished plan hides the skill line and survives settling (aborted=${aborted})`, async () => {
+    const { handlers, ctx, widget, plan } = await load();
+    const list = steps("done", "active");
+    list[1].skill = "tdd";
+    await plan({ playbook: "bug-fix", steps: list });
+    const open = widget();
+    assert.equal(open[0], "pstack · bug-fix · 1/2 · 正在用 tdd");
+    readIn(handlers, ctx, join(skillsDir, "tdd", "SKILL.md"));
+    assert.deepEqual(widget(), open, "a skill read cannot add a second current label");
+    assert.ok(!widget().some((line) => line.startsWith("正在用 tdd：")), "the title is the only current skill label");
+    handlers.get("agent_settled")({ aborted }, ctx);
+    assert.deepEqual(widget(), open, "settling keeps every open step");
+    await plan({ steps: [] });
+    assert.equal(widget(), undefined, "clearing the plan cannot revive the previous turn's skill");
+  });
+}
 
 test("a resumed session or branch switch shows that branch's last reported plan", async () => {
   const { handlers, ctx, widget } = await load();
   const reported = (playbook, list) => ({ type: "message", message: { role: "toolResult", toolName: "pstack_plan", details: { playbook, steps: list } } });
+  readIn(handlers, ctx, join(skillsDir, "bro", "SKILL.md"));
   handlers.get("session_start")({}, { ...ctx, ...branchOf(reported("bug-fix", steps("done", "active")), reported("bug-fix", steps("done", "done", "active"))) });
   assert.deepEqual(widget(), ["pstack · bug-fix · 2/3", "✓ step 1", "✓ step 2", "▶ step 3"], "a short plan shows every step");
 

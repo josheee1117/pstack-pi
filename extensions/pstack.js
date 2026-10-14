@@ -80,13 +80,11 @@ const skillInfo = (key) => {
   return skillIndex.get(key);
 };
 
-// What a read of a file inside skills/ tells the user: a playbook of the entry
-// skill, or the skill that owns the file (its SKILL.md or a reference).
-const asSeen = (info) => info && { name: shortName(info.name), about: info.about };
+// Only skill entries name the current workflow; supporting reads do not.
+const asSeen = (info) => info && !info.name.startsWith("pstack-principle-") && { name: shortName(info.name), about: info.about };
 const skillOfFile = (child) => {
-  const [dir, sub, file] = child.split(sep);
-  if (dir === "poteto-mode" && sub === "playbooks" && file) return { name: `流程 ${file.replace(/\.md$/, "")}`, about: "" };
-  return asSeen(skillInfo(dir));
+  const [dir, file, ...rest] = child.split(sep);
+  return file === "SKILL.md" && !rest.length ? asSeen(skillInfo(dir)) : undefined;
 };
 
 // The console widget. Pi shows at most ten lines of a string widget and wraps
@@ -163,7 +161,7 @@ function widgetLines(plan, last) {
       ])));
     }
   }
-  if (last) lines.push(clip(`刚读取 ${last.name}${last.about ? `：${last.about}` : ""}`));
+  if (last && steps.every((s) => FINISHED.has(s.status))) lines.push(clip(`正在用 ${last.name}${last.about ? `：${last.about}` : ""}`));
   return lines;
 }
 
@@ -239,7 +237,7 @@ export default function pstack(pi) {
   let modeOn = false;
   let adapterOn = false;
   // The playbook the model reported through pstack_plan, and the pstack skill
-  // this session read last. Both feed the console widget.
+  // currently in use this turn. Both feed the console widget.
   let plan = { playbook: "", steps: [] };
   let last;
   // Tool results and reminders since the model last reported the plan. A
@@ -247,6 +245,7 @@ export default function pstack(pi) {
   let sincePlan = 0;
   let nudges = 0;
   const noPlan = () => ({ playbook: "", steps: [] });
+  const finishedPlan = () => plan.steps.length > 0 && plan.steps.every((s) => FINISHED.has(s.status));
   const resetNudges = () => {
     sincePlan = 0;
     nudges = 0;
@@ -332,8 +331,7 @@ export default function pstack(pi) {
     adapterOn = false;
     plan = noPlan();
     resetNudges();
-    // ponytail: the last-read skill line starts empty after a resume or branch
-    // switch; rebuild it from the branch's read calls if that gap matters.
+    // A skill from a previous turn is not current after a resume or switch.
     last = undefined;
     try {
       for (const entry of ctx.sessionManager.getBranch()) {
@@ -351,6 +349,7 @@ export default function pstack(pi) {
       // A session manager that cannot be read leaves both off; the commands
       // and the first skill read still turn them on for this session.
     }
+    if (finishedPlan()) plan = noPlan();
     if (adapterOn) activatePlan();
     showMode(ctx);
     showWidget(ctx);
@@ -420,6 +419,14 @@ export default function pstack(pi) {
     const nudge = planNudge(event);
     if (!nudge) return own;
     return { content: [...(own?.content ?? event.content), { type: "text", text: nudge }] };
+  });
+
+  // A finished plan stays on screen while the model writes its reply, then
+  // leaves once Pi stops working. The current skill always ends with the turn.
+  pi.on("agent_settled", (_event, ctx) => {
+    if (finishedPlan()) plan = noPlan();
+    last = undefined;
+    showWidget(ctx);
   });
 
   pi.on("before_agent_start", (event, ctx) => {
