@@ -7,9 +7,9 @@ import { repoRoot, skillsDir } from "./helpers.js";
 const adapterDir = join(repoRoot, "adapter");
 const read = (...parts) => readFileSync(join(repoRoot, ...parts), "utf8");
 
-test("every file the platform map sends the model to exists", () => {
+test("every file the platform map and overrides send the model to exists", () => {
   const map = read("adapter", "platform.md");
-  const refs = [...map.matchAll(/\{\{(root|skills|adapter)\}\}(\/[\w./-]+\.md)/g)].map(([, base, rest]) => {
+  const refs = [...[map, read("adapter", "overrides.md")].join("\n").matchAll(/\{\{(root|skills|adapter)\}\}(\/[\w./-]+\.md)/g)].map(([, base, rest]) => {
     const dir = { root: repoRoot, skills: skillsDir, adapter: adapterDir }[base];
     return join(dir, rest);
   });

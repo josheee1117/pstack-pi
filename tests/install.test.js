@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, existsSync, readdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expectedName, loadPi, repoRoot, upstreamSkillDirs, unexpectedSkillDiagnostics } from "./helpers.js";
@@ -26,7 +26,14 @@ test("into an empty Pi, the package contributes exactly its skills with no diagn
 
   const { loader, fromPackage } = await freshInstall(pi);
   const { skills, diagnostics } = loader.getSkills();
-  assert.deepEqual(fromPackage(skills).map((s) => s.name).sort(), upstreamSkillDirs.map(expectedName).sort());
+  const localSkillsDir = join(repoRoot, "local-skills");
+  const localNames = readdirSync(localSkillsDir).filter((dir) => existsSync(join(localSkillsDir, dir, "SKILL.md")));
+  assert.deepEqual(
+    fromPackage(skills).map((s) => s.name).sort(),
+    [...upstreamSkillDirs.map(expectedName), ...localNames].sort(),
+  );
+  assert.ok(fromPackage(skills).some((skill) => skill.name === "pstack-report" && skill.disableModelInvocation === true && skill.filePath === join(localSkillsDir, "pstack-report", "SKILL.md")), "the installed loader loads the local report skill");
+  assert.deepEqual(diagnostics.filter((diagnostic) => String(diagnostic.path ?? "").startsWith(localSkillsDir)), [], "local skills have no diagnostics");
   assert.deepEqual(unexpectedSkillDiagnostics(diagnostics).map((d) => d.message), [], "no unexpected diagnostics or name collisions");
 });
 

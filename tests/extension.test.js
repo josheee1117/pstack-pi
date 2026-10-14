@@ -12,8 +12,10 @@ const ENTRY_SKILL = join(skillsDir, "poteto-mode", "SKILL.md");
  * Run the extension the way Pi does: call its factory with a recording API
  * stub, then drive the handlers directly. No Pi install and no model needed.
  */
-async function load() {
-  const { default: factory } = await import(pathToFileURL(extensionPath).href);
+async function load(skillDirs) {
+  const module = await import(pathToFileURL(extensionPath).href + (skillDirs ? "?missing-skill-roots" : ""));
+  if (skillDirs) module.SKILL_DIRS.splice(0, module.SKILL_DIRS.length, ...skillDirs);
+  const factory = module.default;
   const handlers = new Map();
   const entries = [];
   const commands = new Map();
@@ -69,6 +71,29 @@ async function load() {
 
 const branchOf = (...entries) => ({ sessionManager: { getBranch: () => entries } });
 const custom = (customType, data) => ({ type: "custom", customType, data });
+
+test("missing skill roots do not block reads or indexing of the remaining root", async () => {
+  const missing = join(repoRoot, "no-such-skill-root");
+  const { handlers, turn, widget, ctx } = await load([missing, skillsDir, `${missing}-last`]);
+  const result = handlers.get("tool_result")({
+    toolName: "read",
+    input: { path: join(skillsDir, "how", "SKILL.md") },
+    content: [{ type: "text", text: "skill body" }],
+    isError: false,
+  }, ctx);
+  assert.match(result.content.at(-1).text, /# pstack on Pi/);
+  assert.ok(turn().pstack_adapter);
+  assert.ok(widget().some((line) => line.includes("刚读取 how")), "the surviving root is indexed for the skill label");
+});
+
+test("the injected adapter resolves the local report path and keeps its final reply rule", async () => {
+  const { handlers, turn } = await load();
+  handlers.get("input")({ text: "/skill:pstack-how x", source: "interactive" });
+  const text = turn().pstack_adapter;
+  const reportPath = join(repoRoot, "local-skills", "pstack-report", "SKILL.md");
+  assert.ok(text.includes(`its final reply follows ${reportPath}. Read it before writing that reply.`));
+  assert.doesNotMatch(text, /\{\{root\}\}/);
+});
 
 test("the extension registers every hook it needs", async () => {
   const { handlers, command } = await load();
@@ -179,7 +204,7 @@ test("a pstack skill command ends with the overrides once, after Pi would expand
 test("Pi expands transformed skill commands with or without arguments", async (t) => {
   const pi = await loadPi();
   if (!pi) return t.skip("the Pi package is not installed on this machine");
-  const skills = pi.loadSkillsFromDir({ dir: skillsDir, source: "pstack-pi" });
+  const skills = { skills: [skillsDir, join(repoRoot, "local-skills")].flatMap((dir) => pi.loadSkillsFromDir({ dir, source: "pstack-pi" }).skills) };
   const context = {
     resourceLoader: { getSkills: () => skills },
     _extensionRunner: { emitError: (event) => { throw new Error(event.error); } },
@@ -547,4 +572,32 @@ test("an abandoned plan stops reminding after two ignored reminders, and /pstack
   assert.equal(widget(), undefined, "a resumed session does not bring back a plan the user turned off");
   handlers.get("session_start")({}, { ...ctx, ...branchOf(...entries, reported) });
   assert.equal(widget()[0], "pstack · feature · 0/1", "a plan reported after turning off still shows");
+});
+
+test("the local report's first read carries the adapter and labels the widget; later reads only append overrides", async () => {
+  const { handlers, ctx, turn, widget, entries } = await load();
+  const event = {
+    toolName: "read", input: { path: join(repoRoot, "local-skills", "pstack-report", "SKILL.md") },
+    content: [{ type: "text", text: "report body" }], isError: false,
+  };
+  const first = handlers.get("tool_result")(event, ctx);
+  assert.equal(first.content[0].text, "report body");
+  assert.match(first.content[1].text, /# Operator overrides/);
+  assert.match(first.content[1].text, /# pstack on Pi/);
+  assert.match(widget().at(-1), /^刚读取 report：收尾报告/);
+  assert.ok(turn().pstack_adapter);
+  assert.equal(entries.filter((entry) => entry.customType === "pstack-adapter").length, 1);
+  const later = handlers.get("tool_result")(event, ctx);
+  assert.match(later.content.at(-1).text, /# Operator overrides/);
+  assert.doesNotMatch(later.content.at(-1).text, /# pstack on Pi/);
+});
+
+test("the local report command activates the adapter and labels the widget without entering the mode", async () => {
+  const { handlers, ctx, turn, widget } = await load();
+  const result = handlers.get("input")({ text: "/skill:pstack-report", source: "interactive" }, ctx);
+  assert.equal(result.action, "transform");
+  assert.match(result.text, /# Operator overrides/);
+  assert.ok(turn().pstack_adapter);
+  assert.equal(turn().pstack_mode, undefined);
+  assert.match(widget().at(-1), /^刚读取 report：收尾报告/);
 });

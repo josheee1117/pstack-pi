@@ -10,7 +10,7 @@ test("the manifest declares the skills and the one extension, and nothing that w
   assert.equal(pkg.name, "pstack-pi");
   assert.equal(pkg.type, "module");
   assert.ok(pkg.keywords.includes("pi-package"), "the pi-package keyword makes the package discoverable");
-  assert.deepEqual(pkg.pi.skills, ["./skills"]);
+  assert.deepEqual(pkg.pi.skills, ["./skills", "./local-skills"]);
   assert.deepEqual(pkg.pi.extensions, ["./extensions/pstack.js"]);
   assert.deepEqual(readdirSync(join(repoRoot, "extensions")), ["pstack.js"]);
   for (const key of ["prompts", "themes", "mcp"]) {
@@ -23,7 +23,7 @@ test("the manifest declares the skills and the one extension, and nothing that w
 
 test("everything the package publishes exists, and the pieces the extension reads are published", () => {
   for (const entry of pkg.files) assert.ok(existsSync(join(repoRoot, entry)), `files entry ${entry} exists`);
-  for (const entry of ["skills", "agents", "adapter", "extensions", "LICENSE", "LICENSE.upstream", "NOTICE.md", "upstream.lock"]) {
+  for (const entry of ["skills", "local-skills", "agents", "adapter", "extensions", "LICENSE", "LICENSE.upstream", "NOTICE.md", "upstream.lock"]) {
     assert.ok(pkg.files.includes(entry), `${entry} is published`);
   }
 });

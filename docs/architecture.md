@@ -3,6 +3,7 @@
 ## 上游与本地内容
 
 - `skills/` 保留上游目录、正文及相对引用。注册名加 `pstack-` 前缀，description 本地翻译成中文。
+- `local-skills/` 放本包自有技能，不来自上游。
 - `agents/` 保留上游角色说明，按路径作为任务材料使用，不直接冒充 Pi 内置角色。
 - `adapter/platform.md` 对照工具与路径；`adapter/overrides.md` 规定本包偏好；`adapter/notes/` 放会话、云端工作者、浏览器、数据源的按需说明。
 - `adapter/agents/pstack-investigator.md` 是可选 pi-subagents 角色元数据，提供 MCP 调查所需的工具选择；它不安装 MCP 服务，也不是安全沙箱。
