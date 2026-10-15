@@ -24,7 +24,9 @@
 | `/skill:pstack-benchmark-checklist` | 报告性能数字前逐项核对测量是否可信 | 可用。部分命令（`nproc`、`strace`）只在 Linux 上有，macOS 用 `sysctl -n hw.ncpu`、`dtruss` 等对应工具 | 无 |
 | `/skill:pstack-tdd` | 先写失败测试再修 | 可用 | 无 |
 | `/skill:pstack-bro` | 用大白话重说上一条回复 | 可用 | 无 |
-| `/skill:pstack-ketchup` | 追进度：汇总你上次发消息之后发生的事，为每个待办项给出可决策摘要 | 可用 | 无 |
+| `/skill:pstack-in-your-own-words` | 动手前用自己的话复述用户的目标和要解决的问题，确认理解一致 | 可用 | 无 |
+| `/skill:pstack-sharpen` | 动手前把任务磨准：专家做法、用户真正要什么、要求过细还是过粗，然后直接开工 | 可用 | 无 |
+| `/skill:pstack-ketchup` | 追进度：用几句大白话加小图示讲清你上次发消息之后变了什么，为每个待办项给出够做决定的背景 | 可用。上游的 `/visualize` 图表在 Pi 上改用 mermaid 或文字示意图 | 无 |
 | `/skill:pstack-unslop` | 去掉文字里的机器腔 | 可用。高频规则由 extension 常驻注入 | 无 |
 | `/skill:pstack-technical-writing` | 规范文档、PR、提交信息的写法 | 可用 | 无 |
 | `/skill:pstack-no-comments` | 精简无价值的注释 | 可用。审查者用独立上下文的子代理 | pi-subagents |
