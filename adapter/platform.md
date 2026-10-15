@@ -31,6 +31,7 @@ The pstack skills were written for Cursor. On Pi, read them through this map. Pa
 
 - The `/setup-pstack` rule `~/.cursor/rules/pstack-models.mdc` is `{{agentDir}}/pstack-models.md` (installs of the earlier port wrote `{{agentDir}}/pstack-roles.md`; read that when the first is missing). The setup skill writes the first. A role line's value is a Pi model, `provider/id` with an optional `:thinking` suffix, passed as `model`.
 - Upstream default slugs (claude-…-xhigh, grok-…, gpt-…) do not exist here. When a role has no line, or its value is `auto` or `inherit-parent`, pass `model: "inherit"`. Omitting `model` uses the agent's configured default, which is not the session model.
+- "Match the model to the job": a reasoning level is the `:thinking` suffix of a Pi model (`provider/id:high`). Pi has no fast mode, so ignore `-fast` slugs and the fast-or-standard choice.
 - A panel meant to span models (arena, architect, interrogate, reflect) may run on one model in fresh contexts. Say that model diversity was lost. Independence was not.
 
 ## Cursor tools and commands
@@ -41,7 +42,7 @@ The pstack skills were written for Cursor. On Pi, read them through this map. Pa
 - `cursor-team-kit`: `/deslop` is the project's own lint and format tools. `control-cli` is bash, with tmux for interactive TUIs. `control-ui` is in notes/browser.md.
 - Cursor's built-in `create-skill`: the Agent Skills format (a directory with `SKILL.md` and `name` and `description` frontmatter) plus playbooks/authoring-a-skill.md. Cursor's built-in `babysit` skill does not exist here. Use playbooks/babysit.md.
 - MCP servers in Cursor's `mcps/` folder: the `mcp` tool from pi-mcp-adapter. See notes/sources.md.
-- Image generation (teach): a mermaid diagram or an ASCII sketch.
+- Image generation (teach) and `/visualize` charts (ketchup): a mermaid diagram or an ASCII sketch.
 - `paths:` auto-attach does not exist. When you edit `.ts` or `.tsx` files, read the typescript-best-practices skill.
 - `scripts/watch-pr` and `scripts/orch` need `bun`. The orch frontier needs Graphite's `gt`. If one is missing, say so and use `gh pr checks --watch` and `gh pr view --json`, or the playbook's own fallback.
 - The help skill (poteto-help, typed here as `/skill:pstack-help`) answers for Cursor. On Pi, install is `pi install -l <package>` then `/reload`. The mode that stays on is `/pstack`, left with `/pstack off`; Custom Modes and Option+Enter do not exist. Users type a skill as `/skill:pstack-<name>`, except `/skill:pstack` (poteto-mode), `/skill:pstack-setup`, and `/skill:pstack-teach-me`. Its README and `docs/guide/` links are not shipped: point to {{root}}/README.md, {{root}}/docs/install.md, and {{root}}/docs/coverage.md, and give the upstream guide's public URL only as Cursor background. `make-bot-ui` is not in this package.
