@@ -34,6 +34,10 @@ test("the map covers the Cursor-only vocabulary upstream uses", () => {
   }
 });
 
+test("the map has setup offer to install the formal verifier before the first run", () => {
+  assert.match(read("adapter", "platform.md"), /Formal verification \(setup-pstack step 8.*ask once whether to install it.*tla2tools\.jar.*Install only after a yes/);
+});
+
 test("the overrides keep the behaviors the eval showed upstream text lacks", () => {
   const overrides = read("adapter", "overrides.md");
   assert.match(overrides, /Size the task before routing it/);
