@@ -37,6 +37,7 @@ test("the map covers the Cursor-only vocabulary upstream uses", () => {
 test("the overrides keep the behaviors the eval showed upstream text lacks", () => {
   const overrides = read("adapter", "overrides.md");
   assert.match(overrides, /Size the task before routing it/);
+  assert.match(overrides, /Restate before you start\..*\{\{skills\}\}\/in-your-own-words\/SKILL\.md/);
   assert.match(overrides, /Fix only what the request needs/);
   assert.match(overrides, /Spawn a subagent only when/);
   assert.match(overrides, /names no principles, playbook steps/);
