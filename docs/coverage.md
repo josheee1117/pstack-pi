@@ -26,13 +26,14 @@
 | `/skill:pstack-bro` | 用大白话重说上一条回复 | 可用 | 无 |
 | `/skill:pstack-in-your-own-words` | 动手前用自己的话复述用户的目标和要解决的问题，确认理解一致 | 可用 | 无 |
 | `/skill:pstack-sharpen` | 动手前把任务磨准：专家做法、用户真正要什么、要求过细还是过粗，然后直接开工 | 可用 | 无 |
-| `/skill:pstack-ketchup` | 追进度：用几句大白话加小图示讲清你上次发消息之后变了什么，为每个待办项给出够做决定的背景 | 可用。上游的 `/visualize` 图表在 Pi 上改用 mermaid 或文字示意图 | 无 |
+| `/skill:pstack-ketchup` | 追进度：用大白话加小图示讲清你上次发消息之后变了什么，列出每一件等你决定的事 | 可用。上游的 `/visualize` 图表在 Pi 上改用 mermaid 或文字示意图 | 无 |
 | `/skill:pstack-unslop` | 去掉文字里的机器腔 | 可用。高频规则由 extension 常驻注入 | 无 |
 | `/skill:pstack-technical-writing` | 规范文档、PR、提交信息的写法 | 可用 | 无 |
 | `/skill:pstack-no-comments` | 精简无价值的注释 | 可用。审查者用独立上下文的子代理 | pi-subagents |
 | `/skill:pstack-typescript-best-practices` | TypeScript 类型与建模规范 | 可用。上游按文件类型自动挂载，Pi 没有这个机制，改由对照说明提醒模型编辑 `.ts` 时去读 | 无 |
 | `/skill:pstack-figure-it-out` | 为没有现成流程的复杂任务设计流程 | 可用。负责人就是当前会话，每轮派新的子代理；会话关掉流程就停 | pi-subagents |
 | `/skill:pstack-show-me-your-work` | 用 TSV 日志记录决策过程 | 可用 | 无 |
+| `/skill:pstack-create-formal-verification-skill` | 为最怕出错、测试又难覆盖的代码（并发、重试、状态机、解析器）生成形式化验证技能，默认用 TLA+ | 可用。生成到项目的 `.pi/skills/`；验证工具（如 TLA+ 的 TLC）需要本机自备 | 对应的验证工具 |
 | `/skill:pstack-create-verification-skill` | 为项目生成真实驱动应用的验证技能 | 可用。生成到项目的 `.pi/skills/`；网页和 Electron 应用用浏览器 MCP | Chrome DevTools MCP（界面类应用） |
 | `/skill:pstack-maintain-verification-skill` | 维护验证技能与功能地图 | 可用 | 同上；gh（开 PR） |
 | `/skill:pstack-reflect` | 复盘并把教训落到技能里 | 可用。读本项目的 Pi 会话记录 | pi-subagents（三个审查视角） |
