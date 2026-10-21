@@ -4,7 +4,7 @@ This directory is the maintained source for verifying what a user sees in the Pi
 
 ## Baseline preconditions
 
-- Launch with `.claude/skills/verify-pstack-pi/scripts/drive.sh launch`.
+- Launch with `.agents/skills/verify-pstack-pi/scripts/drive.sh launch`.
 - The run directory it prints is the only state this run may touch.
 - The throwaway project has this repo installed, and `drive.sh doctor` prints `doctor: ok`.
 - Doctor prints the Pi version. The keystrokes in this map were checked on Pi 1.3.0. The footer shows `deepseek-flash-latest`.

@@ -16,7 +16,7 @@ Verified against Pi 1.3.0 (`/opt/homebrew/bin/pi`), tmux 3.7b, on macOS. The REA
 Run the helper from the repo root. It creates a throwaway run under `/tmp/verify-pstack-pi/`, copies only the `cpa` provider into that run's agent dir, installs this repo into a throwaway project, and starts Pi in a new tmux session.
 
 ```bash
-.claude/skills/verify-pstack-pi/scripts/drive.sh launch
+.agents/skills/verify-pstack-pi/scripts/drive.sh launch
 ```
 
 The command prints the run directory, such as `/tmp/verify-pstack-pi/run-Ab12`. Every later command uses the newest run that still has a live tmux session (else the most recently modified run), or `VERIFY_PSTACK_RUN=<that directory>` when more than one run exists.
@@ -37,7 +37,7 @@ Two runs can exist at once. Each has its own tmux session, agent dir, and projec
 ## Doctor
 
 ```bash
-.claude/skills/verify-pstack-pi/scripts/drive.sh doctor
+.agents/skills/verify-pstack-pi/scripts/drive.sh doctor
 ```
 
 Doctor checks four things and prints `doctor: ok`.
@@ -71,9 +71,9 @@ tmux capture-pane -t <session> -p -S -200 -e | sed $'s/\x1b\\[[0-9;?]*[A-Za-z]//
 The helper wraps these steps. Drive one feature:
 
 ```bash
-.claude/skills/verify-pstack-pi/scripts/drive.sh drive pstack-status
-.claude/skills/verify-pstack-pi/scripts/drive.sh drive pstack-task
-.claude/skills/verify-pstack-pi/scripts/drive.sh drive slash-menu
+.agents/skills/verify-pstack-pi/scripts/drive.sh drive pstack-status
+.agents/skills/verify-pstack-pi/scripts/drive.sh drive pstack-task
+.agents/skills/verify-pstack-pi/scripts/drive.sh drive slash-menu
 ```
 
 `pstack-status` needs no model call. `pstack-task` calls `cpa/deepseek-flash-latest` with `/pstack 只回复 pstack-task-ok` and expects a reply line that is exactly `pstack-task-ok`. `slash-menu` proves the command is registered in the menu, then runs it.
@@ -91,7 +91,7 @@ The feature id is the file name. The entry point is the typed command inside the
 ## Cleanup
 
 ```bash
-.claude/skills/verify-pstack-pi/scripts/drive.sh cleanup
+.agents/skills/verify-pstack-pi/scripts/drive.sh cleanup
 ```
 
 Cleanup kills the tmux session it started. If the pane pid is still alive after that, it sends `SIGTERM` and then `SIGKILL` to that pid only. It then deletes `<run>/project` and `<run>/agent`. It leaves `<run>/evidence/`.

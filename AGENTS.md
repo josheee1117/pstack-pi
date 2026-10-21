@@ -47,3 +47,12 @@ pstack 的技能规定所需能力和包内默认实现。使用者可以在自�
 上表是给**使用本包的项目**用的模板。pstack-pi 自己怎么开发不受它约束：这个仓库的开发不需要任何特定 subagent 扩展，也不需要 MCP。
 
 包内的默认执行方式写在 `adapter/platform.md` 和 `adapter/notes/`：所有子代理都用 pi-subagents。那是**产品的包内默认**，你项目的 `AGENTS.md` 映射可以替换它，不是本仓库的开发要求，也不是任何环境都应该有的前提。适配层在会话第一次用到 pstack 时就注入，所以单独调一个 `/skill:pstack-swarm` 也会拿到这些默认。
+
+## 本地验证技能 / Local verification skill
+
+- 本仓库有一个验证技能（随仓库提交）：`.agents/skills/verify-pstack-pi/SKILL.md`，功能地图在 `.agents/skills/verify-pstack-pi/features/README.md`，控制脚本 `.agents/skills/verify-pstack-pi/scripts/drive.sh`（在 tmux 里驱动真实 Pi 界面）。
+- 适用工具：Codex 与 Pi（pstack-pi）直接读取 `.agents/skills/verify-pstack-pi/`；Claude Code 通过软链接 `.claude/skills/verify-pstack-pi` 读取同一份文件。`/maintain-verification-skill` 由 pstack-pi 提供。
+- 任何 agent 改完代码，必须先按该技能验证并给出证据，才能说完成。
+- 每个工作日应跑一次维护：`/maintain-verification-skill`（没有该命令时：对照最近提交，更新功能地图和 SKILL.md 中过期的命令/入口，再完整跑一遍 `scripts/drive.sh`），让功能地图跟代码保持一致。
+- 这些文件随仓库提交，所有 agent 都能读到。
+- This repo has a verification skill (tracked in git) at `.agents/skills/verify-pstack-pi/SKILL.md` with a feature map at `.agents/skills/verify-pstack-pi/features/README.md`. Any agent must use it to verify changes (with evidence) before calling them done. A weekday daily maintenance pass should run `/maintain-verification-skill` (or, without it: diff recent commits, update stale feature-map entries/commands, then re-run `scripts/drive.sh`) to keep the map in sync with code. These files are tracked in git so every agent can read them. Tools: Codex and Pi (pstack-pi) read `.agents/skills/verify-pstack-pi/` directly; Claude Code reads it via the symlink `.claude/skills/verify-pstack-pi`. `/maintain-verification-skill` comes from pstack-pi.
