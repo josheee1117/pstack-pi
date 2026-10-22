@@ -34,6 +34,17 @@ test("the map covers the Cursor-only vocabulary upstream uses", () => {
   }
 });
 
+test("project skills go to .agents/skills with a .claude symlink, in every adapter", () => {
+  for (const file of ["platform.md", "opencode.md"]) {
+    const text = read("adapter", file);
+    assert.match(text, /\.agents\/skills\//, `${file} writes project skills to .agents/skills`);
+    assert.match(text, /\.claude\/skills\//, `${file} links .claude/skills`);
+    assert.match(text, /\.\.\/\.\.\/\.agents\/skills\//, `${file} names the relative link target`);
+    assert.match(text, /\.pi\/skills\//, `${file} names the old location it replaced`);
+  }
+  assert.doesNotMatch(read("adapter", "platform.md"), /`\.cursor\/skills\/` is `\.pi\/skills\/`/);
+});
+
 test("the map has setup offer to install the formal verifier before the first run", () => {
   assert.match(read("adapter", "platform.md"), /Formal verification \(setup-pstack step 8.*ask once whether to install it.*tla2tools\.jar.*Install only after a yes/);
 });

@@ -33,8 +33,8 @@
 | `/skill:pstack-typescript-best-practices` | TypeScript 类型与建模规范 | 可用。上游按文件类型自动挂载，Pi 没有这个机制，改由对照说明提醒模型编辑 `.ts` 时去读 | 无 |
 | `/skill:pstack-figure-it-out` | 为没有现成流程的复杂任务设计流程 | 可用。负责人就是当前会话，每轮派新的子代理；会话关掉流程就停 | pi-subagents |
 | `/skill:pstack-show-me-your-work` | 用 TSV 日志记录决策过程 | 可用 | 无 |
-| `/skill:pstack-create-formal-verification-skill` | 为最怕出错、测试又难覆盖的代码（并发、重试、状态机、解析器）生成形式化验证技能，默认用 TLA+ | 可用。生成到项目的 `.pi/skills/`；验证工具（如 TLA+ 的 TLC）需要本机自备 | 对应的验证工具 |
-| `/skill:pstack-create-verification-skill` | 为项目生成真实驱动应用的验证技能 | 可用。生成到项目的 `.pi/skills/`；网页和 Electron 应用用浏览器 MCP | Chrome DevTools MCP（界面类应用） |
+| `/skill:pstack-create-formal-verification-skill` | 为最怕出错、测试又难覆盖的代码（并发、重试、状态机、解析器）生成形式化验证技能，默认用 TLA+ | 可用。生成到项目的 `.agents/skills/verify-<app>/`，并建 `.claude/skills/verify-<app>` 相对软链；验证工具（如 TLA+ 的 TLC）需要本机自备 | 对应的验证工具 |
+| `/skill:pstack-create-verification-skill` | 为项目生成真实驱动应用的验证技能 | 可用。生成到项目的 `.agents/skills/verify-<app>/`，并建 `.claude/skills/verify-<app>` 相对软链；网页和 Electron 应用用浏览器 MCP | Chrome DevTools MCP（界面类应用） |
 | `/skill:pstack-maintain-verification-skill` | 维护验证技能与功能地图 | 可用 | 同上；gh（开 PR） |
 | `/skill:pstack-reflect` | 复盘并把教训落到技能里 | 可用。读本项目的 Pi 会话记录 | pi-subagents（三个审查视角） |
 | `/skill:pstack-automate-me` | 把个人习惯做成技能 | 可用。挖掘本项目的 Pi 会话记录 | pi-subagents |

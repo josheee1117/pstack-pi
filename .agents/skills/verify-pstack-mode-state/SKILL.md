@@ -20,7 +20,7 @@ If this breaks, a user who typed `/pstack off` still sees the old plan and still
 From the repo root:
 
 ```
-.claude/skills/verify-pstack-mode-state/check.sh
+.agents/skills/verify-pstack-mode-state/check.sh
 ```
 
 The script calls `~/.local/bin/tlc` (TLC 2.19, needs Java 11 or later) on `ModeState.tla` with `ModeState.cfg`, one worker, and deletes TLC's scratch states when it finishes. A pass ends with `Model checking completed. No error has been found.` and exit code 0. A failure ends with `Invariant <name> is violated.` and a numbered trace. Exit code 12 means a violated invariant.
