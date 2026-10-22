@@ -168,6 +168,33 @@ drive_task() {
   save_proof "$run" "task-off"
 }
 
+drive_skill() {
+  local run
+  run="$(run_of)"
+  # The alternate entry point: /skill:pstack turns the mode on by itself.
+  type_cmd "/skill:pstack 只回复 pstack-skill-entry-ok"
+  wait_for "^ *pstack-skill-entry-ok *$" 40 || die "the model did not answer pstack-skill-entry-ok"
+  capture -40 | grep -q "pstack: mode on" || die "status bar is missing pstack: mode on after /skill:pstack"
+  save_proof "$run" "skill-entry" >/dev/null
+  type_cmd "/pstack off"
+  wait_for "pstack mode off." 15 || die "/pstack off did not notify after /skill:pstack"
+  save_proof "$run" "skill-entry-off"
+}
+
+drive_plan() {
+  local run
+  run="$(run_of)"
+  # The widget only exists because the model calls pstack_plan, so this spends
+  # a real request and needs a model that follows the instruction.
+  type_cmd "/pstack 只调用一次 pstack_plan 工具：playbook 填 demo，两步，第一步 status done，第二步 status active。然后只回复 plan-widget-ok。不要调用其他工具。"
+  wait_for "pstack · demo · 1/2" 60 || die "the plan widget did not show the demo plan"
+  save_proof "$run" "plan-on" >/dev/null
+  type_cmd "/pstack off"
+  wait_for "pstack mode off." 15 || die "/pstack off did not notify after the plan"
+  capture -40 | grep -q "pstack · demo" && die "the plan widget survived /pstack off"
+  save_proof "$run" "plan-off"
+}
+
 drive_menu() {
   local run session
   run="$(run_of)"
@@ -219,8 +246,10 @@ case "${1:-}" in
     case "${2:-}" in
       pstack-status) drive_status ;;
       pstack-task) drive_task ;;
+      pstack-skill) drive_skill ;;
+      plan-widget) drive_plan ;;
       slash-menu) drive_menu ;;
-      *) die "unknown feature '${2:-}'. Use pstack-status, pstack-task, or slash-menu" ;;
+      *) die "unknown feature '${2:-}'. Use pstack-status, pstack-task, pstack-skill, plan-widget, or slash-menu" ;;
     esac
     ;;
   cleanup) cleanup ;;

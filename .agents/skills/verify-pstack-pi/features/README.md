@@ -34,5 +34,6 @@ Each feature file has an H1, one paragraph, then four H2 sections: `Sub-features
 ## Features
 
 - [Mode status](./mode-status.md) turns the mode on and off and reads it back with `/pstack status`.
-- [Task entry](./task-entry.md) runs `/pstack` with a task and checks the model reply.
+- [Task entry](./task-entry.md) runs `/pstack` or `/skill:pstack` with a task and checks the model reply.
+- [Plan widget](./plan-widget.md) shows the steps a model reported through `pstack_plan`, and clears them on `/pstack off`.
 - [Slash menu](./slash-menu.md) finds `/pstack` in the `/` menu and runs the completed command.

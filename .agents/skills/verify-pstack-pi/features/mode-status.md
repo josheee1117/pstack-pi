@@ -27,12 +27,12 @@ Preconditions:
 - **Turn it on.** Type `/pstack` and press Enter. The transcript gains ` pstack mode on. Later turns stay in it; /pstack off leaves.` and the footer gains `pstack: mode on`.
 - **Read it back.** Type `/pstack status` and press Enter. The transcript gains ` pstack mode on.` and the footer still shows `pstack: mode on`.
 - **Turn it off.** Type `/pstack off` and press Enter. The transcript gains ` pstack mode off.` and the last lines of the screen no longer contain `pstack: mode on`.
-- **Menu entry.** From a fresh launch, type `/`, then `pstack`, press Tab, type ` status`, and press Enter. The same ` pstack mode off.` line appears. This entry is not covered by `drive.sh drive pstack-status`.
+- **Menu entry.** From a fresh launch, type `/`, then `pstack`, press Tab, type ` status`, and press Enter. The same ` pstack mode off.` line appears. With the mode already on it answers ` pstack mode on.` and the footer stays. This entry is not covered by `drive.sh drive pstack-status`; its capture is `<run>/evidence/menu-status-path.txt`.
 - **Proof.** `drive.sh drive pstack-status` writes three captures to `<run>/evidence/`, because Pi shows only the latest notification: `status-before.txt` has ` pstack mode off.`; `status-on.txt` has ` pstack mode on.` and the footer `pstack: mode on`; `status-after.txt` has ` pstack mode off.` and no `pstack: mode on` footer.
 
 ## Gotchas
 
 - The notify text is indented one column in `capture-pane` output. Match ` pstack mode on.`, not a line that starts at column zero.
 - Off does not print a status-bar replacement. Assert that `pstack: mode on` is gone from the footer. Pi keeps no tmux scrollback, so the earlier on state is only in `status-on.txt`.
-- `/pstack off` also clears the plan widget. This recipe does not create a plan, so it cannot prove that clearing.
+- `/pstack off` also clears the plan widget. This recipe does not create a plan; [plan widget](./plan-widget.md) proves that clearing.
 - Enter on a filtered menu runs the highlighted command instead of the typed text. Press Tab to leave the menu before typing ` status`, or type the whole command with `send-keys -l` so the menu never steals Enter.
