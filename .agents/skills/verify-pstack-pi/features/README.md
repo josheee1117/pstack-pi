@@ -7,7 +7,7 @@ This directory is the maintained source for verifying what a user sees in the Pi
 - Launch with `.agents/skills/verify-pstack-pi/scripts/drive.sh launch`.
 - The run directory it prints is the only state this run may touch.
 - The throwaway project has this repo installed, and `drive.sh doctor` prints `doctor: ok`.
-- Doctor prints the Pi version. The keystrokes in this map were checked on Pi 1.3.0. The footer shows `deepseek-flash-latest`.
+- Doctor prints the Pi version. The keystrokes in this map were checked on Pi 1.3.0, and on 1.4.0 for mode status and skill loading. The footer shows `deepseek-flash-latest`.
 - Drive only the tmux session this launch started.
 
 ## Driving conventions
@@ -35,5 +35,6 @@ Each feature file has an H1, one paragraph, then four H2 sections: `Sub-features
 
 - [Mode status](./mode-status.md) turns the mode on and off and reads it back with `/pstack status`.
 - [Task entry](./task-entry.md) runs `/pstack` or `/skill:pstack` with a task and checks the model reply.
+- [Skill loading](./skill-loading.md) finds a shipped skill in the `/` menu and proves its body reaches the model.
 - [Plan widget](./plan-widget.md) shows the steps a model reported through `pstack_plan`, and clears them on `/pstack off`.
 - [Slash menu](./slash-menu.md) finds `/pstack` in the `/` menu and runs the completed command.

@@ -181,6 +181,29 @@ drive_skill() {
   save_proof "$run" "skill-entry-off"
 }
 
+# Proves a skill is registered and that its body reaches the model. The token
+# asked for appears only in that skill's body, which is hidden from the prompt
+# listing, so the model cannot answer it without the expansion.
+drive_load() {
+  local run session
+  run="$(run_of)"
+  session="$(session_of)"
+  tmux send-keys -t "$session" '/'
+  sleep "$CMD_PAUSE"
+  tmux send-keys -t "$session" -l -- "skill:pstack-statechart"
+  sleep 0.8
+  capture -30 | grep -q "skill:pstack-statechart" || die "the slash menu did not list skill:pstack-statechart"
+  save_proof "$run" "skill-menu" >/dev/null
+  # Escape closes the menu and keeps the typed text in the editor.
+  tmux send-keys -t "$session" Escape
+  sleep "$CMD_PAUSE"
+  tmux send-keys -t "$session" -l -- " 只回答一个问题，只回复一个词：要把一个已有的 TLA+ 模型画成图，用哪个方向？"
+  sleep "$CMD_PAUSE"
+  tmux send-keys -t "$session" Enter
+  wait_for "from-spec" 40 || die "the model did not answer from-spec, so the skill body did not reach it"
+  save_proof "$run" "skill-run"
+}
+
 drive_plan() {
   local run
   run="$(run_of)"
@@ -247,9 +270,10 @@ case "${1:-}" in
       pstack-status) drive_status ;;
       pstack-task) drive_task ;;
       pstack-skill) drive_skill ;;
+      skill-load) drive_load ;;
       plan-widget) drive_plan ;;
       slash-menu) drive_menu ;;
-      *) die "unknown feature '${2:-}'. Use pstack-status, pstack-task, pstack-skill, plan-widget, or slash-menu" ;;
+      *) die "unknown feature '${2:-}'. Use pstack-status, pstack-task, pstack-skill, skill-load, plan-widget, or slash-menu" ;;
     esac
     ;;
   cleanup) cleanup ;;

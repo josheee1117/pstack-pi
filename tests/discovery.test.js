@@ -34,7 +34,7 @@ test("the real Pi loader discovers every skill with no diagnostics", async (t) =
 
   for (const skill of result.skills) {
     assert.match(skill.name, NAME_PATTERN, `${skill.name} is a valid skill name`);
-    assert.match(skill.description, /^\p{Script=Han}/u, `${skill.name} has a Chinese command description`);
+    assert.match(skill.description, /^(?:（实验性）)?\p{Script=Han}/u, `${skill.name} has a Chinese command description`);
     assert.ok(skill.description.length <= 1024, `${skill.name} description is within 1024 characters`);
   }
 });

@@ -83,12 +83,13 @@ export function unexpectedSkillDiagnostics(diagnostics) {
   return diagnostics.filter((d) => String(d.path ?? "").startsWith(skillsDir) && !allowed.has(d.message));
 }
 
-// Upstream pstack 0.15.27's skills, minus make-bot-ui (Cursor's Grok Bot runtime).
+// Upstream pstack 0.15.32's skills, minus make-bot-ui (Cursor's Grok Bot runtime).
 export const upstreamSkillDirs = [
   "architect", "arena", "automate-me", "benchmark-checklist", "blast-radius", "bro", "correct",
-  "create-formal-verification-skill", "create-verification-skill", "figure-it-out", "how", "in-your-own-words", "interrogate", "maintain-verification-skill",
-  "ketchup", "no-comments", "poteto-help", "poteto-mode",
-  "recall", "reflect", "setup-pstack", "sharpen", "show-me-your-work", "swarm", "tdd", "teach",
+  "create-formal-verification-skill", "create-verification-skill", "figure-it-out", "how", "in-your-own-words", "interrogate",
+  "maintain-formal-verification-skill", "maintain-verification-skill",
+  "ketchup", "ketchup-video", "no-comments", "poteto-help", "poteto-mode",
+  "recall", "reflect", "setup-pstack", "sharpen", "show-me-your-work", "statechart", "swarm", "tdd", "teach",
   "technical-writing", "typescript-best-practices", "unslop", "why",
   ...[
     "attack-the-premise", "boundary-discipline", "build-the-lever", "encode-lessons-in-structure",

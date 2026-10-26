@@ -9,7 +9,7 @@ pstack-pi is a Pi package. The user installs it with `pi install -l`, starts `pi
 
 The surface is the Pi TUI. `pi -p` and `pi --mode rpc` are not a substitute: they do not render the status bar or the plan widget. The package also ships a Node CLI, `node adapter/worktree-audit.mjs`, which this skill does not drive. The mode and plan state machine has its own check in `.agents/skills/verify-pstack-mode-state/`; run it when a change touches mode persistence, plan restore, or the step reminder.
 
-Verified against Pi 1.3.0 (`/opt/homebrew/bin/pi`), tmux 3.7b, on macOS. The README names Pi 1.1.0. `pi --version` reported 1.2.0 earlier in the same session and 1.3.0 by the time the proof run started, so record the version doctor prints. Re-run this skill after a Pi upgrade. A user's `~/.agents/skills/` can print a `[Skill conflicts]` banner at startup. That banner is not a failure.
+Verified against Pi 1.3.0 (`/opt/homebrew/bin/pi`), tmux 3.7b, on macOS. Mode status and skill loading were rechecked on Pi 1.4.0. The README names Pi 1.1.0. `pi --version` reported 1.2.0 earlier in the same session and 1.3.0 by the time the proof run started, so record the version doctor prints. Re-run this skill after a Pi upgrade. A user's `~/.agents/skills/` can print a `[Skill conflicts]` banner at startup. That banner is not a failure.
 
 ## Launch
 
@@ -47,7 +47,7 @@ Doctor checks four things and prints `doctor: ok`.
 - The live screen shows `deepseek-flash-latest`.
 - The live screen does not say `This project is not trusted`.
 
-It also prints `pi --version`. The keystrokes below were checked on 1.3.0. A different version means they are unverified. Stop and re-check them against that version.
+It also prints `pi --version`. The keystrokes below were checked on 1.3.0, and again on 1.4.0 for `pstack-status` and `skill-load`. A different version means they are unverified. Stop and re-check them against that version.
 
 ## Drive
 
@@ -74,17 +74,18 @@ The helper wraps these steps. Drive one feature:
 .agents/skills/verify-pstack-pi/scripts/drive.sh drive pstack-status
 .agents/skills/verify-pstack-pi/scripts/drive.sh drive pstack-task
 .agents/skills/verify-pstack-pi/scripts/drive.sh drive pstack-skill
+.agents/skills/verify-pstack-pi/scripts/drive.sh drive skill-load
 .agents/skills/verify-pstack-pi/scripts/drive.sh drive plan-widget
 .agents/skills/verify-pstack-pi/scripts/drive.sh drive slash-menu
 ```
 
-`pstack-status` needs no model call. `pstack-task` calls `cpa/deepseek-flash-latest` with `/pstack 只回复 pstack-task-ok` and expects a reply line that is exactly `pstack-task-ok`. `pstack-skill` makes the same check through `/skill:pstack`, which turns the mode on without the `/pstack` command. `plan-widget` asks the model to call `pstack_plan` with a two-step demo plan and checks the widget above the editor, then clears it with `/pstack off`. `slash-menu` proves the command is registered in the menu, then runs it.
+`pstack-status` needs no model call. `pstack-task` calls `cpa/deepseek-flash-latest` with `/pstack 只回复 pstack-task-ok` and expects a reply line that is exactly `pstack-task-ok`. `pstack-skill` makes the same check through `/skill:pstack`, which turns the mode on without the `/pstack` command. `skill-load` finds `/skill:pstack-statechart` in the `/` menu with its description, then runs it and expects a word that only its body contains. `plan-widget` asks the model to call `pstack_plan` with a two-step demo plan and checks the widget above the editor, then clears it with `/pstack off`. `slash-menu` proves the command is registered in the menu, then runs it.
 
 Notifications print as a line in the transcript, indented one column in the capture (` pstack mode on.`). The status bar is the footer line `pstack: mode on`. It disappears when the mode is off. There is no `pstack: mode off` line.
 
 ## Evidence
 
-Proof lives in `<run>/evidence/`. The helper writes `status-before.txt`, `status-on.txt` and `status-after.txt` for the status feature, `task.txt` plus `task-off.txt` for the task feature, `skill-entry.txt` plus `skill-entry-off.txt` for the `/skill:pstack` entry, `plan-on.txt` plus `plan-off.txt` for the plan widget, and `menu-open.txt`, `menu.txt` plus `menu-off.txt` for the menu feature. Pi shows only the latest notification and leaves no tmux scrollback, so a capture is only the live screen and each state that matters gets its own capture.
+Proof lives in `<run>/evidence/`. The helper writes `status-before.txt`, `status-on.txt` and `status-after.txt` for the status feature, `task.txt` plus `task-off.txt` for the task feature, `skill-entry.txt` plus `skill-entry-off.txt` for the `/skill:pstack` entry, `skill-menu.txt` plus `skill-run.txt` for skill loading, `plan-on.txt` plus `plan-off.txt` for the plan widget, and `menu-open.txt`, `menu.txt` plus `menu-off.txt` for the menu feature. Pi shows only the latest notification and leaves no tmux scrollback, so a capture is only the live screen and each state that matters gets its own capture.
 
 A proof shows both. For the status feature that is `status-on.txt` with the notify text `pstack mode on.` and the footer `pstack: mode on`, then `status-after.txt` with `pstack mode off.` and that footer gone. A transcript that shows only the final off state is not proof.
 
