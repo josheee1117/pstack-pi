@@ -25,8 +25,9 @@
 | `/skill:pstack-tdd` | 先写失败测试再修 | 可用 | 无 |
 | `/skill:pstack-bro` | 用大白话重说上一条回复 | 可用 | 无 |
 | `/skill:pstack-in-your-own-words` | 动手前用自己的话复述用户的目标和要解决的问题，确认理解一致 | 可用 | 无 |
-| `/skill:pstack-sharpen` | 动手前把任务磨准：专家做法、用户真正要什么、要求过细还是过粗，然后直接开工 | 可用 | 无 |
+| `/skill:pstack-sharpen` | 把任务做深而不是做大：专家会怎么做、该从哪些原始材料入手、用什么方法和工具、什么能证明结果正确，再按这四点重写提示词；只交回改写后的提示词，不自己开工 | 可用 | 无 |
 | `/skill:pstack-ketchup` | 追进度：用大白话加小图示讲清你上次发消息之后变了什么，列出每一件等你决定的事 | 可用。上游的 `/visualize` 图表在 Pi 上改用 mermaid 或文字示意图 | 无 |
+| `/skill:pstack-ketchup-video` | 同 ketchup 的追进度，但把发生了什么做成一段无声幻灯片短视频，视频下方用文字列出在等你决定的事 | **实验性**。要本机有能把幻灯片渲染成无声视频的工具（如 ffmpeg），Pi 上未验证；渲染失败时按技能写法只列出待决事项 | 渲染无声视频的工具 |
 | `/skill:pstack-unslop` | 去掉文字里的机器腔 | 可用。高频规则由 extension 常驻注入 | 无 |
 | `/skill:pstack-technical-writing` | 规范文档、PR、提交信息的写法 | 可用 | 无 |
 | `/skill:pstack-no-comments` | 精简无价值的注释 | 可用。审查者用独立上下文的子代理 | pi-subagents |
@@ -34,7 +35,9 @@
 | `/skill:pstack-figure-it-out` | 为没有现成流程的复杂任务设计流程 | 可用。负责人就是当前会话，每轮派新的子代理；会话关掉流程就停 | pi-subagents |
 | `/skill:pstack-show-me-your-work` | 用 TSV 日志记录决策过程 | 可用 | 无 |
 | `/skill:pstack-create-formal-verification-skill` | 为最怕出错、测试又难覆盖的代码（并发、重试、状态机、解析器）生成形式化验证技能，默认用 TLA+ | 可用。生成到项目的 `.agents/skills/verify-<app>/`，并建 `.claude/skills/verify-<app>` 相对软链；验证工具（如 TLA+ 的 TLC）需要本机自备 | 对应的验证工具 |
+| `/skill:pstack-statechart` | 把系统如何在状态之间移动画成 Mermaid 状态图（产品流程、协议、服务），从 TLA+ 模型出图；每个 bug 是一条编号路径，蓝框指向破坏规则的状态；也能把已达成共识的图变成 TLA+ 骨架 | 可用。工作目录在仓库外的临时目录；首次运行用 mise 下载 TLC 和 Java（约 305 MB，需联网） | mise、TLC、Java |
 | `/skill:pstack-create-verification-skill` | 为项目生成真实驱动应用的验证技能 | 可用。生成到项目的 `.agents/skills/verify-<app>/`，并建 `.claude/skills/verify-<app>` 相对软链；网页和 Electron 应用用浏览器 MCP | Chrome DevTools MCP（界面类应用） |
+| `/skill:pstack-maintain-formal-verification-skill` | 代码改动后让形式化验证重新对上代码：找出动过被验证代码的提交，更新模型、harness 或性质，重跑并说清每个失败是验证跑偏还是代码有 bug | 可用。与 `create-formal-verification-skill` 配套，验证工具本机自备 | 对应的验证工具 |
 | `/skill:pstack-maintain-verification-skill` | 维护验证技能与功能地图 | 可用 | 同上；gh（开 PR） |
 | `/skill:pstack-reflect` | 复盘并把教训落到技能里 | 可用。读本项目的 Pi 会话记录 | pi-subagents（三个审查视角） |
 | `/skill:pstack-automate-me` | 把个人习惯做成技能 | 可用。挖掘本项目的 Pi 会话记录 | pi-subagents |
