@@ -20,8 +20,7 @@
 | MCP 数据源及浏览器 | `pi install npm:pi-mcp-adapter` | 接入服务器还需要独立安装、认证和授权 |
 | 自主任务 | 可选 `pi install npm:@narumitw/pi-goal` | 工具名、自动续跑上限按安装版本确认；缺失时不承诺自动唤醒 |
 | PR、CI、代码历史 | Git；GitHub 使用 `gh` 并由用户运行 `gh auth login` | 未授权不创建、修改或合并 PR |
-| 上游 watch-pr/orch 脚本 | Bun，见 <https://bun.sh/docs/installation> | 不想装可用 gh 做有界 PR 查询；不能声称覆盖完整 orchestrate |
-| orch 的 Graphite 栈操作 | `npm install -g @withgraphite/graphite-cli` | 还需仓库配置及认证，未做真实远端验收 |
+| 上游 watch-pr 脚本 | Bun，见 <https://bun.sh/docs/installation> | 不想装可用 gh 做有界 PR 查询；orchestrate 用协调者已有工具，不依赖此脚本或 Graphite |
 | 浏览器驱动 | Chrome，或 Playwright 支持的浏览器 | 浏览器安装与首次下载由用户确认 |
 
 可选插件的版本和接口会变化。先看工具列表与 schema，再执行下面的示例。装完后 `/reload` 或重启 Pi；子代理依赖的插件还必须在子会话环境里加载。

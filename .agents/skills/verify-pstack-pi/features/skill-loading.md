@@ -9,7 +9,7 @@ A skill the package ships must appear in Pi's `/` menu under `skill:<name>` with
 
 ## How to get to it (user POV)
 
-Install the package, start Pi, type `/`, then `skill:pstack-statechart`. The menu shows the entry and its description. Tab completes it and Enter runs it.
+Install the package, start Pi, type `/`, then `skill:pstack-interrogate` or `skill:pstack-statechart`. The menu shows the entry and its description. Tab completes it and Enter runs it.
 
 ## Driving it with tmux
 
@@ -17,9 +17,11 @@ Install the package, start Pi, type `/`, then `skill:pstack-statechart`. The men
 .agents/skills/verify-pstack-pi/scripts/drive.sh drive skill-load
 ```
 
-It types `/`, then `skill:pstack-statechart`, and captures the menu. Then it closes the menu with Escape, appends a question to the text left in the editor, and runs it.
+It checks interrogate, then statechart. For each skill, it types `/skill:pstack-<name>` and captures the menu. Then it closes the menu with Escape, appends a read-only question to the text left in the editor, and runs it.
 
-The question asks which direction turns an existing TLA+ model into a chart. The answer, `from-spec`, appears only in that skill's body. Every skill except `/skill:pstack-setup` is hidden from the system prompt listing, so the model cannot answer it without the expansion.
+The interrogate question asks for the adversary's agent type in the Fan out section. The answer is `generalPurpose`. The statechart question asks for the raw TLC output file in the Read the report section. The answer is `tlc.out`. Neither answer appears in the command or the skill's description. Every skill except `/skill:pstack-setup` is hidden from the system prompt listing. The questions forbid tool calls, reviews, model checks, and downloads.
+
+The captures are `skill-interrogate-menu.txt`, `skill-interrogate-run.txt`, `skill-statechart-menu.txt`, and `skill-statechart-run.txt` under the run's `evidence/` directory.
 
 ## Gotchas
 

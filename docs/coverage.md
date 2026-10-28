@@ -19,7 +19,7 @@
 | `/skill:pstack-architect` | 先设计再实现 | 可用 | pi-subagents（多方案并行） |
 | `/skill:pstack-arena` | 多方案竞赛，选底版再嫁接 | 可用 | pi-subagents |
 | `/skill:pstack-swarm` | 并行分工再汇总 | 可用。每个工作者是一个后台子代理，写代码的各用一个 git worktree | pi-subagents |
-| `/skill:pstack-interrogate` | 多模型对抗式审查 | 可用。只有一个模型时仍在独立上下文里审，结论注明少了模型多样性 | pi-subagents |
+| `/skill:pstack-interrogate` | 对手各自在独立 worktree 里设法弄坏改动或设计，用实际运行证明问题，主审重跑确认，只报告证实的问题，不修代码 | 可用。只有一个模型时仍用独立上下文和 worktree 运行取证，主审重跑确认，结论注明少了模型多样性 | pi-subagents |
 | `/skill:pstack-correct` | 把反复出现的同类错误变成架构、类型、lint 或测试层面的硬约束 | 可用 | 无 |
 | `/skill:pstack-benchmark-checklist` | 报告性能数字前逐项核对测量是否可信 | 可用。部分命令（`nproc`、`strace`）只在 Linux 上有，macOS 用 `sysctl -n hw.ncpu`、`dtruss` 等对应工具 | 无 |
 | `/skill:pstack-tdd` | 先写失败测试再修 | 可用 | 无 |
@@ -27,7 +27,7 @@
 | `/skill:pstack-in-your-own-words` | 动手前用自己的话复述用户的目标和要解决的问题，确认理解一致 | 可用 | 无 |
 | `/skill:pstack-sharpen` | 把任务做深而不是做大：专家会怎么做、该从哪些原始材料入手、用什么方法和工具、什么能证明结果正确，再按这四点重写提示词；只交回改写后的提示词，不自己开工 | 可用 | 无 |
 | `/skill:pstack-ketchup` | 追进度：用大白话加小图示讲清你上次发消息之后变了什么，列出每一件等你决定的事 | 可用。上游的 `/visualize` 图表在 Pi 上改用 mermaid 或文字示意图 | 无 |
-| `/skill:pstack-ketchup-video` | 同 ketchup 的追进度，但把发生了什么做成一段无声幻灯片短视频，视频下方用文字列出在等你决定的事 | **实验性**。要本机有能把幻灯片渲染成无声视频的工具（如 ffmpeg），Pi 上未验证；渲染失败时按技能写法只列出待决事项 | 渲染无声视频的工具 |
+| `/skill:pstack-ketchup-video` | 同 ketchup 的追进度，但把发生了什么做成一段带字幕的幻灯片短视频，视频下方用文字列出在等你决定的事 | **实验性**。要本机有能把幻灯片渲染成带字幕视频的工具（如 ffmpeg），Pi 上未验证；渲染失败时按技能写法只列出待决事项 | 渲染带字幕视频的工具 |
 | `/skill:pstack-unslop` | 去掉文字里的机器腔 | 可用。高频规则由 extension 常驻注入 | 无 |
 | `/skill:pstack-technical-writing` | 规范文档、PR、提交信息的写法 | 可用 | 无 |
 | `/skill:pstack-no-comments` | 精简无价值的注释 | 可用。审查者用独立上下文的子代理 | pi-subagents |
@@ -35,7 +35,7 @@
 | `/skill:pstack-figure-it-out` | 为没有现成流程的复杂任务设计流程 | 可用。负责人就是当前会话，每轮派新的子代理；会话关掉流程就停 | pi-subagents |
 | `/skill:pstack-show-me-your-work` | 用 TSV 日志记录决策过程 | 可用 | 无 |
 | `/skill:pstack-create-formal-verification-skill` | 为最怕出错、测试又难覆盖的代码（并发、重试、状态机、解析器）生成形式化验证技能，默认用 TLA+ | 可用。生成到项目的 `.agents/skills/verify-<app>/`，并建 `.claude/skills/verify-<app>` 相对软链；验证工具（如 TLA+ 的 TLC）需要本机自备 | 对应的验证工具 |
-| `/skill:pstack-statechart` | 把系统如何在状态之间移动画成 Mermaid 状态图（产品流程、协议、服务），从 TLA+ 模型出图；每个 bug 是一条编号路径，蓝框指向破坏规则的状态；也能把已达成共识的图变成 TLA+ 骨架 | 可用。工作目录在仓库外的临时目录；首次运行用 mise 下载 TLC 和 Java（约 305 MB，需联网） | mise、TLC、Java |
+| `/skill:pstack-statechart` | 用 `scripts/statechart SPEC.tla` 检查 TLA+ 模型，画成 Mermaid 状态图，并在报告里给出走到每个违规状态的最短路径 | 可用。工作目录在仓库外的临时目录。运行时需 Node 22.18+（23.x 需 23.6+）、Bun 1.1.5+ 或 Deno 2.0+。首次运行用 mise 下载 TLC 和 Java（约 305 MB，需联网并先征求用户同意）；没有 mise 时设 `TLA2TOOLS` 为 tla2tools.jar 路径、`JAVA` 为 Java 11+ 的 java 来跳过安装 | 支持 TypeScript 的运行时；TLC、Java（由 mise 安装或用 `TLA2TOOLS` / `JAVA` 指定） |
 | `/skill:pstack-create-verification-skill` | 为项目生成真实驱动应用的验证技能 | 可用。生成到项目的 `.agents/skills/verify-<app>/`，并建 `.claude/skills/verify-<app>` 相对软链；网页和 Electron 应用用浏览器 MCP | Chrome DevTools MCP（界面类应用） |
 | `/skill:pstack-maintain-formal-verification-skill` | 代码改动后让形式化验证重新对上代码：找出动过被验证代码的提交，更新模型、harness 或性质，重跑并说清每个失败是验证跑偏还是代码有 bug | 可用。与 `create-formal-verification-skill` 配套，验证工具本机自备 | 对应的验证工具 |
 | `/skill:pstack-maintain-verification-skill` | 维护验证技能与功能地图 | 可用 | 同上；gh（开 PR） |
@@ -53,7 +53,7 @@
 | autonomous-run | 可用。"跑到完成为止"用 `/goal`，固定节拍用 pi-subagents 的定时任务，都没有就按上限轮询 | pi-goal 或 pi-subagents |
 | bug-fix、perf-issue、runtime-forensics、visual-parity | 可用。命令行和服务用 bash 驱动；网页和 Electron 用 Chrome DevTools MCP；像素对比写 Playwright 脚本 | Chrome DevTools MCP（界面类问题） |
 | opening-a-pr、babysit、shipping | 可用，只在你要求时开 PR。盯 CI 用上游脚本（要 bun）或 `gh pr checks --watch` | gh；bun（可选）；pi-subagents（shipping 的逐 PR 验证者） |
-| autopilot-full、autopilot-stack、orchestrate | 可用。当前会话统筹，每个 PR 每轮派一个新的后台子代理；没有能自己醒来的长期负责人，会话关掉流程就停。orchestrate 的 PR 栈计算要 Graphite | pi-subagents、gh；pi-goal（自动续跑）；bun 和 gt（orchestrate） |
+| autopilot-full、autopilot-stack、orchestrate | 可用。当前会话统筹，每个 PR 每轮派一个新的后台子代理；没有能自己醒来的长期负责人，会话关掉流程就停。orchestrate 用协调者已有工具分派工作并检查产物，不依赖已删除的编排脚本 | pi-subagents、gh；pi-goal（自动续跑） |
 | worktree-cleanup | 已做本地只读审计测试。按 Pi 会话头核对项目，未知证据不判 safe，不 fetch、不删除 | Node + git；`--prs` 才使用 gh |
 
 ## 已去掉

@@ -512,7 +512,7 @@ test("only reading a skill entry updates the current skill line", async () => {
   readIn(handlers, ctx, join(skillsDir, "architect", "references", "design-red-flags.md"));
   assert.deepEqual(widget(), first, "a reference of the same skill changes nothing");
 
-  readIn(handlers, ctx, join(skillsDir, "interrogate", "references", "rubric.md"));
+  readIn(handlers, ctx, join(skillsDir, "how", "references", "explorer-prompt.md"));
   assert.deepEqual(widget(), first, "a reference of another skill changes nothing");
 
   readIn(handlers, ctx, join(skillsDir, "poteto-mode", "playbooks", "feature.md"));
