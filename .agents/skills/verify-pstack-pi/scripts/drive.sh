@@ -185,23 +185,35 @@ drive_skill() {
 # asked for appears only in that skill's body, which is hidden from the prompt
 # listing, so the model cannot answer it without the expansion.
 drive_load() {
-  local run session
+  local run session skill question answer
   run="$(run_of)"
   session="$(session_of)"
-  tmux send-keys -t "$session" '/'
-  sleep "$CMD_PAUSE"
-  tmux send-keys -t "$session" -l -- "skill:pstack-statechart"
-  sleep 0.8
-  capture -30 | grep -q "skill:pstack-statechart" || die "the slash menu did not list skill:pstack-statechart"
-  save_proof "$run" "skill-menu" >/dev/null
-  # Escape closes the menu and keeps the typed text in the editor.
-  tmux send-keys -t "$session" Escape
-  sleep "$CMD_PAUSE"
-  tmux send-keys -t "$session" -l -- " 只回答一个问题，只回复一个词：要把一个已有的 TLA+ 模型画成图，用哪个方向？"
-  sleep "$CMD_PAUSE"
-  tmux send-keys -t "$session" Enter
-  wait_for "from-spec" 40 || die "the model did not answer from-spec, so the skill body did not reach it"
-  save_proof "$run" "skill-run"
+  for skill in interrogate statechart; do
+    case "$skill" in
+      interrogate)
+        question="不要执行审查，不调用工具。仅根据本技能 Fan out 段落回答：每个对手启动时使用的代理类型是什么？只回复该英文类型名。"
+        answer="generalPurpose"
+        ;;
+      statechart)
+        question="不要执行模型检查，不调用工具。仅根据本技能 Read the report 段落回答：按原配置运行 TLC 的原始输出保存在哪个文件？只回复文件名。"
+        answer="tlc.out"
+        ;;
+    esac
+    tmux send-keys -t "$session" '/'
+    sleep "$CMD_PAUSE"
+    tmux send-keys -t "$session" -l -- "skill:pstack-$skill"
+    sleep 0.8
+    capture -30 | grep -q "skill:pstack-$skill" || die "the slash menu did not list skill:pstack-$skill"
+    save_proof "$run" "skill-$skill-menu" >/dev/null
+    # Escape closes the menu and keeps the typed text in the editor.
+    tmux send-keys -t "$session" Escape
+    sleep "$CMD_PAUSE"
+    tmux send-keys -t "$session" -l -- " $question"
+    sleep "$CMD_PAUSE"
+    tmux send-keys -t "$session" Enter
+    wait_for "^ *$answer *$" 60 || die "the model did not answer $answer, so the $skill body did not reach it"
+    save_proof "$run" "skill-$skill-run"
+  done
 }
 
 drive_plan() {
