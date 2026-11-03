@@ -4,6 +4,8 @@ Upstream drives web and Electron UIs with Cursor's `control-ui` skill and uses C
 
 ## What to use
 
+Web pages and signed-in sites: use `ego-browser` when installed, else the MCP servers below.
+
 | Need | Use |
 |---|---|
 | Click, type, navigate, screenshot, console and network logs | Chrome DevTools MCP (`chrome-devtools-mcp`): `navigate_page`, `click`, `fill`, `take_screenshot`, console and network tools |
