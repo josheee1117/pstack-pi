@@ -6,7 +6,7 @@ set -u
 
 REPO="$(cd "$(dirname "$0")/../../../.." && pwd)"
 ROOT="${VERIFY_PSTACK_ROOT:-/tmp/verify-pstack-pi}"
-READY='deepseek-flash-latest'
+READY='deepseek-v4.1-flash'
 CMD_PAUSE=0.4
 
 die() { echo "drive.sh: $*" >&2; exit 1; }
@@ -75,11 +75,11 @@ copy_config() {
 import json, os
 agent = os.environ["VERIFY_AGENT"]
 src = json.load(open(os.path.expanduser("~/.pi/agent/models.json")))
-json.dump({"providers": {"cpa": src["providers"]["cpa"]}}, open(os.path.join(agent, "models.json"), "w"))
+json.dump({"providers": {"workbuddy": src["providers"]["workbuddy"]}}, open(os.path.join(agent, "models.json"), "w"))
 json.dump({
-    "defaultProvider": "cpa",
-    "defaultModel": "deepseek-flash-latest",
-    "defaultThinkingLevel": "off",
+    "defaultProvider": "workbuddy",
+    "defaultModel": "global:deepseek-v4.1-flash",
+    "defaultThinkingLevel": "max",
     "quietStartup": True,
 }, open(os.path.join(agent, "settings.json"), "w"))
 PY
@@ -88,7 +88,7 @@ PY
 launch() {
   command -v pi >/dev/null || die "pi is not on PATH"
   command -v tmux >/dev/null || die "tmux is not on PATH"
-  [ -f "$HOME/.pi/agent/models.json" ] || die "~/.pi/agent/models.json is missing, so the cpa provider cannot be copied"
+  [ -f "$HOME/.pi/agent/models.json" ] || die "~/.pi/agent/models.json is missing, so the workbuddy provider cannot be copied"
   mkdir -p "$ROOT"
   local run session
   run="$(mktemp -d "$ROOT/run-XXXX")"
@@ -97,11 +97,11 @@ launch() {
   # Pin every later helper call in this launch to the new run, so the ready
   # check reads this session and not another live run.
   VERIFY_PSTACK_RUN="$run"
-  copy_config "$run/agent" || die "could not copy the cpa provider from ~/.pi/agent/models.json"
+  copy_config "$run/agent" || die "could not copy the workbuddy provider from ~/.pi/agent/models.json"
   [ -f "$run/agent/models.json" ] && [ -f "$run/agent/settings.json" ] || die "agent config was not written to $run/agent"
   ( cd "$run/project" && PI_CODING_AGENT_DIR="$run/agent" pi install -l "$REPO" --approve ) >&2 || die "pi install failed"
   tmux new-session -d -s "$session" -x 140 -y 44 -c "$run/project" \
-    "export PI_CODING_AGENT_DIR='$run/agent'; export TERM='${TERM:-xterm-256color}'; exec pi --approve --model cpa/deepseek-flash-latest --thinking off" \
+    "export PI_CODING_AGENT_DIR='$run/agent'; export TERM='${TERM:-xterm-256color}'; exec pi --approve --model workbuddy/global:deepseek-v4.1-flash --thinking max" \
     || die "tmux new-session failed"
   if ! wait_for "$READY" 30; then
     capture -40 >&2 || true

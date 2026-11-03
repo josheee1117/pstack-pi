@@ -13,7 +13,7 @@ Verified against Pi 1.3.0 (`/opt/homebrew/bin/pi`), tmux 3.7b, on macOS. Mode st
 
 ## Launch
 
-Run the helper from the repo root. It creates a throwaway run under `/tmp/verify-pstack-pi/`, copies only the `cpa` provider into that run's agent dir, installs this repo into a throwaway project, and starts Pi in a new tmux session.
+Run the helper from the repo root. It creates a throwaway run under `/tmp/verify-pstack-pi/`, copies only the `workbuddy` provider into that run's agent dir, installs this repo into a throwaway project, and starts Pi in a new tmux session.
 
 ```bash
 .agents/skills/verify-pstack-pi/scripts/drive.sh launch
@@ -21,14 +21,14 @@ Run the helper from the repo root. It creates a throwaway run under `/tmp/verify
 
 The command prints the run directory, such as `/tmp/verify-pstack-pi/run-Ab12`. Every later command uses the newest run that still has a live tmux session (else the most recently modified run), or `VERIFY_PSTACK_RUN=<that directory>` when more than one run exists.
 
-Ready means the footer shows `deepseek-flash-latest`. The helper waits for that string. A process that merely stays alive is not ready.
+Ready means the footer shows `deepseek-v4.1-flash`. The helper waits for that string. A process that merely stays alive is not ready.
 
 What launch does, so a failed run can be repeated by hand:
 
 1. `mkdir` a run with `agent/`, `project/`, and `evidence/`.
-2. Copy `providers.cpa` from `~/.pi/agent/models.json` into `<run>/agent/models.json`. Write `<run>/agent/settings.json` with `defaultProvider: cpa`, `defaultModel: deepseek-flash-latest`, `defaultThinkingLevel: off`, `quietStartup: true`. Copy nothing else. Do not copy `sessions/`, `auth.json`, or `trust.json`.
+2. Copy `providers.workbuddy` from `~/.pi/agent/models.json` into `<run>/agent/models.json`. Write `<run>/agent/settings.json` with `defaultProvider: workbuddy`, `defaultModel: global:deepseek-v4.1-flash`, `defaultThinkingLevel: max`, `quietStartup: true`. Copy nothing else. Do not copy `sessions/`, `auth.json`, or `trust.json`.
 3. `cd <run>/project && PI_CODING_AGENT_DIR=<run>/agent pi install -l <repo> --approve`. Then `pi list --approve` lists the repo under Project packages.
-4. `tmux new-session -d -s <session> -x 140 -y 44 -c <run>/project` with `PI_CODING_AGENT_DIR=<run>/agent` and `exec pi --approve --model cpa/deepseek-flash-latest --thinking off`. The session name is the run directory's basename.
+4. `tmux new-session -d -s <session> -x 140 -y 44 -c <run>/project` with `PI_CODING_AGENT_DIR=<run>/agent` and `exec pi --approve --model workbuddy/global:deepseek-v4.1-flash --thinking max`. The session name is the run directory's basename.
 
 `<repo>` is this checkout. `--approve` trusts the throwaway project for that one process and does not write `~/.pi/agent/trust.json`.
 
@@ -44,7 +44,7 @@ Doctor checks four things and prints `doctor: ok`.
 
 - The tmux session exists.
 - Its pane pid is alive.
-- The live screen shows `deepseek-flash-latest`.
+- The live screen shows `deepseek-v4.1-flash`.
 - The live screen does not say `This project is not trusted`.
 
 It also prints `pi --version`. The keystrokes below were checked on 1.3.0, and again on 1.4.0 for `pstack-status` and `skill-load`. A different version means they are unverified. Stop and re-check them against that version.
@@ -79,7 +79,7 @@ The helper wraps these steps. Drive one feature:
 .agents/skills/verify-pstack-pi/scripts/drive.sh drive slash-menu
 ```
 
-`pstack-status` needs no model call. `pstack-task` calls `cpa/deepseek-flash-latest` with `/pstack 只回复 pstack-task-ok` and expects a reply line that is exactly `pstack-task-ok`. `pstack-skill` makes the same check through `/skill:pstack`, which turns the mode on without the `/pstack` command. `skill-load` finds `/skill:pstack-interrogate` and `/skill:pstack-statechart` in the `/` menu with their descriptions, then runs each with a read-only question about its body. It expects `generalPurpose` for interrogate and `tlc.out` for statechart. It does not run a review, model check, or download. `plan-widget` asks the model to call `pstack_plan` with a two-step demo plan and checks the widget above the editor, then clears it with `/pstack off`. `slash-menu` proves the command is registered in the menu, then runs it.
+`pstack-status` needs no model call. `pstack-task` calls `workbuddy/global:deepseek-v4.1-flash` with `/pstack 只回复 pstack-task-ok` and expects a reply line that is exactly `pstack-task-ok`. `pstack-skill` makes the same check through `/skill:pstack`, which turns the mode on without the `/pstack` command. `skill-load` finds `/skill:pstack-interrogate` and `/skill:pstack-statechart` in the `/` menu with their descriptions, then runs each with a read-only question about its body. It expects `generalPurpose` for interrogate and `tlc.out` for statechart. It does not run a review, model check, or download. `plan-widget` asks the model to call `pstack_plan` with a two-step demo plan and checks the widget above the editor, then clears it with `/pstack off`. `slash-menu` proves the command is registered in the menu, then runs it.
 
 Notifications print as a line in the transcript, indented one column in the capture (` pstack mode on.`). The status bar is the footer line `pstack: mode on`. It disappears when the mode is off. There is no `pstack: mode off` line.
 
