@@ -36,21 +36,21 @@ The script calls `~/.local/bin/tlc` (TLC 2.19, needs Java 11 or later) on `ModeS
 
 Checked, as one step each, matching `extensions/pstack.js`:
 
-- Turn the mode on (`/pstack`, `/pstack <task>`, `/skill:pstack`). Lines 381-384 and 484-485.
+- Turn the mode on (`/pstack`, `/pstack <task>`, `/skill:pstack`). Lines 380-384 and 483-486.
 - `/pstack off`. Lines 468-471.
 - The model reports an open plan, or a finished plan, through `pstack_plan`. Lines 323-324.
-- Any other tool result, which may append the reminder. Lines 419-424.
-- The agent settles and drops a finished plan. Lines 437-438.
-- Resume or tree switch replays the branch. Lines 340-363.
+- Any other tool result, which may append the reminder. Lines 415-429.
+- The agent settles and drops a finished plan. Lines 433-437 (plan cleared at line 434).
+- Resume or tree switch replays the branch. Lines 336-365.
 
-`NUDGE_EVERY` is 6 and `NUDGE_LIMIT` is 2 (lines 107-108). The branch holds at most six entries. Each entry is one of `mode_on`, `mode_off`, `plan_open`, `plan_done`. A longer branch only repeats those four kinds. The checked run on 2026-10-19 searched 39613 distinct states in about one second.
+`NUDGE_EVERY` is 6 and `NUDGE_LIMIT` is 2 (lines 107-108). The branch holds at most six entries. Each entry is one of `mode_on`, `mode_off`, `plan_open`, `plan_done`. A longer branch only repeats those four kinds. The checked run on 2026-10-29 against commit 1f22de5 searched 39613 distinct states in under one second.
 
 ## Bounds and assumptions
 
 - One session, one branch. The model does not switch to a second branch with different entries. `session_start` and `session_tree` both call `restoreState`, so one replay action covers both.
 - A plan is either open or finished. The check does not model step text, step order, or the widget's line wrapping.
 - `ReportDone` requires an open plan. The code also accepts a finished plan with nothing open before it, and an empty `steps` list that clears the widget. Neither is in the model.
-- The session can be read. The `catch` in `restoreState` (lines 360-362), which leaves both flags off, is not in the model.
+- The session can be read. The `catch` in `restoreState` (lines 355-358), which leaves both flags off, is not in the model.
 - `/pstack off` writes its `mode_off` entry in the same step that clears the plan. The code does those two writes together (lines 469-471).
 - `restored` is a model flag, not a variable in the code. It means "the last thing that happened was a replay", which is when `BranchAgrees` applies. A pass says nothing about states the model never represents.
 
@@ -68,7 +68,7 @@ Read the trace from State 1. Each later state names the action. Map it back:
 | Settle | `agent_settled` |
 | SwitchBranch | `session_start` or `session_tree` |
 
-A real bug is a trace whose steps the code can actually run, and whose end state breaks one of the four sentences above. A modeling error is a trace that needs a step the code cannot take, such as a plan entry and an off entry changing the widget in one loop iteration. `restoreState` handles them as two entries (lines 348-356). Do not weaken an invariant to make a trace go away. If the current code violates one, report the trace in the code's words and leave the product code alone unless the user asks for a fix.
+A real bug is a trace whose steps the code can actually run, and whose end state breaks one of the four sentences above. A modeling error is a trace that needs a step the code cannot take, such as a plan entry and an off entry changing the widget in one loop iteration. `restoreState` handles them as two entries (lines 344-354). Do not weaken an invariant to make a trace go away. If the current code violates one, report the trace in the code's words and leave the product code alone unless the user asks for a fix.
 
 ## When the code changes
 

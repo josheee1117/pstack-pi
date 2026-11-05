@@ -4,11 +4,11 @@
 \*
 \* Code:
 \*   extensions/pstack.js:107-108  NUDGE_EVERY = 6, NUDGE_LIMIT = 2
-\*   extensions/pstack.js:248-262  modeOn, plan, sincePlan, nudges, noPlan, finishedPlan, resetNudges
+\*   extensions/pstack.js:241-256  modeOn, plan, sincePlan, nudges, noPlan, finishedPlan, resetNudges
 \*   extensions/pstack.js:323-324  pstack_plan execute stores the reported plan and resetNudges()
-\*   extensions/pstack.js:340-363  restoreState replays the branch, then drops a finished plan
-\*   extensions/pstack.js:419-424  planNudge
-\*   extensions/pstack.js:437-438  agent_settled drops a finished plan
+\*   extensions/pstack.js:336-363  restoreState replays the branch, then drops a finished plan
+\*   extensions/pstack.js:415-422  planNudge
+\*   extensions/pstack.js:433-437  agent_settled drops a finished plan
 \*   extensions/pstack.js:468-471  /pstack off clears mode, appends {enabled: FALSE}, clears the plan
 
 EXTENDS Integers, Sequences, TLC
@@ -36,7 +36,7 @@ ReportPlan(open) ==
   /\ sincePlan' = 0
   /\ nudges' = 0
 
-\* extensions/pstack.js:340-363. Branch order is oldest first, so the last
+\* extensions/pstack.js:336-363. Branch order is oldest first, so the last
 \* matching entry wins. A plan entry and an off entry in one record are not
 \* one step in the code: the loop handles them as two entries.
 Restore ==
@@ -56,8 +56,8 @@ Restore ==
            /\ sincePlan' = 0
            /\ nudges' = 0
 
-\* extensions/pstack.js:419-424. pstack_plan's own result returns before this.
-\* Once the plan is abandoned the code returns before counting (line 422),
+\* extensions/pstack.js:415-422. pstack_plan's own result returns before this.
+\* Once the plan is abandoned the code returns before counting (line 418),
 \* so further tool results are not new states.
 OtherTool ==
   /\ IF planOpen /\ nudges < NudgeLimit
@@ -85,8 +85,8 @@ TurnOn ==
   /\ restored' = FALSE
   /\ UNCHANGED <<planOpen, planDone, sincePlan, nudges>>
 
-\* /pstack <task> and /skill:pstack also turn the mode on (lines 381-384 and
-\* 484-485). Same flag write, so TurnOn covers them.
+\* /pstack <task> and /skill:pstack also turn the mode on (lines 380-384 and
+\* 483-486). Same flag write, so TurnOn covers them.
 
 TurnOff ==
   /\ modeOn' = FALSE
@@ -114,7 +114,7 @@ Settle ==
   /\ IF planDone THEN NoPlan ELSE UNCHANGED <<planOpen, planDone, sincePlan, nudges>>
   /\ UNCHANGED <<modeOn, branch, restored>>
 
-\* session_start and session_tree share restoreState (lines 368-369).
+\* session_start and session_tree share restoreState (lines 364-365).
 SwitchBranch ==
   /\ Restore
   /\ restored' = TRUE
@@ -136,8 +136,8 @@ Next ==
 
 Spec == Init /\ [][Next]_vars
 
-\* A mode entry only changes the flag (line 354). Off is the entry that clears
-\* the plan (lines 355 and 471). Turning the mode back on must not bring a
+\* A mode entry only changes the flag (line 350). Off is the entry that clears
+\* the plan (lines 351 and 470). Turning the mode back on must not bring a
 \* plan back. A plan the model reports after that on is a new report.
 OffClearsPlan ==
   LET prior[i \in 0..Len(branch)] ==
@@ -147,9 +147,9 @@ OffClearsPlan ==
         ELSE prior[i - 1]
   IN ~modeOn \/ ~planOpen \/ ~prior[Len(branch)]
 
-\* A finished plan stays through the reply (line 435) and is gone after the
-\* next settle or restore. While it is still on screen it has no open step,
-\* so it draws no reminder (line 422).
+\* A finished plan stays through the reply and is gone after the
+\* next settle or restore (lines 359 and 434). While it is still on screen it has no open step,
+\* so it draws no reminder (line 418).
 DonePlanIsQuiet == ~planDone \/ (nudges = 0 /\ sincePlan = 0 /\ ~planOpen)
 
 \* Two ignored reminders end it (NUDGE_LIMIT), until the model reports again.
