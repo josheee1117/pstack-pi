@@ -9,7 +9,7 @@ pstack-pi is a Pi package. The user installs it with `pi install -l`, starts `pi
 
 The surface is the Pi TUI. `pi -p` and `pi --mode rpc` are not a substitute: they do not render the status bar or the plan widget. The package also ships a Node CLI, `node adapter/worktree-audit.mjs`, which this skill does not drive. The mode and plan state machine has its own check in `.agents/skills/verify-pstack-mode-state/`; run it when a change touches mode persistence, plan restore, or the step reminder.
 
-Verified against Pi 1.3.0 (`/opt/homebrew/bin/pi`), tmux 3.7b, on macOS. Mode status and skill loading were rechecked on Pi 1.4.0. The README names Pi 1.1.0. `pi --version` reported 1.2.0 earlier in the same session and 1.3.0 by the time the proof run started, so record the version doctor prints. Re-run this skill after a Pi upgrade. A user's `~/.agents/skills/` can print a `[Skill conflicts]` banner at startup. That banner is not a failure.
+Verified against Pi 1.3.0 (`/opt/homebrew/bin/pi`), tmux 3.7b, on macOS. Mode status and skill loading were rechecked on Pi 1.4.0, and `pstack-status`, `pstack-skill`, `skill-load` and `slash-menu` on Pi 1.5.2 (2026-11-16, upstream 0.15.42). The README names Pi 1.1.0. `pi --version` reported 1.2.0 earlier in the same session and 1.3.0 by the time the proof run started, so record the version doctor prints. Re-run this skill after a Pi upgrade. A user's `~/.agents/skills/` can print a `[Skill conflicts]` banner at startup. That banner is not a failure.
 
 ## Launch
 
