@@ -18,7 +18,7 @@
 | `/skill:pstack-blast-radius` | 检查改动会波及哪里 | 可用 | gh（查 PR） |
 | `/skill:pstack-architect` | 先设计再实现 | 可用 | pi-subagents（多方案并行） |
 | `/skill:pstack-arena` | 多方案竞赛，选底版再嫁接 | 可用 | pi-subagents |
-| `/skill:pstack-swarm` | 并行分工再汇总 | 可用。每个工作者是一个后台子代理，写代码的各用一个 git worktree | pi-subagents |
+| `/skill:pstack-swarm` | 并行分工再汇总 | 可用。每个工作者是一个后台子代理，写代码的各用一个 git worktree。在 pm 里派的多单并行写代码改走 pm 的 `tools/swarm`（队列、worker、列车合并，见 pm ADR 0030、0031），这里只管单个会话内的分工 | pi-subagents |
 | `/skill:pstack-interrogate` | 对手各自在独立 worktree 里设法弄坏改动或设计，用实际运行证明问题，主审重跑确认，只报告证实的问题，不修代码 | 可用。只有一个模型时仍用独立上下文和 worktree 运行取证，主审重跑确认，结论注明少了模型多样性 | pi-subagents |
 | `/skill:pstack-correct` | 把反复出现的同类错误变成架构、类型、lint 或测试层面的硬约束 | 可用 | 无 |
 | `/skill:pstack-benchmark-checklist` | 报告性能数字前逐项核对测量是否可信 | 可用。部分命令（`nproc`、`strace`）只在 Linux 上有，macOS 用 `sysctl -n hw.ncpu`、`dtruss` 等对应工具 | 无 |
