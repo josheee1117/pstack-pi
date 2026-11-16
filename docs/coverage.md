@@ -12,9 +12,9 @@
 | `/skill:pstack-report` | 收尾报告，讲清改了什么、验证了哪些场景、证据和没覆盖的 | 可用。本包自有技能，流程收尾时由对照规则自动套用 | 无 |
 | `/skill:pstack-help` | 使用向导：怎么配置、怎么开模式、该用哪个技能 | 可用。上游按 Cursor 写（Custom Mode、插件安装、指南页），对照说明把这些换成 Pi 的命令和本包文档 | 无 |
 | `/skill:pstack-setup` | 配置各角色用哪个模型 | 可用。写入 `~/.pi/agent/pstack-models.md` | 无 |
-| `/skill:pstack-how` | 讲清系统怎么工作 | 可用。简单问题直接答，复杂问题并行探查 | pi-subagents（并行探查） |
-| `/skill:pstack-why` | 追查代码为什么这样写 | 可用。代码历史用 git 和 gh；工单、文档、聊天、错误追踪、监控通过 MCP 接入，没接的类别在结论里写明未覆盖 | gh；pi-mcp-adapter 和对应 MCP 服务；pi-subagents（并行查） |
-| `/skill:pstack-recall` | 恢复工作上下文 | 可用。读本项目的 Pi 会话记录（`adapter/notes/sessions.md`），共享记录部分同 why | 同 why |
+| `/skill:pstack-how` | 讲清系统怎么工作 | 可用。派一个只读子代理一次探查并讲解（上游 0.15.42 起不再分多个探查者） | pi-subagents |
+| `/skill:pstack-why` | 追查代码为什么这样写 | 可用。先读引入目标和后续改动的提交、PR 讨论，引用作者原话；记录不够再看其他来源，回答不了的写明（上游 0.15.42 起不再按来源分派调查者） | gh；需要时 pi-mcp-adapter |
+| `/skill:pstack-recall` | 恢复工作上下文 | 可用。读本项目的 Pi 会话记录（`adapter/notes/sessions.md`）；共享记录每个来源派一个调查者（`pstack-investigator`，见 `adapter/notes/sources.md`），没接的来源写明 | gh；pi-mcp-adapter 和对应 MCP 服务；pi-subagents |
 | `/skill:pstack-blast-radius` | 检查改动会波及哪里 | 可用 | gh（查 PR） |
 | `/skill:pstack-architect` | 先设计再实现 | 可用 | pi-subagents（多方案并行） |
 | `/skill:pstack-arena` | 多方案竞赛，选底版再嫁接 | 可用 | pi-subagents |
