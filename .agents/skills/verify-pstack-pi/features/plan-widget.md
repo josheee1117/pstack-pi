@@ -19,7 +19,7 @@ When the model reports a plan through the `pstack_plan` tool, a widget above the
 Preconditions:
 
 - `drive.sh doctor` printed `doctor: ok`.
-- `workbuddy/global:deepseek-v4.1-flash` answers, as in [task entry](./task-entry.md).
+- `magpie/workbuddy/deepseek-v4.1-flash` answers, as in [task entry](./task-entry.md).
 
 - **Show an unfinished plan.** Type `/pstack 只调用一次 pstack_plan 工具：playbook 填 demo，两步，第一步 status done，第二步 status active。然后只回复 plan-widget-ok。不要调用其他工具。` and press Enter. The screen gains `pstack · demo · 1/2`, then `✓ 第一步` and `▶ 第二步`, and the footer shows `pstack: mode on`.
 - **Unfinished plan stays.** After the reply `plan-widget-ok` and Pi stops working, the widget is still on screen with `1/2`.

@@ -8,8 +8,8 @@ Upstream runs workers, PR owners, and verifiers as Cursor cloud agents: a fresh 
 |---|---|
 | swarm worker, `environment: "cloud"` | one async `delegate` per worker, each in its own worktree |
 | `cloud_base_branch` | the `<base>` of `git worktree add` |
-| autopilot or orchestrate PR owner | one async `delegate` per round in the PR's worktree. The role outlives the child: a fresh child takes the next round with the consolidated brief |
-| shipping, autopilot, or orchestrate verifier | a fresh `scout` with `cwd` set to a worktree at the PR head |
+| autopilot PR owner | one async `delegate` per round in the PR's worktree. The role outlives the child: a fresh child takes the next round with the consolidated brief |
+| shipping or autopilot verifier | a fresh `scout` with `cwd` set to a worktree at the PR head |
 | figure-it-out owner | this session. No child stays alive between rounds |
 | Cursor dashboard | `/subagents-fleet` for the user, `subagent({ action: "status" })` for you |
 

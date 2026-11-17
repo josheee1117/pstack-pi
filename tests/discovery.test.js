@@ -83,13 +83,11 @@ test("/skill:<name> expands through Pi's real command expansion for every skill"
 test("the entry skill's playbook list and the playbooks directory agree", () => {
   const entry = readFileSync(join(skillsDir, "poteto-mode", "SKILL.md"), "utf8");
   const kebab = (title) => title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  // Upstream routes by title: the file is playbooks/<kebab title>.md unless the
-  // entry names one explicitly with `File:`.
+  // Upstream routes by title: the section ends with a comma-separated list of
+  // playbook titles, each opening playbooks/<kebab title>.md.
   const section = entry.slice(entry.indexOf("## Playbooks"), entry.indexOf("\n## ", entry.indexOf("## Playbooks") + 1));
-  const listed = [...section.matchAll(/^- \*\*(.+?)\*\*(.*)$/gm)].map(([, rawTitle, rest]) => {
-    const explicit = rest.match(/File: `playbooks\/([a-z0-9-]+\.md)`/);
-    return explicit ? explicit[1] : `${kebab(rawTitle.replace(/\.$/, ""))}.md`;
-  });
+  const titles = section.trim().split(/\n\s*\n/).at(-1).replace(/\.\s*$/, "").split(/,\s*/);
+  const listed = titles.map((title) => `${kebab(title)}.md`);
   const onDisk = readdirSync(join(skillsDir, "poteto-mode", "playbooks")).filter((f) => f.endsWith(".md"));
   assert.deepEqual([...new Set(listed)].sort(), onDisk.sort(), "every playbook the entry routes to ships, and no other");
 });

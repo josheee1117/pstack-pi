@@ -19,7 +19,7 @@ Preconditions:
 
 - `drive.sh doctor` printed `doctor: ok`.
 - `<run>/agent/models.json` contains the `workbuddy` provider, copied at launch.
-- `workbuddy/global:deepseek-v4.1-flash` answered `pi -p --model workbuddy/global:deepseek-v4.1-flash "只回复 ok"` with `ok` at least once on this machine. If that probe fails, skip this feature and say the probe failed. Do not claim the direct command proved it.
+- `magpie/workbuddy/deepseek-v4.1-flash` answered `pi -p --model magpie/workbuddy/deepseek-v4.1-flash "只回复 ok"` with `ok` at least once on this machine. If that probe fails, skip this feature and say the probe failed. Do not claim the direct command proved it.
 
 - **Send the task.** Type `/pstack 只回复 pstack-task-ok` and press Enter. The transcript shows the expanded entry skill, then a line whose text is `pstack-task-ok`.
 - **Send it through the skill command.** With the mode off, type `/skill:pstack 只回复 pstack-skill-entry-ok` and press Enter. The transcript shows a line whose text is `pstack-skill-entry-ok`, and the footer gains `pstack: mode on` even though `/pstack` was never typed.
