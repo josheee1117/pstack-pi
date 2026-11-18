@@ -8,7 +8,7 @@
 
 | 命令 | 做什么 | 在 Pi 上 | 可选组件 |
 |---|---|---|---|
-| `/skill:pstack` | 工作流入口：判断任务大小，匹配 23 个流程之一 | 可用。另见下面的"流程" | 看具体流程 |
+| `/skill:pstack` | 工作流入口：判断任务大小，匹配 22 个流程之一 | 可用。另见下面的"流程" | 看具体流程 |
 | `/skill:pstack-report` | 收尾报告，讲清改了什么、验证了哪些场景、证据和没覆盖的 | 可用。本包自有技能，流程收尾时由对照规则自动套用 | 无 |
 | `/skill:pstack-help` | 使用向导：怎么配置、怎么开模式、该用哪个技能 | 可用。上游按 Cursor 写（Custom Mode、插件安装、指南页），对照说明把这些换成 Pi 的命令和本包文档 | 无 |
 | `/skill:pstack-setup` | 配置各角色用哪个模型 | 可用。写入 `~/.pi/agent/pstack-models.md` | 无 |
@@ -16,7 +16,7 @@
 | `/skill:pstack-why` | 追查代码为什么这样写 | 可用。先读引入目标和后续改动的提交、PR 讨论，引用作者原话；记录不够再看其他来源，回答不了的写明（上游 0.15.42 起不再按来源分派调查者） | gh；需要时 pi-mcp-adapter |
 | `/skill:pstack-recall` | 恢复工作上下文 | 可用。读本项目的 Pi 会话记录（`adapter/notes/sessions.md`）；共享记录每个来源派一个调查者（`pstack-investigator`，见 `adapter/notes/sources.md`），没接的来源写明 | gh；pi-mcp-adapter 和对应 MCP 服务；pi-subagents |
 | `/skill:pstack-blast-radius` | 检查改动会波及哪里 | 可用 | gh（查 PR） |
-| `/skill:pstack-architect` | 先设计再实现 | 可用 | pi-subagents（多方案并行） |
+| `/skill:pstack-architect` | 先设计再实现 | 可用。大或有争议的设计转 arena 多方案比较（上游 0.15.43 起 architect 自身不再并行探索） | 无；转 arena 时 pi-subagents |
 | `/skill:pstack-arena` | 多方案竞赛，选底版再嫁接 | 可用 | pi-subagents |
 | `/skill:pstack-swarm` | 并行分工再汇总 | 可用。每个工作者是一个后台子代理，写代码的各用一个 git worktree。在 pm 里派的多单并行写代码改走 pm 的 `tools/swarm`（队列、worker、列车合并，见 pm ADR 0030、0031），这里只管单个会话内的分工 | pi-subagents |
 | `/skill:pstack-interrogate` | 对手各自在独立 worktree 里设法弄坏改动或设计，用实际运行证明问题，主审重跑确认，只报告证实的问题，不修代码 | 可用。只有一个模型时仍用独立上下文和 worktree 运行取证，主审重跑确认，结论注明少了模型多样性 | pi-subagents |
@@ -39,12 +39,12 @@
 | `/skill:pstack-create-verification-skill` | 为项目生成真实驱动应用的验证技能 | 可用。生成到项目的 `.agents/skills/verify-<app>/`，并建 `.claude/skills/verify-<app>` 相对软链；网页和 Electron 应用用浏览器 MCP | Chrome DevTools MCP（界面类应用） |
 | `/skill:pstack-maintain-formal-verification-skill` | 代码改动后让形式化验证重新对上代码：找出动过被验证代码的提交，更新模型、harness 或性质，重跑并说清每个失败是验证跑偏还是代码有 bug | 可用。与 `create-formal-verification-skill` 配套，验证工具本机自备 | 对应的验证工具 |
 | `/skill:pstack-maintain-verification-skill` | 维护验证技能与功能地图 | 可用 | 同上；gh（开 PR） |
-| `/skill:pstack-reflect` | 复盘并把教训落到技能里 | 可用。读本项目的 Pi 会话记录 | pi-subagents（三个审查视角） |
+| `/skill:pstack-reflect` | 复盘并把教训落到技能里 | 可用。自己读本项目的 Pi 会话记录，列出采纳、不采纳和待办，批准后才改技能（上游 0.15.43 起不再派审查子代理） | 无 |
 | `/skill:pstack-automate-me` | 把个人习惯做成技能 | 可用。挖掘本项目的 Pi 会话记录 | pi-subagents |
 | `/skill:pstack-teach-me` | 把改动或子系统讲明白 | 可用。上游用生图工具画空间类的图，这里改用 mermaid 或文字示意图。改名是为了不被项目里的同名 `teach` 技能盖掉 | 无 |
 | `/skill:pstack-principle-*` | 24 条原则，如 `pstack-principle-fix-root-causes` | 可用，原样 | 无 |
 
-## 流程（入口技能的 23 个 playbook）
+## 流程（入口技能的 22 个 playbook）
 
 | 流程 | 在 Pi 上 | 可选组件 |
 |---|---|---|
@@ -52,8 +52,8 @@
 | eval | 可用。候选和评审都在独立上下文里跑 | pi-subagents |
 | autonomous-run | 可用。"跑到完成为止"用 `/goal`，固定节拍用 pi-subagents 的定时任务，都没有就按上限轮询 | pi-goal 或 pi-subagents |
 | bug-fix、perf-issue、runtime-forensics、visual-parity | 可用。命令行和服务用 bash 驱动；网页和 Electron 用 Chrome DevTools MCP；像素对比写 Playwright 脚本 | Chrome DevTools MCP（界面类问题） |
-| opening-a-pr、babysit、shipping | 可用，只在你要求时开 PR。盯 CI 用上游脚本（要 bun）或 `gh pr checks --watch` | gh；bun（可选）；pi-subagents（shipping 的逐 PR 验证者） |
-| autopilot-full、autopilot-stack、orchestrate | 可用。当前会话统筹，每个 PR 每轮派一个新的后台子代理；没有能自己醒来的长期负责人，会话关掉流程就停。orchestrate 用协调者已有工具分派工作并检查产物，不依赖已删除的编排脚本 | pi-subagents、gh；pi-goal（自动续跑） |
+| opening-a-pr、babysit、shipping | 可用，只在你要求时开 PR。盯 CI 用上游脚本（要 bun）或 `gh pr checks --watch`；上游的 Origin（`origin pr`）分支不适用 | gh；bun（可选）；pi-subagents（shipping 的逐 PR 验证者） |
+| autopilot-full、autopilot-stack | 可用。当前会话统筹，每个 PR 每轮派一个新的后台子代理；没有能自己醒来的长期负责人，会话关掉流程就停。上游 0.15.43 删了 orchestrate，程序级的活走 figure-it-out | pi-subagents、gh；pi-goal（自动续跑） |
 | worktree-cleanup | 已做本地只读审计测试。按 Pi 会话头核对项目，未知证据不判 safe，不 fetch、不删除 | Node + git；`--prs` 才使用 gh |
 
 ## 已去掉

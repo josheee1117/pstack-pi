@@ -505,14 +505,14 @@ test("a finished plan leaves the console once Pi stops working, and does not com
 
 test("only reading a skill entry updates the current skill line", async () => {
   const { handlers, ctx, widget } = await load();
-  readIn(handlers, ctx, join(skillsDir, "architect", "SKILL.md"));
-  assert.match(widget()[0], /^正在用 architect：先设计再实现/, "the user sees the skill's own description");
+  readIn(handlers, ctx, join(skillsDir, "show-me-your-work", "SKILL.md"));
+  assert.match(widget()[0], /^正在用 show-me-your-work：记录可审查的决策过程/, "the user sees the skill's own description");
   const first = widget();
 
-  readIn(handlers, ctx, join(skillsDir, "architect", "references", "design-red-flags.md"));
+  readIn(handlers, ctx, join(skillsDir, "show-me-your-work", "references", "decision-log-template.tsv"));
   assert.deepEqual(widget(), first, "a reference of the same skill changes nothing");
 
-  readIn(handlers, ctx, join(skillsDir, "reflect", "references", "synthesizer.md"));
+  readIn(handlers, ctx, join(skillsDir, "statechart", "references", "render.md"));
   assert.deepEqual(widget(), first, "a reference of another skill changes nothing");
 
   readIn(handlers, ctx, join(skillsDir, "poteto-mode", "playbooks", "feature.md"));
@@ -541,7 +541,7 @@ test("typing a pstack command names its skill, the entry skill included", async 
 
 test("references, playbooks and principles never create a current skill line", async () => {
   const { handlers, ctx, widget } = await load();
-  for (const file of [join(skillsDir, "architect", "references", "design-red-flags.md"), join(skillsDir, "poteto-mode", "playbooks", "feature.md"), join(skillsDir, "principle-laziness-protocol", "SKILL.md")]) {
+  for (const file of [join(skillsDir, "statechart", "references", "render.md"), join(skillsDir, "poteto-mode", "playbooks", "feature.md"), join(skillsDir, "principle-laziness-protocol", "SKILL.md")]) {
     readIn(handlers, ctx, file);
     assert.equal(widget(), undefined, file);
   }

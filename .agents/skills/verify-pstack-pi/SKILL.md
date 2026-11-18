@@ -9,11 +9,11 @@ pstack-pi is a Pi package. The user installs it with `pi install -l`, starts `pi
 
 The surface is the Pi TUI. `pi -p` and `pi --mode rpc` are not a substitute: they do not render the status bar or the plan widget. The package also ships a Node CLI, `node adapter/worktree-audit.mjs`, which this skill does not drive. The mode and plan state machine has its own check in `.agents/skills/verify-pstack-mode-state/`; run it when a change touches mode persistence, plan restore, or the step reminder.
 
-Verified against Pi 1.3.0 (`/opt/homebrew/bin/pi`), tmux 3.7b, on macOS. Mode status and skill loading were rechecked on Pi 1.4.0, and `pstack-status`, `pstack-skill`, `skill-load` and `slash-menu` on Pi 1.5.2 (2026-11-16, upstream 0.15.42). The README names Pi 1.1.0. `pi --version` reported 1.2.0 earlier in the same session and 1.3.0 by the time the proof run started, so record the version doctor prints. Re-run this skill after a Pi upgrade. A user's `~/.agents/skills/` can print a `[Skill conflicts]` banner at startup. That banner is not a failure.
+Verified against Pi 1.3.0 (`/opt/homebrew/bin/pi`), tmux 3.7b, on macOS. Mode status and skill loading were rechecked on Pi 1.4.0, and `pstack-status`, `pstack-skill`, `skill-load` and `slash-menu` on Pi 1.5.2 (2026-11-16, upstream 0.15.42; again 2026-11-17, upstream 0.15.43, through the magpie gateway). The README names Pi 1.1.0. `pi --version` reported 1.2.0 earlier in the same session and 1.3.0 by the time the proof run started, so record the version doctor prints. Re-run this skill after a Pi upgrade. A user's `~/.agents/skills/` can print a `[Skill conflicts]` banner at startup. That banner is not a failure.
 
 ## Launch
 
-Run the helper from the repo root. It creates a throwaway run under `/tmp/verify-pstack-pi/`, copies only the `workbuddy` provider into that run's agent dir, installs this repo into a throwaway project, and starts Pi in a new tmux session.
+Run the helper from the repo root. It creates a throwaway run under `/tmp/verify-pstack-pi/`, copies only the `magpie` gateway provider into that run's agent dir, installs this repo into a throwaway project, and starts Pi in a new tmux session.
 
 ```bash
 .agents/skills/verify-pstack-pi/scripts/drive.sh launch
@@ -26,9 +26,9 @@ Ready means the footer shows `deepseek-v4.1-flash`. The helper waits for that st
 What launch does, so a failed run can be repeated by hand:
 
 1. `mkdir` a run with `agent/`, `project/`, and `evidence/`.
-2. Copy `providers.workbuddy` from `~/.pi/agent/models.json` into `<run>/agent/models.json`. Write `<run>/agent/settings.json` with `defaultProvider: workbuddy`, `defaultModel: global:deepseek-v4.1-flash`, `defaultThinkingLevel: max`, `quietStartup: true`. Copy nothing else. Do not copy `sessions/`, `auth.json`, or `trust.json`.
+2. Copy `providers.magpie` from `~/.pi/agent/models.json` into `<run>/agent/models.json`. Write `<run>/agent/settings.json` with `defaultProvider: magpie`, `defaultModel: workbuddy/deepseek-v4.1-flash`, `defaultThinkingLevel: max`, `quietStartup: true`. Copy nothing else. Do not copy `sessions/`, `auth.json`, or `trust.json`.
 3. `cd <run>/project && PI_CODING_AGENT_DIR=<run>/agent pi install -l <repo> --approve`. Then `pi list --approve` lists the repo under Project packages.
-4. `tmux new-session -d -s <session> -x 140 -y 44 -c <run>/project` with `PI_CODING_AGENT_DIR=<run>/agent` and `exec pi --approve --model workbuddy/global:deepseek-v4.1-flash --thinking max`. The session name is the run directory's basename.
+4. `tmux new-session -d -s <session> -x 140 -y 44 -c <run>/project` with `PI_CODING_AGENT_DIR=<run>/agent` and `exec pi --approve --model magpie/workbuddy/deepseek-v4.1-flash --thinking max`. The session name is the run directory's basename.
 
 `<repo>` is this checkout. `--approve` trusts the throwaway project for that one process and does not write `~/.pi/agent/trust.json`.
 
@@ -79,7 +79,7 @@ The helper wraps these steps. Drive one feature:
 .agents/skills/verify-pstack-pi/scripts/drive.sh drive slash-menu
 ```
 
-`pstack-status` needs no model call. `pstack-task` calls `workbuddy/global:deepseek-v4.1-flash` with `/pstack 只回复 pstack-task-ok` and expects a reply line that is exactly `pstack-task-ok`. `pstack-skill` makes the same check through `/skill:pstack`, which turns the mode on without the `/pstack` command. `skill-load` finds `/skill:pstack-interrogate` and `/skill:pstack-statechart` in the `/` menu with their descriptions, then runs each with a read-only question about its body. It expects `generalPurpose` for interrogate and `tlc.out` for statechart. It does not run a review, model check, or download. `plan-widget` asks the model to call `pstack_plan` with a two-step demo plan and checks the widget above the editor, then clears it with `/pstack off`. `slash-menu` proves the command is registered in the menu, then runs it.
+`pstack-status` needs no model call. `pstack-task` calls `magpie/workbuddy/deepseek-v4.1-flash` with `/pstack 只回复 pstack-task-ok` and expects a reply line that is exactly `pstack-task-ok`. `pstack-skill` makes the same check through `/skill:pstack`, which turns the mode on without the `/pstack` command. `skill-load` finds `/skill:pstack-interrogate` and `/skill:pstack-statechart` in the `/` menu with their descriptions, then runs each with a read-only question about its body. It expects `generalPurpose` for interrogate and `tlc.out` for statechart. It does not run a review, model check, or download. `plan-widget` asks the model to call `pstack_plan` with a two-step demo plan and checks the widget above the editor, then clears it with `/pstack off`. `slash-menu` proves the command is registered in the menu, then runs it.
 
 Notifications print as a line in the transcript, indented one column in the capture (` pstack mode on.`). The status bar is the footer line `pstack: mode on`. It disappears when the mode is off. There is no `pstack: mode off` line.
 

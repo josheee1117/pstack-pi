@@ -13,7 +13,7 @@ The pstack skills were written for Cursor. On Pi, read them through this map. Pa
 - A skill inside an installed package, `plugins/cache/` in Cursor's words, is read-only. That covers `{{skills}}/<name>/` and anything under `{{agentDir}}/npm/`. Before approval, name where the copy goes: `.agents/skills/<name>/` for a project skill, `{{agentDir}}/skills/<name>/` for a user one. After approval, copy the folder there and edit the copy.
 - Before you follow one of these, read the note it names:
   - Chat transcripts, `agent-transcripts/` (recall, reflect, automate-me, eval, show-me-your-work audits, worktree-cleanup): {{adapter}}/notes/sessions.md.
-  - Cloud agents, `environment: "cloud"`, long-lived owners (swarm, autopilot-full, autopilot-stack, shipping, orchestrate, figure-it-out): {{adapter}}/notes/cloud-agents.md.
+  - Cloud agents, `environment: "cloud"`, long-lived owners (swarm, autopilot-full, autopilot-stack, shipping, figure-it-out): {{adapter}}/notes/cloud-agents.md.
   - `control-ui`, CDP, screenshots, traces (bug-fix, visual-parity, runtime-forensics, perf-issue, prototype, create-verification-skill): {{adapter}}/notes/browser.md.
   - MCP sources (why, and reviewers that look up tickets or chat): {{adapter}}/notes/sources.md.
 
@@ -21,6 +21,7 @@ The pstack skills were written for Cursor. On Pi, read them through this map. Pa
 
 - Cursor's `Task` tool is the `subagent` tool from the pi-subagents package. If this session has no `subagent` tool, do bounded work yourself and say so. A step whose product is an independent verdict stops and names the gap.
 - One child is one call: `subagent({ agent, task, context: "fresh", async: true, model })`. `run_in_background: true` is `async: true`. N parallel children are N such calls in one reply. Do not write workflow scripts. Their interface changes between pi-subagents versions.
+- The worker.md pointer that opens every kickoff names `{{skills}}/poteto-mode/worker.md` by its absolute path, for `delegate`, `scout` and cloud owners alike.
 - `subagent_type: "generalPurpose"` and `"poteto-agent"` map to agent `delegate`. `readonly: true` maps to agent `scout` with a read-only task. Always pass `context: "fresh"` for an independent judgment. Agent names and tool allowlists alone are not a security boundary; verify the actual child context and allowed capabilities.
 - `isolation: "worktree"`, and every set of parallel writers: before launching, create one worktree per writer with `git worktree add <path> -b pstack/<name> <base>` and pass `<path>` as `cwd`. Remove only worktrees you created, and only after you kept their diff.
 - An async child's result arrives by itself, after your current tool calls or as a new turn when you are idle. Do not poll for it. `subagent({ action: "status", id })` shows one child, `subagent({ action: "steer", id, message })` redirects a running one, `subagent({ action: "stop", id })` ends one, and `subagent({ action: "resume", id, message })` continues a finished one. A status result does not prove a child completed its task.
