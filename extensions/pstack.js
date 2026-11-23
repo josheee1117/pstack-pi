@@ -289,7 +289,7 @@ export default function pstack(pi) {
     // RPC hosts such as T3 Code show extension statuses but drop custom widgets.
     if (ctx.mode === "rpc" && ctx.ui.setStatus) {
       const step = currentStep();
-      ctx.ui.setStatus(PLAN_STATUS, lines.length ? [lines[0], step && `${ICON[step.status] ?? ICON.pending} ${step.text}`].filter(Boolean).join(" · ") : undefined);
+      ctx.ui.setStatus(PLAN_STATUS, lines.length ? clip([lines[0], step && `${ICON[step.status] ?? ICON.pending} ${step.text}`].filter(Boolean).join(" · ")) : undefined);
     }
   };
 

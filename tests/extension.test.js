@@ -497,6 +497,10 @@ test("in rpc mode the plan is mirrored into one status line, because rpc hosts d
   assert.equal(planStatus(statuses), "pstack · feature · 3/5 · ▶ step 4");
   await plan({ playbook: "feature", steps: steps("pending", "pending") });
   assert.equal(planStatus(statuses), "pstack · feature · 0/2 · ○ step 1", "with nothing active yet, the first unfinished step is current");
+  await plan({ playbook: "feature", steps: [{ text: "读代码\n验收", status: "active" }, { text: "提交", status: "pending" }] });
+  assert.equal(planStatus(statuses), "pstack · feature · 0/2 · ▶ 读代码 验收", "multiline active step text is flattened to one line");
+  await plan({ playbook: "feature", steps: [{ text: "读代码\n验收", status: "pending" }, { text: "提交", status: "pending" }] });
+  assert.equal(planStatus(statuses), "pstack · feature · 0/2 · ○ 读代码 验收", "multiline pending step text is flattened to one line");
   await plan({ playbook: "feature", steps: steps("done", "done") });
   assert.equal(planStatus(statuses), "pstack · feature · 2/2 ✓");
   await plan({ steps: [] });
