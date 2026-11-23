@@ -501,6 +501,17 @@ test("in rpc mode the plan is mirrored into one status line, because rpc hosts d
   assert.equal(planStatus(statuses), undefined, "an empty plan clears the line");
 });
 
+test("in rpc mode the plan result lists every step, because the host shows no widget", async () => {
+  const tui = await load();
+  assert.doesNotMatch(widgetResult(await tui.plan({ playbook: "feature", steps: steps("done", "active", "pending") })), /○ step 3/, "the terminal widget already lists the steps");
+
+  const { ctx, plan } = await load();
+  ctx.mode = "rpc";
+  const text = widgetResult(await plan({ playbook: "feature", steps: [...steps("done", "active"), { text: "step 3", status: "skipped", note: "no change" }, ...steps("pending", "pending", "pending", "pending", "pending", "pending", "pending").map((s, i) => ({ ...s, text: `later ${i + 1}` }))] }));
+  assert.match(text, /pstack · feature · 2\/10\n✓ step 1\n▶ step 2\n– step 3 · 跳过：no change\n○ later 1/);
+  assert.match(text, /○ later 7/, "the list is not windowed like the terminal widget");
+});
+
 test("a finished plan leaves the console once Pi stops working, and does not come back on resume", async () => {
   const { handlers, ctx, plan, widget } = await load();
   readIn(handlers, ctx, join(skillsDir, "tdd", "SKILL.md"));

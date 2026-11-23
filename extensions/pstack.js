@@ -177,6 +177,18 @@ function widgetLines(plan, last) {
   return lines;
 }
 
+// Every step on its own line, for hosts that show the transcript but no widget.
+function planList(plan) {
+  const finished = plan.steps.filter((s) => FINISHED.has(s.status)).length;
+  return [
+    `pstack · ${plan.playbook || "plan"} · ${finished}/${plan.steps.length}`,
+    ...plan.steps.map((s) => {
+      const tag = s.status === "skipped" ? (s.note ? `跳过：${s.note}` : "跳过") : skillTag(s.skill);
+      return `${ICON[s.status] ?? ICON.pending} ${s.text}${tag ? ` · ${tag}` : ""}`;
+    }),
+  ].join("\n");
+}
+
 const fill = (text) =>
   text
     .replaceAll("{{root}}", ROOT)
@@ -334,7 +346,9 @@ export default function pstack(pi) {
       const text = next
         ? `Plan shown: ${finished}/${plan.steps.length} steps finished. Current step: ${JSON.stringify(next.text)}. When it finishes, call ${PLAN_TOOL} again before you start the next step.`
         : `Plan shown: ${finished}/${plan.steps.length} steps finished.`;
-      return { content: [{ type: "text", text }], details: plan };
+      // RPC hosts drop the widget, so the transcript carries the whole list instead.
+      const list = ctx?.mode === "rpc" && plan.steps.length ? `\n\n${planList(plan)}` : "";
+      return { content: [{ type: "text", text: text + list }], details: plan };
     },
   });
 
