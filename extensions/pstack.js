@@ -280,14 +280,16 @@ export default function pstack(pi) {
     ctx.ui.setStatus("pstack", modeOn ? "pstack: mode on" : undefined);
   };
 
+  const currentStep = () => plan.steps.find((s) => s.status === "active") ?? plan.steps.find((s) => !FINISHED.has(s.status));
+
   const showWidget = (ctx) => {
     if (!ctx?.ui?.setWidget) return;
     const lines = widgetLines(plan, last);
     ctx.ui.setWidget(WIDGET, lines.length ? lines : undefined);
     // RPC hosts such as T3 Code show extension statuses but drop custom widgets.
     if (ctx.mode === "rpc" && ctx.ui.setStatus) {
-      const current = lines.find((line) => line.startsWith(ICON.active));
-      ctx.ui.setStatus(PLAN_STATUS, lines.length ? [lines[0], current?.replace(/\s{2,}.*$/, "")].filter(Boolean).join(" · ") : undefined);
+      const step = currentStep();
+      ctx.ui.setStatus(PLAN_STATUS, lines.length ? [lines[0], step && `${ICON[step.status] ?? ICON.pending} ${step.text}`].filter(Boolean).join(" · ") : undefined);
     }
   };
 
@@ -342,7 +344,7 @@ export default function pstack(pi) {
       resetNudges();
       showWidget(ctx);
       const finished = plan.steps.filter((s) => FINISHED.has(s.status)).length;
-      const next = plan.steps.find((s) => s.status === "active") ?? plan.steps.find((s) => !FINISHED.has(s.status));
+      const next = currentStep();
       const text = next
         ? `Plan shown: ${finished}/${plan.steps.length} steps finished. Current step: ${JSON.stringify(next.text)}. When it finishes, call ${PLAN_TOOL} again before you start the next step.`
         : `Plan shown: ${finished}/${plan.steps.length} steps finished.`;
