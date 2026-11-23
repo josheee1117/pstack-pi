@@ -485,6 +485,22 @@ test("a reported plan shows above the editor, windowed on the current step; fini
   assert.equal(widget(), undefined, "an empty plan with no skills in use removes the widget");
 });
 
+test("in rpc mode the plan is mirrored into one status line, because rpc hosts drop custom widgets", async () => {
+  const planStatus = (statuses) => statuses.filter(([key]) => key === "pstack-plan").at(-1)?.[1];
+  const tui = await load();
+  await tui.plan({ playbook: "feature", steps: steps("done", "active") });
+  assert.equal(tui.statuses.some(([key]) => key === "pstack-plan"), false, "the terminal already shows the widget");
+
+  const { ctx, plan, statuses } = await load();
+  ctx.mode = "rpc";
+  await plan({ playbook: "feature", steps: steps("done", "done", "done", "active", "pending") });
+  assert.equal(planStatus(statuses), "pstack · feature · 3/5 · ▶ step 4");
+  await plan({ playbook: "feature", steps: steps("done", "done") });
+  assert.equal(planStatus(statuses), "pstack · feature · 2/2 ✓");
+  await plan({ steps: [] });
+  assert.equal(planStatus(statuses), undefined, "an empty plan clears the line");
+});
+
 test("a finished plan leaves the console once Pi stops working, and does not come back on resume", async () => {
   const { handlers, ctx, plan, widget } = await load();
   readIn(handlers, ctx, join(skillsDir, "tdd", "SKILL.md"));

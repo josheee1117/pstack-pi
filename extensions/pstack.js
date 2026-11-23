@@ -103,6 +103,7 @@ const skillOfFile = (child) => {
 // the current step.
 const PLAN_TOOL = "pstack_plan";
 const WIDGET = "pstack";
+const PLAN_STATUS = "pstack-plan";
 const STEP_LINES = 7;
 const NUDGE_EVERY = 6;
 const NUDGE_LIMIT = 2;
@@ -271,6 +272,11 @@ export default function pstack(pi) {
     if (!ctx?.ui?.setWidget) return;
     const lines = widgetLines(plan, last);
     ctx.ui.setWidget(WIDGET, lines.length ? lines : undefined);
+    // RPC hosts such as T3 Code show extension statuses but drop custom widgets.
+    if (ctx.mode === "rpc" && ctx.ui.setStatus) {
+      const current = lines.find((line) => line.startsWith(ICON.active));
+      ctx.ui.setStatus(PLAN_STATUS, lines.length ? [lines[0], current?.replace(/\s{2,}.*$/, "")].filter(Boolean).join(" · ") : undefined);
+    }
   };
 
   const noteSkill = (skill, ctx) => {
