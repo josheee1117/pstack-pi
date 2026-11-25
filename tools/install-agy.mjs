@@ -180,7 +180,7 @@ function main(options) {
   }
   writeIfChanged(join(pluginDir, "plugin.json"), manifest);
   writeIfChanged(join(pluginDir, "rules", "AGENTS.md"), rules);
-  for (const [id, target] of links) ensureLink(join(skillsDir, id), resolve(target));
+  for (const [id, target] of links) ensureLink(join(skillsDir, id), target);
 
   // A skill removed from the package leaves a broken link behind. Foreign
   // entries in the plugin's skills directory are not ours to delete.
