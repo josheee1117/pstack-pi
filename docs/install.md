@@ -10,6 +10,27 @@
 
 实际执行环境为 macOS。Node 实现已移除 macOS 专用 stat/date，测试覆盖 Windows 风格路径编码，但 Windows/Linux 真机以及不同版本的外部插件尚未端到端验证。Pi 本身的 Node、Git、shell 和平台要求，以所装版本为准。
 
+## agy（Antigravity）
+
+把同一份 pstack 技能装成 agy 插件，T3 里的 agy 会话不用给路径就能用 `pstack-<名>`。装的是当前检出，要指向 Pi 实际加载的那一份；合入 main 后再装，不要指向临时 worktree。
+
+```bash
+node /path/to/pstack-pi/tools/install-agy.mjs
+```
+
+脚本默认写 `~/.gemini/config/plugins/pstack`：`plugin.json`、`rules/AGENTS.md`（由 `adapter/agy.md` 填成本机绝对路径）和 `skills/pstack-<名>` 软链。入口技能是 `pstack`（对应 `skills/poteto-mode`），`pstack-report` 这类自带前缀的目录保持原名。
+
+它还会读 `~/.t3/userdata/settings.json`，给每个 `driver` 为 `antigravity` 且启用的实例建 `config/plugins/pstack` 软链，指向同一个插件目录。
+
+重跑同一条命令即可更新：正确的软链不动，指错的改对，包里删掉的技能对应软链清掉。
+
+```bash
+node /path/to/pstack-pi/tools/install-agy.mjs --dry-run
+node /path/to/pstack-pi/tools/install-agy.mjs --uninstall
+```
+
+`--gemini-dir`、`--t3-home`、`--root` 分别改 agy 配置目录、T3 数据目录和包根，默认是 `~/.gemini/config`、`~/.t3` 和脚本所在仓库。测试只在临时目录里跑，见 `tests/install-agy.test.js`。
+
 ## 按需组件
 
 以下命令是操作者自行选择的安装示例，不会由本包自动执行。`brew` 示例仅适用于装了 Homebrew 的环境；其他平台按对应项目官方安装文档操作。
