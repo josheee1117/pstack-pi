@@ -12,7 +12,7 @@ export const MANIFEST_FILE = ".pstack-install.json";
 
 // The registered id comes from SKILL.md, not the directory: poteto-mode is
 // `pstack`, setup-pstack is `pstack-setup`, teach is `pstack-teach-me`.
-export function skillName(skillFile) {
+function skillName(skillFile) {
   const frontmatter = /^---\r?\n([\s\S]*?)\r?\n---/.exec(readFileSync(skillFile, "utf8"));
   const line = frontmatter && /^name:\s*(.+?)\s*$/m.exec(frontmatter[1]);
   return line ? line[1].replace(/^["']|["']$/g, "") : undefined;
