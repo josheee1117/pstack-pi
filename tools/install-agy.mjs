@@ -187,7 +187,7 @@ function main(options) {
       { path: "plugin.json", sha256: sha256(pluginJson) },
       { path: "rules/AGENTS.md", sha256: sha256(rules) },
     ],
-    links,
+    links: [...links].map(([id, target]) => ({ path: `skills/${id}`, target })),
   }));
 
   if (options.dryRun) console.log("[dry-run] nothing written");

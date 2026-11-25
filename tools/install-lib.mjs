@@ -59,7 +59,7 @@ export function readInstallManifest(dir) {
   return manifest;
 }
 
-export function pointsIntoPackageSkills(target, root) {
+function pointsIntoPackageSkills(target, root) {
   return SKILL_DIRS.some((sub) => target.startsWith(join(resolve(root, sub), sep)));
 }
 
@@ -82,10 +82,7 @@ export function renderAdapter(root, fileName) {
 }
 
 export function manifestContent({ root, files, links }) {
-  const entries = [...links]
-    .map(([id, target]) => ({ path: `skills/${id}`, target }))
-    .sort((left, right) => left.path.localeCompare(right.path));
-  return `${JSON.stringify({ name: PSTACK, root, files, links: entries }, null, 2)}\n`;
+  return `${JSON.stringify({ name: PSTACK, root, files, links: [...links].sort((left, right) => left.path.localeCompare(right.path)) }, null, 2)}\n`;
 }
 
 // Counts what a run changed and performs its writes. In a dry run every write

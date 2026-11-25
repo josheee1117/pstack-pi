@@ -13,8 +13,8 @@ The pstack skills were written for Cursor. This install adds them to Codex. Read
 | adapter | `{{adapter}}` |
 | agentDir | `{{agentDir}}` |
 
-- Codex lists the skills as `pstack-<name>`; the entry skill is `pstack` (`{{skills}}/poteto-mode/SKILL.md`). When the user names one, find the directory under `{{skills}}` or `{{root}}/local-skills` whose `SKILL.md` frontmatter `name` is that id, read the file, and follow it.
-- Codex ignores `disable-model-invocation`, so its catalog lists every installed skill with its description. Apply a pstack skill when the user names it or the task clearly matches, not on keyword overlap alone.
+- Codex installs the skills as `pstack-<name>`; the entry skill is `pstack` (`{{skills}}/poteto-mode/SKILL.md`). Only `pstack` stays in Codex's automatic catalog: every other skill has `agents/openai.yaml` with `allow_implicit_invocation: false`, so the user names it with `$pstack-<name>`. When the user names one, find the directory under `{{skills}}` or `{{root}}/local-skills` whose `SKILL.md` frontmatter `name` is that id, read the file, and follow it.
+- Codex ignores `disable-model-invocation` in `SKILL.md`, so the installer hides the other skills from the catalog itself. Apply a pstack skill when the user names it or the task clearly matches, not on keyword overlap alone.
 - A pstack skill may tell you to create a project skill. Codex discovers project skills in `.agents/skills/<name>/SKILL.md`, so put it there.
 - Role model settings live in `{{agentDir}}/pstack-models.md`. Read `{{agentDir}}/pstack-roles.md` when the first is missing. This map only says where the choices are recorded; Codex still owns model selection.
 

@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 import { mkdirSync, readFileSync, readdirSync, readlinkSync, unlinkSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import { MANIFEST_FILE, PSTACK, createWriter, lstat, manifestContent, pointsIntoPackageSkills, readInstallManifest, removeEmptyDirs, removeLinksForRemovedSkills, removeRecorded, renderAdapter, sha256, skillLinks } from "./install-lib.mjs";
+import { MANIFEST_FILE, PSTACK, createWriter, lstat, manifestContent, readInstallManifest, removeEmptyDirs, removeRecorded, renderAdapter, sha256, skillLinks } from "./install-lib.mjs";
 
 const SCRIPT_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 // Paths in the manifest and on disk, relative to the codex home.
@@ -15,10 +15,9 @@ const BLOCK_END = "<!-- pstack:end";
 const BLOCK_BEGIN_LINE = "<!-- pstack:begin (managed by pstack-port tools/install-codex.mjs) -->";
 const BLOCK_END_LINE = "<!-- pstack:end -->";
 const USAGE = `Usage: node tools/install-codex.mjs [options]
-
-Install pstack for Codex: link every skill into $CODEX_HOME/skills as
-pstack-<name>, render adapter/codex.md, and add a managed block to
-$CODEX_HOME/AGENTS.md.
+Install pstack for Codex: link the entry skill into $CODEX_HOME/skills, wrap
+every other skill in a directory that keeps it out of the automatic catalog,
+render adapter/codex.md, and add a managed block to $CODEX_HOME/AGENTS.md.
 
 Options:
   --root <dir>          package root (default: the repository holding this script)
@@ -98,10 +97,34 @@ function removeBlock(text, agentsPath) {
   return joined === "" ? "" : joined.replace(/\n+$/, "\n");
 }
 
+// Codex reads a per-skill policy from agents/openai.yaml inside the skill's own
+// directory. The package skill directories are upstream files, so a skill that
+// must stay out of the automatic catalog gets a real directory: a copy of its
+// SKILL.md (Codex 0.171.0 ignores a skill whose SKILL.md is a symlink), links
+// to its other files, and the generated policy. The entry skill stays a plain
+// link and in the catalog.
+const POLICY = "policy:\n  allow_implicit_invocation: false\n";
+const skip = (message) => console.log(`skip ${message}`);
+
+function wrappedSkill(id, target) {
+  const dir = `skills/${id}`;
+  return {
+    dir,
+    files: [
+      { path: `${dir}/SKILL.md`, content: readFileSync(join(target, "SKILL.md"), "utf8") },
+      { path: `${dir}/agents/openai.yaml`, content: POLICY },
+    ],
+    links: readdirSync(target)
+      .filter((name) => name !== "SKILL.md")
+      .sort()
+      .map((name) => ({ path: `${dir}/${name}`, target: join(target, name) })),
+  };
+}
+
 // Everything is checked before the first write: a skills directory that is not
 // a directory, a skill entry this installer did not create, or a pstack
 // directory with no manifest leaves the codex home untouched.
-function assertInstallable(options, skillsDir, previous, links) {
+function assertInstallable(options, skillsDir, previous, links, wrapped) {
   const stat = lstat(skillsDir);
   if (stat?.isSymbolicLink()) throw new Error(`${skillsDir} is a symlink; this installer never creates one. Move it away, or install into another home with --codex-home`);
   if (stat && !stat.isDirectory()) throw new Error(`${skillsDir} exists and is not a directory; move it away, or install into another home with --codex-home`);
@@ -113,35 +136,72 @@ function assertInstallable(options, skillsDir, previous, links) {
     throw new Error(`${adapterDir} already exists and was not created by this installer (no ${MANIFEST_FILE}); move it away, or install into another home with --codex-home`);
   }
 
-  const recorded = new Map((previous?.links ?? []).map((link) => [link.path, link.target]));
+  // Only a link the earlier manifest recorded, at this path and this target,
+  // is this installer's. A link the user made at a pstack id is a conflict
+  // even when it points into the package, so this installer never claims it.
+  const recordedLinks = new Map((previous?.links ?? []).map((link) => [link.path, resolve(link.target)]));
+  const recordedFiles = new Set((previous?.files ?? []).map((file) => file.path));
   const conflicts = [];
-  for (const [id, target] of links) {
-    const path = join(skillsDir, id);
+  const checkLink = (path, pathKey) => {
     const entry = lstat(path);
-    if (!entry) continue;
+    if (!entry) return;
     if (!entry.isSymbolicLink()) {
       conflicts.push(`${path} exists and is not a symlink`);
-      continue;
+      return;
     }
     const current = resolve(dirname(path), readlinkSync(path));
-    if (current !== resolve(target) && current !== recorded.get(`skills/${id}`) && !pointsIntoPackageSkills(current, options.root)) {
-      conflicts.push(`${path} points to ${current}`);
+    if (recordedLinks.get(pathKey) !== current) conflicts.push(`${path} points to ${current}`);
+  };
+
+  for (const id of links.keys()) {
+    const path = join(skillsDir, id);
+    const wrapper = wrapped.get(id);
+    if (!wrapper) {
+      checkLink(path, `skills/${id}`);
+      continue;
+    }
+    const entry = lstat(path);
+    if (!entry) continue;
+    if (!entry.isDirectory()) {
+      conflicts.push(entry.isSymbolicLink() ? `${path} points to ${resolve(dirname(path), readlinkSync(path))}` : `${path} exists and is not a directory`);
+      continue;
+    }
+    // A directory this installer did not write is the user's, even when it
+    // holds the same name or links into the package.
+    const owned = [...wrapper.links, ...wrapper.files].some((item) => recordedLinks.has(item.path) || recordedFiles.has(item.path));
+    if (!owned) {
+      conflicts.push(`${path} exists and was not created by this installer`);
+      continue;
+    }
+    for (const link of wrapper.links) checkLink(join(options.codexHome, link.path), link.path);
+    for (const file of wrapper.files) {
+      const filePath = join(options.codexHome, file.path);
+      const fileStat = lstat(filePath);
+      if (fileStat && (!fileStat.isFile() || !recordedFiles.has(file.path))) conflicts.push(`${filePath} exists and was not created by this installer`);
     }
   }
   if (conflicts.length > 0) throw new Error(`${conflicts.join("\n")}\nmove these away, or install into another home with --codex-home`);
 }
 
+// Directories the recorded entries live in, deepest first. `skills` itself is
+// not the installer's, so it is not in the list.
+function entryDirectories(baseDir, entries) {
+  const dirs = new Set();
+  for (const entry of entries) {
+    for (let dir = dirname(entry.path); dir !== "." && dir !== "skills"; dir = dirname(dir)) dirs.add(join(baseDir, dir));
+  }
+  return [...dirs].sort((left, right) => right.split(sep).length - left.split(sep).length);
+}
+
 function uninstall(options, paths, previous, writer) {
   const { note } = writer;
-  const skip = (message) => console.log(`skip ${message}`);
-  if (!previous) console.log(`no ${MANIFEST_FILE} in ${options.codexHome}: only the managed block and links that point into the package can be removed`);
+  if (!previous) console.log(`no ${MANIFEST_FILE} in ${options.codexHome}: only the managed block can be removed`);
 
-  removeRecorded({ baseDir: options.codexHome, entries: [...(previous?.files ?? []), ...(previous?.links ?? [])], note, skip, dryRun: options.dryRun });
-
-  // Uninstall removes every link that points into the package: the ones the
-  // manifest recorded above, and a skill that left the package after the last
-  // run.
-  removeLinksForRemovedSkills({ linksDir: paths.skillsDir, current: new Set(), recorded: new Map(), root: options.root, note, dryRun: options.dryRun });
+  // The manifest lists everything this installer wrote. Uninstall never scans
+  // the skills directory, so a link it did not record survives even when it
+  // points into the package.
+  const entries = [...(previous?.files ?? []), ...(previous?.links ?? [])];
+  removeRecorded({ baseDir: options.codexHome, entries, note, skip, dryRun: options.dryRun });
 
   if (lstat(paths.agentsPath)?.isFile()) {
     const text = readFileSync(paths.agentsPath, "utf8");
@@ -161,7 +221,7 @@ function uninstall(options, paths, previous, writer) {
     note(`remove ${paths.manifestPath}`);
     if (!options.dryRun) unlinkSync(paths.manifestPath);
   }
-  removeEmptyDirs({ dirs: [join(options.codexHome, "pstack")], note, dryRun: options.dryRun });
+  removeEmptyDirs({ dirs: [...new Set([join(options.codexHome, "pstack"), ...entryDirectories(options.codexHome, entries)])], note, dryRun: options.dryRun });
 }
 
 function main(options) {
@@ -185,10 +245,11 @@ function main(options) {
   // Read and validate everything before the first write, so a conflicting entry
   // or an edited AGENTS.md leaves the codex home untouched.
   const links = skillLinks(options.root);
+  const wrapped = new Map([...links].filter(([id]) => id !== PSTACK).map(([id, target]) => [id, wrappedSkill(id, target)]));
   const adapter = renderAdapter(options.root, "codex.md");
   const block = blockText(options.root, paths.adapterPath);
   const agents = agentsWithBlock(paths.agentsPath, block);
-  assertInstallable(options, skillsDir, previous, links);
+  assertInstallable(options, skillsDir, previous, links, wrapped);
 
   if (!options.dryRun) {
     mkdirSync(skillsDir, { recursive: true });
@@ -196,18 +257,37 @@ function main(options) {
   }
   writeIfChanged(paths.adapterPath, adapter);
   writeIfChanged(paths.agentsPath, agents);
-  for (const [id, target] of links) ensureLink(join(skillsDir, id), target);
+  for (const [id, target] of links) {
+    const wrapper = wrapped.get(id);
+    if (!wrapper) {
+      ensureLink(join(skillsDir, id), target);
+      continue;
+    }
+    if (!options.dryRun) mkdirSync(join(options.codexHome, wrapper.dir, "agents"), { recursive: true });
+    for (const link of wrapper.links) ensureLink(join(options.codexHome, link.path), link.target);
+    for (const file of wrapper.files) writeIfChanged(join(options.codexHome, file.path), file.content);
+  }
 
-  const recorded = new Map((previous?.links ?? []).map((link) => [link.path, link.target]));
-  removeLinksForRemovedSkills({ linksDir: skillsDir, current: links, recorded, root: options.root, note, dryRun: options.dryRun });
+  // A skill removed from the package leaves its recorded entries behind. Only
+  // that record decides what is ours; a link this installer never wrote is
+  // left alone, even when it points into the package.
+  const linkEntries = [...links].flatMap(([id, target]) => wrapped.get(id)?.links ?? [{ path: `skills/${id}`, target }]);
+  const fileEntries = [
+    { path: ADAPTER_FILE, sha256: sha256(adapter) },
+    ...[...wrapped.values()].flatMap((wrapper) => wrapper.files.map((file) => ({ path: file.path, sha256: sha256(file.content) }))),
+  ];
+  const keptLinks = new Set(linkEntries.map((entry) => entry.path));
+  const keptFiles = new Set(fileEntries.map((entry) => entry.path));
+  const removed = [
+    ...(previous?.files ?? []).filter((entry) => !keptFiles.has(entry.path)),
+    ...(previous?.links ?? []).filter((entry) => !keptLinks.has(entry.path)),
+  ];
+  removeRecorded({ baseDir: options.codexHome, entries: removed, note, skip, dryRun: options.dryRun });
+  removeEmptyDirs({ dirs: entryDirectories(options.codexHome, removed), note, dryRun: options.dryRun });
 
   // Written last: it is the record of what this run wrote, for the next run and
   // for uninstall.
-  writeIfChanged(paths.manifestPath, manifestContent({
-    root: options.root,
-    files: [{ path: ADAPTER_FILE, sha256: sha256(adapter) }],
-    links,
-  }));
+  writeIfChanged(paths.manifestPath, manifestContent({ root: options.root, files: fileEntries, links: linkEntries }));
 
   if (options.dryRun) console.log("[dry-run] nothing written");
   else if (writer.changes === 0) console.log(`${PSTACK} codex install is up to date: ${options.codexHome}`);

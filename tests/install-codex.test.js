@@ -38,19 +38,45 @@ function fixture(t) {
   };
 }
 
-test("links every packaged skill by its registered id and renders the adapter", (t) => {
+// A package small enough to change between runs: the installer only reads
+// SKILL.md files and the adapter template.
+function packageWith(base, skills) {
+  const root = join(base, "package");
+  mkdirSync(join(root, "adapter"), { recursive: true });
+  writeFileSync(join(root, "adapter", "codex.md"), "codex adapter for {{root}}\n");
+  for (const [dir, name] of skills) {
+    mkdirSync(join(root, "skills", dir), { recursive: true });
+    writeFileSync(join(root, "skills", dir, "SKILL.md"), `---\nname: ${name}\n---\n\n${name} body\n`);
+  }
+  return root;
+}
+
+test("installs every packaged skill, keeping only the entry in Codex's automatic catalog", (t) => {
   const f = fixture(t);
   run(f.args);
 
-  const entries = readdirSync(f.skills, { withFileTypes: true });
-  assert.equal(entries.length, skillCount, "one link per packaged skill");
-  assert.ok(entries.every((entry) => entry.isSymbolicLink()), "every skill entry is a symlink");
-  const link = (id) => resolve(f.skills, readlinkSync(join(f.skills, id)));
-  assert.equal(link("pstack"), join(repoRoot, "skills", "poteto-mode"));
-  assert.equal(link("pstack-setup"), join(repoRoot, "skills", "setup-pstack"));
-  assert.equal(link("pstack-teach-me"), join(repoRoot, "skills", "teach"));
-  assert.equal(link("pstack-report"), join(repoRoot, "local-skills", "pstack-report"));
-  assert.ok(existsSync(join(f.skills, "pstack-how", "SKILL.md")));
+  const ids = readdirSync(f.skills).sort();
+  assert.equal(ids.length, skillCount, "one entry per packaged skill");
+
+  // The entry stays a plain link, so Codex keeps listing it in the catalog.
+  assert.ok(lstatSync(join(f.skills, "pstack")).isSymbolicLink());
+  assert.equal(resolve(f.skills, readlinkSync(join(f.skills, "pstack"))), join(repoRoot, "skills", "poteto-mode"));
+
+  // Every other skill is a real directory: Codex reads agents/openai.yaml from
+  // the skill's own directory, and the package directories are upstream files.
+  for (const id of ids.filter((id) => id !== "pstack")) {
+    const dir = join(f.skills, id);
+    assert.ok(lstatSync(dir).isDirectory(), `${id} is a real directory`);
+    assert.ok(lstatSync(join(dir, "SKILL.md")).isFile(), `${id}/SKILL.md is a real file`);
+    assert.equal(readFileSync(join(dir, "agents", "openai.yaml"), "utf8"), "policy:\n  allow_implicit_invocation: false\n", `${id} keeps itself out of the catalog`);
+  }
+  assert.equal(readFileSync(join(f.skills, "pstack-how", "SKILL.md"), "utf8"), readFileSync(join(repoRoot, "skills", "how", "SKILL.md"), "utf8"), "the copied body is the package's");
+
+  const link = (id, name) => resolve(f.skills, readlinkSync(join(f.skills, id, name)));
+  assert.ok(lstatSync(join(f.skills, "pstack-setup", "SKILL.md")).isFile(), "a wrapper body is copied, not linked");
+  assert.equal(link("pstack-show-me-your-work", "scripts"), join(repoRoot, "skills", "show-me-your-work", "scripts"));
+  assert.ok(existsSync(join(f.skills, "pstack-show-me-your-work", "scripts")), "a skill's other files are reachable through the wrapper");
+  assert.ok(existsSync(join(f.skills, "pstack", "playbooks", "bug-fix.md")), "the entry skill's playbooks stay reachable");
 
   const adapter = readFileSync(f.adapter, "utf8");
   assert.ok(adapter.includes(resolve(repoRoot)), "the adapter names the package root");
@@ -60,6 +86,8 @@ test("links every packaged skill by its registered id and renders the adapter", 
   assert.equal(manifest.name, "pstack");
   assert.equal(manifest.root, repoRoot);
   assert.equal(resolve(manifest.links.find((entry) => entry.path === "skills/pstack").target), join(repoRoot, "skills", "poteto-mode"));
+  assert.ok(manifest.files.some((entry) => entry.path === "skills/pstack-how/SKILL.md"), "the copied SKILL.md is recorded");
+  assert.ok(manifest.files.some((entry) => entry.path === "skills/pstack-how/agents/openai.yaml"), "the generated policy file is recorded");
 });
 
 test("writes a marked block into AGENTS.md, creating the file with no leftover placeholders", (t) => {
@@ -78,28 +106,83 @@ test("writes a marked block into AGENTS.md, creating the file with no leftover p
 test("a second run changes nothing", (t) => {
   const f = fixture(t);
   run(f.args);
-  const paths = [f.agents, f.adapter, join(f.codex, ".pstack-install.json"), ...readdirSync(f.skills).map((name) => join(f.skills, name))];
-  const snapshot = () => paths.map((path) => {
-    const stat = lstatSync(path);
-    return [path, stat.mtimeMs, stat.isSymbolicLink() ? readlinkSync(path) : readFileSync(path, "utf8")];
-  });
+  const snapshot = () => {
+    const entries = [];
+    const walk = (path) => {
+      const stat = lstatSync(path);
+      entries.push([path, stat.mtimeMs, stat.isSymbolicLink() ? `link ${readlinkSync(path)}` : stat.isDirectory() ? "dir" : readFileSync(path, "utf8")]);
+      if (stat.isDirectory()) for (const name of readdirSync(path).sort()) walk(join(path, name));
+    };
+    walk(f.codex);
+    return entries;
+  };
   const before = snapshot();
   const output = run(f.args);
   assert.deepEqual(snapshot(), before);
   assert.match(output, /up to date/);
 });
 
-test("a rerun removes links for skills that left the package and leaves other entries alone", (t) => {
+test("a rerun removes a recorded skill once it leaves the package and claims nothing else", (t) => {
   const f = fixture(t);
-  run(f.args);
-  symlinkSync(join(repoRoot, "skills", "gone"), join(f.skills, "pstack-gone"));
+  const root = packageWith(f.base, [["poteto-mode", "pstack"], ["how", "pstack-how"]]);
+  const args = [...f.args, "--root", root];
+  run(args);
+  symlinkSync(join(root, "skills", "how"), join(f.skills, "pstack-gone"));
   symlinkSync(join(f.base, "other-skill"), join(f.skills, "someone-else"));
   mkdirSync(join(f.skills, "hand-written"));
 
-  run(f.args);
-  assert.equal(lexists(join(f.skills, "pstack-gone")), false, "the stale pstack link is gone");
+  rmSync(join(root, "skills", "how"), { recursive: true });
+  const output = run(args);
+
+  assert.equal(lexists(join(f.skills, "pstack-how")), false, "the whole wrapper directory is gone");
+  assert.match(output, /remove .*pstack-how/);
+  assert.ok(lexists(join(f.skills, "pstack-gone")), "a link the manifest never recorded is not this installer's");
   assert.ok(lstatSync(join(f.skills, "someone-else")).isSymbolicLink(), "a foreign link is not this installer's to remove");
   assert.ok(lstatSync(join(f.skills, "hand-written")).isDirectory(), "a foreign directory stays");
+});
+
+test("refuses a first-install symlink to a packaged skill instead of claiming it", (t) => {
+  const f = fixture(t);
+  mkdirSync(f.skills, { recursive: true });
+  symlinkSync(join(repoRoot, "skills", "how"), join(f.skills, "pstack-how"));
+
+  assert.throws(() => run(f.args), (error) => {
+    assert.notEqual(error.status, 0);
+    assert.match(error.stderr, /skills\/pstack-how/);
+    return true;
+  });
+
+  assert.equal(resolve(readlinkSync(join(f.skills, "pstack-how"))), join(repoRoot, "skills", "how"), "the user's link is untouched");
+  assert.equal(lexists(join(f.codex, ".pstack-install.json")), false);
+  assert.equal(lexists(f.agents), false, "nothing was written before the check");
+});
+
+test("leaves a differently named link to a packaged skill alone", (t) => {
+  const f = fixture(t);
+  mkdirSync(f.skills, { recursive: true });
+  const alias = join(f.skills, "my-how");
+  symlinkSync(join(repoRoot, "skills", "how"), alias);
+
+  run(f.args);
+  run(f.args);
+  run([...f.args, "--uninstall"]);
+
+  assert.equal(resolve(readlinkSync(alias)), join(repoRoot, "skills", "how"), "the alias survives install, rerun and uninstall");
+});
+
+test("uninstall in a home that was never installed deletes nothing", (t) => {
+  const f = fixture(t);
+  mkdirSync(f.skills, { recursive: true });
+  const alias = join(f.skills, "my-how");
+  symlinkSync(join(repoRoot, "skills", "how"), alias);
+  const stale = join(f.skills, "pstack-gone");
+  symlinkSync(join(repoRoot, "skills", "gone"), stale);
+
+  const output = run([...f.args, "--uninstall"]);
+
+  assert.match(output, /nothing to remove/);
+  assert.ok(lstatSync(alias).isSymbolicLink());
+  assert.ok(lstatSync(stale).isSymbolicLink(), "no manifest means no link is this installer's");
 });
 
 test("refuses to install over a skill entry this installer did not create", (t) => {
@@ -179,14 +262,11 @@ test("uninstall removes what the installer wrote and keeps everything else", (t)
   symlinkSync(foreignSkill, join(f.skills, "someone-else"));
   const note = join(f.codex, "pstack", "note.md");
   writeFileSync(note, "mine\n");
-  const stale = join(f.skills, "pstack-gone");
-  symlinkSync(join(repoRoot, "skills", "gone"), stale);
 
   run([...f.args, "--uninstall"]);
 
   assert.equal(lexists(join(f.skills, "pstack-how")), false);
   assert.equal(lexists(join(f.skills, "pstack")), false);
-  assert.equal(lexists(stale), false, "a leftover package link is still this installer's");
   assert.ok(lstatSync(join(f.skills, "someone-else")).isSymbolicLink(), "a foreign link stays");
   assert.equal(lexists(f.agents), false, "the file was created for the block, so it goes too");
   assert.equal(lexists(f.adapter), false);
@@ -198,14 +278,14 @@ test("uninstall removes what the installer wrote and keeps everything else", (t)
 test("uninstall leaves a recorded link alone once it points somewhere else", (t) => {
   const f = fixture(t);
   run(f.args);
-  const link = join(f.skills, "pstack-how");
+  const link = join(f.skills, "pstack");
   rmSync(link);
   const elsewhere = join(f.base, "replacement");
   mkdirSync(elsewhere);
   symlinkSync(elsewhere, link);
 
   const output = run([...f.args, "--uninstall"]);
-  assert.match(output, /skip .*pstack-how.*no longer points to/);
+  assert.match(output, /skip .*pstack.*no longer points to/);
   assert.equal(resolve(readlinkSync(link)), elsewhere);
 });
 
@@ -214,7 +294,9 @@ test("dry run prints the plan and writes nothing", (t) => {
   const output = run([...f.args, "--dry-run"]);
 
   assert.match(output, /\[dry-run\]/);
-  assert.match(output, /link .*skills\/pstack/);
+  assert.match(output, /link .*skills\/pstack -> /);
+  assert.match(output, /write .*skills\/pstack-how\/SKILL\.md/);
+  assert.match(output, /write .*skills\/pstack-how\/agents\/openai\.yaml/);
   assert.equal(lexists(f.codex), false, "no codex home content");
 });
 
