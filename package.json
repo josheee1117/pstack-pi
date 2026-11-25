@@ -1,7 +1,7 @@
 {
   "name": "pstack-port",
   "version": "0.2.0",
-  "description": "Rigorous engineering workflows for Pi: upstream pstack's skills with a Pi adapter. Understand, design, implement, verify independently, ship, recover.",
+  "description": "Rigorous engineering workflows from upstream pstack, as portable skills for Pi, Codex, agy and opencode. A Pi extension adds the /pstack command, status bar and plan widget.",
   "type": "module",
   "license": "MIT",
   "keywords": [

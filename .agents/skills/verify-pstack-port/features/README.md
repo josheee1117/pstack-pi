@@ -7,7 +7,7 @@ This directory is the maintained source for verifying what a user sees in the Pi
 - Launch with `.agents/skills/verify-pstack-port/scripts/drive.sh launch`.
 - The run directory it prints is the only state this run may touch.
 - The throwaway project has this repo installed, and `drive.sh doctor` prints `doctor: ok`.
-- Doctor prints the Pi version. The keystrokes in this map were checked on Pi 1.3.0, and on 1.4.0 for mode status and skill loading. The footer shows `deepseek-v4.1-flash`.
+- Doctor prints the Pi version. `SKILL.md` records which Pi versions the keystrokes were checked on. The footer shows `deepseek-v4.1-flash`.
 - Drive only the tmux session this launch started.
 
 ## Driving conventions
