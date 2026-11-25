@@ -19,6 +19,6 @@ The pstack skills were written for Cursor. This installed plugin adds them to ag
 
 ## Tools
 
-- `pstack_plan` is a Pi tool and does not exist here. When a skill asks for it, use agy's own task list if the session has one; otherwise skip the call and keep the plan in the reply.
-- A skill may name a subagent, arena, or another tool that agy does not provide. Do not invent it. Do the work in this session, or say which capability is missing. Use a substitute only when `{{adapter}}/overrides.md` allows it and the tool is actually present.
+- `pstack_plan` is a Pi tool and does not exist here. When a skill asks for it, use agy's own task list if the session has one; if it has none, skip the call. Do not write the steps into the reply.
+- A skill may name a subagent, arena, or another tool that agy does not provide. Do not invent it. When the step needs that tool's independence, such as an independent review, report the missing backend and stop that step; do not do it in this session. `{{adapter}}/overrides.md` decides the rest, and a substitute counts only when it allows one and the tool is actually present.
 - `/skill:pstack-<name>` is Pi syntax. In agy, load the skill by its id `pstack-<name>`.

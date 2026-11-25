@@ -22,7 +22,9 @@ node /path/to/pstack-pi/tools/install-agy.mjs
 
 它还会读 `~/.t3/userdata/settings.json`，给每个 `driver` 为 `antigravity` 且启用的实例建 `config/plugins/pstack` 软链，指向同一个插件目录。
 
-重跑同一条命令即可更新：正确的软链不动，指错的改对，包里删掉的技能对应软链清掉。
+插件目录里有一份 `.pstack-install.json`，记录包根、本脚本生成的文件和软链。首次安装时，如果 `plugins/pstack` 已存在、不是本脚本装的（没有清单、目录非空），或本身是软链，脚本在写盘前退出、打印冲突路径、退出码非 0；先移走它再装。早期版本装的插件没有清单，靠 `plugin.json` 里的 `name` 和已渲染的 `rules/AGENTS.md` 识别，重跑一次就补上。
+
+重跑同一条命令即可更新：正确的软链不动，指错的改对，包里删掉的技能对应软链清掉；用户自己放进 `skills/`、指向别处的链接不动。
 
 ```bash
 node /path/to/pstack-pi/tools/install-agy.mjs --dry-run
@@ -30,6 +32,8 @@ node /path/to/pstack-pi/tools/install-agy.mjs --uninstall
 ```
 
 `--gemini-dir`、`--t3-home`、`--root` 分别改 agy 配置目录、T3 数据目录和包根，默认是 `~/.gemini/config`、`~/.t3` 和脚本所在仓库。测试只在临时目录里跑，见 `tests/install-agy.test.js`。
+
+`--uninstall` 只删清单里、且内容或目标仍匹配的条目，再删空目录；用户自己加的文件（如 `rules/team.md`）保留。账号侧只删指向本插件目录的 `config/plugins/pstack` 软链，普通目录或指向别处的软链跳过并打印原因。没有清单的目录不会被删，脚本只打印一行说明。
 
 ## 按需组件
 

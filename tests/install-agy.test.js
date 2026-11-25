@@ -133,6 +133,88 @@ test("uninstall removes the plugin and every account link, even for a since-disa
   }
 });
 
+test("refuses to install over a plugin directory this installer did not create", (t) => {
+  const f = fixture(t);
+  const plugin = join(f.gemini, "plugins", "pstack");
+  mkdirSync(join(plugin, "rules"), { recursive: true });
+  writeFileSync(join(plugin, "plugin.json"), JSON.stringify({ name: "team-plugin" }));
+  writeFileSync(join(plugin, "rules", "team.md"), "keep me\n");
+
+  assert.throws(() => run(f.args), (error) => {
+    assert.notEqual(error.status, 0);
+    assert.match(error.stderr, /plugins\/pstack/);
+    return true;
+  });
+
+  assert.equal(readFileSync(join(plugin, "plugin.json"), "utf8"), JSON.stringify({ name: "team-plugin" }), "the other plugin is untouched");
+  assert.equal(readFileSync(join(plugin, "rules", "team.md"), "utf8"), "keep me\n");
+  assert.equal(lexists(join(plugin, "rules", "AGENTS.md")), false, "nothing was written before the check");
+  assert.equal(lexists(join(f.account("antigravity_a"), "plugins", "pstack")), false, "no account link was written");
+});
+
+test("refuses to install over a plugin symlink that is not this installer's", (t) => {
+  const f = fixture(t);
+  const elsewhere = join(f.base, "shared-plugin");
+  mkdirSync(join(elsewhere, "rules"), { recursive: true });
+  writeFileSync(join(elsewhere, "rules", "team.md"), "keep me\n");
+  mkdirSync(join(f.gemini, "plugins"), { recursive: true });
+  symlinkSync(elsewhere, join(f.gemini, "plugins", "pstack"));
+
+  assert.throws(() => run(f.args), (error) => {
+    assert.notEqual(error.status, 0);
+    assert.match(error.stderr, /symlink/);
+    return true;
+  });
+
+  assert.deepEqual(readdirSync(elsewhere), ["rules"], "nothing was written through the link");
+  assert.equal(lexists(join(f.account("antigravity_a"), "plugins", "pstack")), false);
+});
+
+test("adopts a plugin that an earlier version installed without a manifest", (t) => {
+  const f = fixture(t);
+  const plugin = join(f.gemini, "plugins", "pstack");
+  mkdirSync(join(plugin, "rules"), { recursive: true });
+  mkdirSync(join(plugin, "skills"), { recursive: true });
+  writeFileSync(join(plugin, "plugin.json"), `${JSON.stringify({ name: "pstack", version: "0.1.0", description: "pstack 工作流技能" }, null, 2)}\n`);
+  writeFileSync(join(plugin, "rules", "AGENTS.md"), "# pstack on agy (Antigravity)\n\nwritten before the manifest existed\n");
+  symlinkSync(join(repoRoot, "skills", "poteto-mode"), join(plugin, "skills", "pstack"));
+  symlinkSync(join(repoRoot, "skills", "gone"), join(plugin, "skills", "pstack-gone"));
+
+  run(f.args);
+
+  const manifest = JSON.parse(readFileSync(join(plugin, ".pstack-install.json"), "utf8"));
+  assert.equal(manifest.root, repoRoot);
+  assert.equal(manifest.files.length, 2);
+  assert.equal(resolve(manifest.links.find((link) => link.path === "skills/pstack").target), join(repoRoot, "skills", "poteto-mode"));
+  assert.equal(lexists(join(plugin, "skills", "pstack-gone")), false, "a stale link from the old install is cleaned");
+  assert.equal(resolve(readlinkSync(join(plugin, "skills", "pstack"))), join(repoRoot, "skills", "poteto-mode"));
+  assert.doesNotMatch(readFileSync(join(plugin, "rules", "AGENTS.md"), "utf8"), /\{\{/);
+  assert.ok(lstatSync(join(f.account("antigravity_a"), "plugins", "pstack")).isSymbolicLink());
+  assert.match(run(f.args), /up to date/);
+});
+
+test("uninstall removes only what the installer wrote", (t) => {
+  const f = fixture(t);
+  run(f.args);
+  const plugin = join(f.gemini, "plugins", "pstack");
+  const teamRules = join(plugin, "rules", "team.md");
+  writeFileSync(teamRules, "team rules\n");
+  const accountA = join(f.account("antigravity_a"), "plugins", "pstack");
+  rmSync(accountA);
+  mkdirSync(join(accountA, "mine"), { recursive: true });
+  writeFileSync(join(accountA, "mine", "note.md"), "ours\n");
+
+  const output = run([...f.args, "--uninstall"]);
+
+  assert.equal(readFileSync(teamRules, "utf8"), "team rules\n", "a file the user added stays");
+  assert.equal(lexists(join(plugin, "plugin.json")), false);
+  assert.equal(lexists(join(plugin, "rules", "AGENTS.md")), false);
+  assert.equal(lexists(join(plugin, "skills", "pstack")), false);
+  assert.equal(readFileSync(join(accountA, "mine", "note.md"), "utf8"), "ours\n", "a plain account directory stays");
+  assert.equal(lexists(join(f.account("antigravity_b"), "plugins", "pstack")), false, "the other account's link is gone");
+  assert.match(output, /skip .*not a symlink/);
+});
+
 test("dry run prints the plan and writes nothing", (t) => {
   const f = fixture(t);
   const output = run([...f.args, "--dry-run"]);
