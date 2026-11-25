@@ -1,10 +1,10 @@
-# pstack-pi verification map
+# pstack-port verification map
 
-This directory is the maintained source for verifying what a user sees in the Pi TUI after installing pstack-pi. Read this index, then follow one feature file.
+This directory is the maintained source for verifying what a user sees in the Pi TUI after installing pstack-port. Read this index, then follow one feature file.
 
 ## Baseline preconditions
 
-- Launch with `.agents/skills/verify-pstack-pi/scripts/drive.sh launch`.
+- Launch with `.agents/skills/verify-pstack-port/scripts/drive.sh launch`.
 - The run directory it prints is the only state this run may touch.
 - The throwaway project has this repo installed, and `drive.sh doctor` prints `doctor: ok`.
 - Doctor prints the Pi version. The keystrokes in this map were checked on Pi 1.3.0, and on 1.4.0 for mode status and skill loading. The footer shows `deepseek-v4.1-flash`.

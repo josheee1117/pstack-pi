@@ -1,11 +1,11 @@
 ---
-name: verify-pstack-pi
-description: "Drive pstack-pi in a real Pi TUI the way a user does, and keep the proof. Use when a change to the /pstack command, the status bar, or the plan widget needs evidence from the interactive app rather than npm test."
+name: verify-pstack-port
+description: "Drive pstack-port in a real Pi TUI the way a user does, and keep the proof. Use when a change to the /pstack command, the status bar, or the plan widget needs evidence from the interactive app rather than npm test."
 ---
 
-# Verify pstack-pi
+# Verify pstack-port
 
-pstack-pi is a Pi package. The user installs it with `pi install -l`, starts `pi` in a project, and types `/pstack`, `/pstack status`, `/pstack off`, and `/skill:pstack-*`. This skill launches that TUI in tmux, types those commands, and saves the screen.
+pstack-port is a Pi package. The user installs it with `pi install -l`, starts `pi` in a project, and types `/pstack`, `/pstack status`, `/pstack off`, and `/skill:pstack-*`. This skill launches that TUI in tmux, types those commands, and saves the screen.
 
 The surface is the Pi TUI. `pi -p` and `pi --mode rpc` are not a substitute: they do not render the status bar or the plan widget. The package also ships a Node CLI, `node adapter/worktree-audit.mjs`, which this skill does not drive. The mode and plan state machine has its own check in `.agents/skills/verify-pstack-mode-state/`; run it when a change touches mode persistence, plan restore, or the step reminder.
 
@@ -13,13 +13,13 @@ Verified against Pi 1.3.0 (`/opt/homebrew/bin/pi`), tmux 3.7b, on macOS. Mode st
 
 ## Launch
 
-Run the helper from the repo root. It creates a throwaway run under `/tmp/verify-pstack-pi/`, copies only the `magpie` gateway provider into that run's agent dir, installs this repo into a throwaway project, and starts Pi in a new tmux session.
+Run the helper from the repo root. It creates a throwaway run under `/tmp/verify-pstack-port/`, copies only the `magpie` gateway provider into that run's agent dir, installs this repo into a throwaway project, and starts Pi in a new tmux session.
 
 ```bash
-.agents/skills/verify-pstack-pi/scripts/drive.sh launch
+.agents/skills/verify-pstack-port/scripts/drive.sh launch
 ```
 
-The command prints the run directory, such as `/tmp/verify-pstack-pi/run-Ab12`. Every later command uses the newest run that still has a live tmux session (else the most recently modified run), or `VERIFY_PSTACK_RUN=<that directory>` when more than one run exists.
+The command prints the run directory, such as `/tmp/verify-pstack-port/run-Ab12`. Every later command uses the newest run that still has a live tmux session (else the most recently modified run), or `VERIFY_PSTACK_RUN=<that directory>` when more than one run exists.
 
 Ready means the footer shows `deepseek-v4.1-flash`. The helper waits for that string. A process that merely stays alive is not ready.
 
@@ -37,7 +37,7 @@ Two runs can exist at once. Each has its own tmux session, agent dir, and projec
 ## Doctor
 
 ```bash
-.agents/skills/verify-pstack-pi/scripts/drive.sh doctor
+.agents/skills/verify-pstack-port/scripts/drive.sh doctor
 ```
 
 Doctor checks four things and prints `doctor: ok`.
@@ -71,12 +71,12 @@ tmux capture-pane -t <session> -p -S -200 -e | sed $'s/\x1b\\[[0-9;?]*[A-Za-z]//
 The helper wraps these steps. Drive one feature:
 
 ```bash
-.agents/skills/verify-pstack-pi/scripts/drive.sh drive pstack-status
-.agents/skills/verify-pstack-pi/scripts/drive.sh drive pstack-task
-.agents/skills/verify-pstack-pi/scripts/drive.sh drive pstack-skill
-.agents/skills/verify-pstack-pi/scripts/drive.sh drive skill-load
-.agents/skills/verify-pstack-pi/scripts/drive.sh drive plan-widget
-.agents/skills/verify-pstack-pi/scripts/drive.sh drive slash-menu
+.agents/skills/verify-pstack-port/scripts/drive.sh drive pstack-status
+.agents/skills/verify-pstack-port/scripts/drive.sh drive pstack-task
+.agents/skills/verify-pstack-port/scripts/drive.sh drive pstack-skill
+.agents/skills/verify-pstack-port/scripts/drive.sh drive skill-load
+.agents/skills/verify-pstack-port/scripts/drive.sh drive plan-widget
+.agents/skills/verify-pstack-port/scripts/drive.sh drive slash-menu
 ```
 
 `pstack-status` needs no model call. `pstack-task` calls `magpie/workbuddy/deepseek-v4.1-flash` with `/pstack 只回复 pstack-task-ok` and expects a reply line that is exactly `pstack-task-ok`. `pstack-skill` makes the same check through `/skill:pstack`, which turns the mode on without the `/pstack` command. `skill-load` finds `/skill:pstack-interrogate` and `/skill:pstack-statechart` in the `/` menu with their descriptions, then runs each with a read-only question about its body. It expects `generalPurpose` for interrogate and `tlc.out` for statechart. It does not run a review, model check, or download. `plan-widget` asks the model to call `pstack_plan` with a two-step demo plan and checks the widget above the editor, then clears it with `/pstack off`. `slash-menu` proves the command is registered in the menu, then runs it.
@@ -94,7 +94,7 @@ The feature id is the file name. The entry point is the typed command inside the
 ## Cleanup
 
 ```bash
-.agents/skills/verify-pstack-pi/scripts/drive.sh cleanup
+.agents/skills/verify-pstack-port/scripts/drive.sh cleanup
 ```
 
 Cleanup kills the tmux session it started. If the pane pid is still alive after that, it sends `SIGTERM` and then `SIGKILL` to that pid only. It then deletes `<run>/project` and `<run>/agent`. It leaves `<run>/evidence/`.
@@ -107,7 +107,7 @@ After cleanup, confirm the evidence file is still there and `tmux has-session -t
 
 `scripts/drive.sh` is the only helper. It is executable. The four commands above are its whole interface: `launch`, `doctor`, `drive <feature-id>`, `cleanup`.
 
-Set `VERIFY_PSTACK_RUN` to an existing run directory to select it. Set `VERIFY_PSTACK_ROOT` to put runs somewhere other than `/tmp/verify-pstack-pi`.
+Set `VERIFY_PSTACK_RUN` to an existing run directory to select it. Set `VERIFY_PSTACK_ROOT` to put runs somewhere other than `/tmp/verify-pstack-port`.
 
 ## Keep the map current
 

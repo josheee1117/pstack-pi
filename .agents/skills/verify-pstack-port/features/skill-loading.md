@@ -14,7 +14,7 @@ Install the package, start Pi, type `/`, then `skill:pstack-interrogate` or `ski
 ## Driving it with tmux
 
 ```bash
-.agents/skills/verify-pstack-pi/scripts/drive.sh drive skill-load
+.agents/skills/verify-pstack-port/scripts/drive.sh drive skill-load
 ```
 
 It checks interrogate, then statechart. For each skill, it types `/skill:pstack-<name>` and captures the menu. Then it closes the menu with Escape, appends a read-only question to the text left in the editor, and runs it.

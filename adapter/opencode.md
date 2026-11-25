@@ -1,6 +1,6 @@
 # pstack on opencode
 
-The pstack skills were written for Cursor. On opencode, read them through this map, plus `adapter/overrides.md` for the package rules. The package root is the directory that holds this `adapter/` folder, /Users/hejiayuan/code_me/pstack-pi on this machine. Use only tools present in your session and check their schema before calling them; this map does not grant permissions.
+The pstack skills were written for Cursor. On opencode, read them through this map, plus `adapter/overrides.md` for the package rules. The package root is the directory that holds this `adapter/` folder, /Users/hejiayuan/code_me/pstack-port on this machine. Use only tools present in your session and check their schema before calling them; this map does not grant permissions.
 
 ## Finding files
 

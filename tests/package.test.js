@@ -7,7 +7,7 @@ import { readJson, repoRoot } from "./helpers.js";
 const pkg = readJson(join(repoRoot, "package.json"));
 
 test("the manifest declares the skills and the one extension, and nothing that would need installing", () => {
-  assert.equal(pkg.name, "pstack-pi");
+  assert.equal(pkg.name, "pstack-port");
   assert.equal(pkg.type, "module");
   assert.ok(pkg.keywords.includes("pi-package"), "the pi-package keyword makes the package discoverable");
   assert.deepEqual(pkg.pi.skills, ["./skills", "./local-skills"]);

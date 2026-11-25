@@ -1,11 +1,11 @@
 #!/bin/bash
 # Drive one isolated Pi TUI that has this repo installed, and leave the proof.
 # Usage: drive.sh <launch|doctor|drive|cleanup> [feature-id]
-# Reads VERIFY_PSTACK_RUN if set. Otherwise uses the newest run under /tmp/verify-pstack-pi/.
+# Reads VERIFY_PSTACK_RUN if set. Otherwise uses the newest run under /tmp/verify-pstack-port/.
 set -u
 
 REPO="$(cd "$(dirname "$0")/../../../.." && pwd)"
-ROOT="${VERIFY_PSTACK_ROOT:-/tmp/verify-pstack-pi}"
+ROOT="${VERIFY_PSTACK_ROOT:-/tmp/verify-pstack-port}"
 READY='deepseek-v4.1-flash'
 CMD_PAUSE=0.4
 

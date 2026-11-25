@@ -24,7 +24,7 @@ test("the real Pi loader discovers every skill with no diagnostics", async (t) =
   const pi = await loadPi();
   if (!pi) return t.skip("the Pi package is not installed on this machine");
 
-  const result = pi.loadSkillsFromDir({ dir: skillsDir, source: "pstack-pi" });
+  const result = pi.loadSkillsFromDir({ dir: skillsDir, source: "pstack-port" });
   assert.deepEqual(
     unexpectedSkillDiagnostics(result.diagnostics).map((d) => `${d.type ?? "diagnostic"}: ${d.message}`),
     [],
@@ -43,7 +43,7 @@ test("the trigger model matches upstream: setup in the prompt listing, every oth
   const pi = await loadPi();
   if (!pi) return t.skip("the Pi package is not installed on this machine");
 
-  const result = pi.loadSkillsFromDir({ dir: skillsDir, source: "pstack-pi" });
+  const result = pi.loadSkillsFromDir({ dir: skillsDir, source: "pstack-port" });
   const visible = result.skills.filter((s) => !s.disableModelInvocation).map((s) => s.name);
   assert.deepEqual(visible, ["pstack-setup"], "only the setup guide is listed in the default prompt");
 
@@ -56,7 +56,7 @@ test("/skill:<name> expands through Pi's real command expansion for every skill"
   const pi = await loadPi();
   if (!pi) return t.skip("the Pi package is not installed on this machine");
 
-  const result = pi.loadSkillsFromDir({ dir: skillsDir, source: "pstack-pi" });
+  const result = pi.loadSkillsFromDir({ dir: skillsDir, source: "pstack-port" });
   // The method only reads this.resourceLoader.getSkills() and reports read
   // failures through this._extensionRunner.emitError(). Throwing there makes a
   // failed read fail the test instead of passing the text through.

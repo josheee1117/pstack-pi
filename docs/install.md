@@ -15,7 +15,7 @@
 把同一份 pstack 技能装成 agy 插件，T3 里的 agy 会话不用给路径就能用 `pstack-<名>`。装的是当前检出，要指向 Pi 实际加载的那一份；合入 main 后再装，不要指向临时 worktree。
 
 ```bash
-node /path/to/pstack-pi/tools/install-agy.mjs
+node /path/to/pstack-port/tools/install-agy.mjs
 ```
 
 脚本默认写 `~/.gemini/config/plugins/pstack`：`plugin.json`、`rules/AGENTS.md`（由 `adapter/agy.md` 填成本机绝对路径）和 `skills/pstack-<名>` 软链。入口技能是 `pstack`（对应 `skills/poteto-mode`），其余技能按 `SKILL.md` 里的 `name` 建链，所以 `setup-pstack` 是 `pstack-setup`，不是 `pstack-setup-pstack`。
@@ -27,8 +27,8 @@ node /path/to/pstack-pi/tools/install-agy.mjs
 重跑同一条命令即可更新：正确的软链不动，指错的改对，包里删掉的技能对应软链清掉；用户自己放进 `skills/`、指向别处的链接不动。
 
 ```bash
-node /path/to/pstack-pi/tools/install-agy.mjs --dry-run
-node /path/to/pstack-pi/tools/install-agy.mjs --uninstall
+node /path/to/pstack-port/tools/install-agy.mjs --dry-run
+node /path/to/pstack-port/tools/install-agy.mjs --uninstall
 ```
 
 `--gemini-dir`、`--t3-home`、`--root` 分别改 agy 配置目录、T3 数据目录和包根，默认是 `~/.gemini/config`、`~/.t3` 和脚本所在仓库。测试只在临时目录里跑，见 `tests/install-agy.test.js`。

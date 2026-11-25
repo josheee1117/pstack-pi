@@ -1,5 +1,5 @@
 {
-  "name": "pstack-pi",
+  "name": "pstack-port",
   "version": "0.2.0",
   "description": "Rigorous engineering workflows for Pi: upstream pstack's skills with a Pi adapter. Understand, design, implement, verify independently, ship, recover.",
   "type": "module",

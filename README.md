@@ -1,6 +1,6 @@
-# pstack-pi
+# pstack-port
 
-把 pstack 的理解、设计、实现、独立审查、验证和交付流程带到 Pi。保留上游大部分正文和目录结构，用独立适配层处理工具、路径和执行差异；支持选择性吸收上游改进，不要求完整照搬。
+把 pstack 的理解、设计、实现、独立审查、验证和交付流程带到 Pi。保留上游大部分正文和目录结构，用独立适配层处理工具、路径和执行差异；支持选择性吸收上游改进，不要求完整照搬。技能是普通 Markdown，Pi、Codex、agy 和 opencode 都能读；`/pstack` 命令、状态栏和计划视图由本包的 Pi 扩展提供。
 
 当前基于上游 pstack 0.15.48。包含 34 个公共技能、24 个原则、22 个 playbook，以及一个无 npm 运行时依赖的扩展。本包另有 1 个自有技能 `pstack-report`，用于收尾报告。去掉完全依赖 Cursor Grok Bot 的 `make-bot-ui`。注册名和中文描述是本地改动，worktree 审计使用 Pi 专用实现。
 
@@ -16,14 +16,14 @@
 
 ```bash
 cd /path/to/your-project
-pi install -l /path/to/pstack-pi
+pi install -l /path/to/pstack-port
 pi
 ```
 
 已发布到远端的版本可用：
 
 ```bash
-pi install -l git:github.com/josheee1117/pstack-pi
+pi install -l git:github.com/josheee1117/pstack-port
 ```
 
 **本地分支没有推送时，远端命令不会安装本地的新改动。**固定版本使用该 Pi 支持的 git ref 安装语法。已打开的 Pi 在安装后 `/reload` 或重启；遵守宿主的项目信任提示。不要同时安装同一包的旧版和新版，它们都注册 `/pstack`。

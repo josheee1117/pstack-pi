@@ -204,7 +204,7 @@ test("a pstack skill command ends with the overrides once, after Pi would expand
 test("Pi expands transformed skill commands with or without arguments", async (t) => {
   const pi = await loadPi();
   if (!pi) return t.skip("the Pi package is not installed on this machine");
-  const skills = { skills: [skillsDir, join(repoRoot, "local-skills")].flatMap((dir) => pi.loadSkillsFromDir({ dir, source: "pstack-pi" }).skills) };
+  const skills = { skills: [skillsDir, join(repoRoot, "local-skills")].flatMap((dir) => pi.loadSkillsFromDir({ dir, source: "pstack-port" }).skills) };
   const context = {
     resourceLoader: { getSkills: () => skills },
     _extensionRunner: { emitError: (event) => { throw new Error(event.error); } },
