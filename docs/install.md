@@ -18,7 +18,7 @@
 node /path/to/pstack-pi/tools/install-agy.mjs
 ```
 
-脚本默认写 `~/.gemini/config/plugins/pstack`：`plugin.json`、`rules/AGENTS.md`（由 `adapter/agy.md` 填成本机绝对路径）和 `skills/pstack-<名>` 软链。入口技能是 `pstack`（对应 `skills/poteto-mode`），`pstack-report` 这类自带前缀的目录保持原名。
+脚本默认写 `~/.gemini/config/plugins/pstack`：`plugin.json`、`rules/AGENTS.md`（由 `adapter/agy.md` 填成本机绝对路径）和 `skills/pstack-<名>` 软链。入口技能是 `pstack`（对应 `skills/poteto-mode`），其余技能按 `SKILL.md` 里的 `name` 建链，所以 `setup-pstack` 是 `pstack-setup`，不是 `pstack-setup-pstack`。
 
 它还会读 `~/.t3/userdata/settings.json`，给每个 `driver` 为 `antigravity` 且启用的实例建 `config/plugins/pstack` 软链，指向同一个插件目录。
 
