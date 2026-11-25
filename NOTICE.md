@@ -3,7 +3,7 @@
 ## 上游
 
 - 项目：`pstack`（作者 Lauren Tan / poteto），位于 `cursor/plugins` 仓库的 `pstack/` 目录。
-- 当前基于：`2dd5c0ccc5b207dc23a69759871a35954082cbf7`（插件版本 0.15.47），见 `upstream.lock`。
+- 当前基于：`ca782ed8b3c2c521cead8e1720d55c3a5dbf2347`（插件版本 0.15.48），见 `upstream.lock`。
 - 站点：https://github.com/cursor/plugins/tree/main/pstack
 - 许可：MIT，Copyright (c) 2026 Lauren Tan。原文见 `LICENSE.upstream`。
 
