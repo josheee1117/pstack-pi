@@ -28,6 +28,8 @@ pi install -l git:github.com/josheee1117/pstack-port
 
 **本地分支没有推送时，远端命令不会安装本地的新改动。**固定版本使用该 Pi 支持的 git ref 安装语法。已打开的 Pi 在安装后 `/reload` 或重启；遵守宿主的项目信任提示。不要同时安装同一包的旧版和新版，它们都注册 `/pstack`。
 
+agy 和 Codex 各有安装脚本，把同一份技能链接到它们的全局技能目录：`node tools/install-agy.mjs`、`node tools/install-codex.mjs`。两者都只写自己的目录和带标记的托管块，支持 `--dry-run` 和 `--uninstall`，见[安装范围](docs/install.md)。
+
 当前版本在 earendil Pi 1.1.0 上验证过：51 个技能加载无警告，命令能展开，提示注入、控制台视图和配合 pi-subagents 0.76.1 的子代理都实际跑过。较早的 earendil Pi 0.87.0 和原版 Pi 0.73.1 只验证过本包早期版本的加载和命令展开，控制台视图在这些版本上没有测过。不承诺任意历史版本、任意 OS、任意可选插件组合均零警告可用。详见安装说明。
 
 ## 使用

@@ -35,6 +35,38 @@ node /path/to/pstack-port/tools/install-agy.mjs --uninstall
 
 `--uninstall` 只删清单里、且内容或目标仍匹配的条目，再删空目录；用户自己加的文件（如 `rules/team.md`）保留。账号侧只删指向本插件目录的 `config/plugins/pstack` 软链，普通目录或指向别处的软链跳过并打印原因。没有清单的目录不会被删，脚本只打印一行说明。
 
+## Codex
+
+把同一份技能装进 Codex 的全局技能目录，直接聊天时按 `pstack-<名>` 用，不用先给路径。装的是当前检出，要指向 Pi 实际加载的那一份；合入 main 后再装，不要指向临时 worktree。
+
+```bash
+node /path/to/pstack-port/tools/install-codex.mjs
+```
+
+脚本默认写 `$CODEX_HOME`（没设就是 `~/.codex`）：
+
+| 位置 | 内容 |
+|---|---|
+| `skills/pstack-<名>` | 软链到包内技能。入口 `pstack` 对应 `skills/poteto-mode`，`pstack-report` 指向 `local-skills/`，其余按 `SKILL.md` 里的 `name` 建链 |
+| `pstack/codex.md` | 由 `adapter/codex.md` 填成本机绝对路径的适配层 |
+| `AGENTS.md` | 带 `pstack:begin` / `pstack:end` 标记的托管块，指向上面的适配层和 `adapter/overrides.md` |
+| `.pstack-install.json` | 所有权清单：包根、本脚本写的文件（含 sha256）和软链 |
+
+不装到 `~/.agents/skills`：Pi 也读那里，会和 Pi 已加载的包重复。Codex 自己也会扫 `~/.agents/skills`，那边已有的技能保持原样。
+
+托管块之外的内容一字不动；`AGENTS.md` 不存在就新建。首次安装时，同名软链不是本脚本建的（指向别处、或是普通目录），或 `pstack/` 目录非空且没有清单，脚本在写盘前退出、打印冲突路径、退出码非 0；标记只有一半同样拒绝改写。重跑幂等：正确的软链不动，指错的改对，包里删掉的技能对应软链清掉，别人的条目不动。
+
+```bash
+node /path/to/pstack-port/tools/install-codex.mjs --dry-run
+node /path/to/pstack-port/tools/install-codex.mjs --uninstall
+```
+
+`--uninstall` 只删清单里、且内容或目标仍匹配的条目，再删空目录；`AGENTS.md` 只摘掉托管块，块外内容保留，文件因托管块才有内容时连文件一起删。没有清单时只删托管块和指向包内技能的软链。
+
+`--codex-home`、`--root` 分别改 Codex 配置目录和包根，默认 `$CODEX_HOME` 或 `~/.codex`、脚本所在仓库。测试只在临时目录里跑，见 `tests/install-codex.test.js`。
+
+Codex 0.171.0 不认 `disable-model-invocation: true`：装进去的每个技能都会带着描述出现在系统提示的技能清单里，实测 59 条，`skills.enabled=false`、`skills.bundled.include_instructions=false`、`--enable skip_host_skill_discovery` 都关不掉。`skills.max_context_tokens` 只截短描述，条目不会减少（上限设成 2000 时仍是 73 条，`pstack-how` 还在）。所以现在没有「只在点名时加载」的显式开关；能选的是不装进 `~/.codex/skills`，改由托管块按路径读，代价是 `$技能名` 和技能菜单找不到它们。技能正文仍按需读取，常驻的只有名字和描述。
+
 ## 按需组件
 
 以下命令是操作者自行选择的安装示例，不会由本包自动执行。`brew` 示例仅适用于装了 Homebrew 的环境；其他平台按对应项目官方安装文档操作。
