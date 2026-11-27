@@ -38,3 +38,4 @@ Each feature file has an H1, one paragraph, then four H2 sections: `Sub-features
 - [Skill loading](./skill-loading.md) finds a shipped skill in the `/` menu and proves its body reaches the model.
 - [Plan widget](./plan-widget.md) shows the steps a model reported through `pstack_plan`, and clears them on `/pstack off`.
 - [Slash menu](./slash-menu.md) finds `/pstack` in the `/` menu and runs the completed command.
+- [Portable adapters & local skills](./adapters.md) verifies isolated `agy`/`codex`/`opencode` installers and `local-skills/pstack-lean` (`lean-probe.py`).

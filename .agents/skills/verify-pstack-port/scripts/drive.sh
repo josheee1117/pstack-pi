@@ -111,8 +111,21 @@ launch() {
 }
 
 doctor() {
-  local run screen pid
+  local run screen pid live_pi expected_pi skill_md fdir
   run="$(run_of)"
+  skill_md="$REPO/.agents/skills/verify-pstack-port/SKILL.md"
+  fdir="$REPO/.agents/skills/verify-pstack-port/features"
+  python3 - "$skill_md" "$fdir" <<'PY' || die "verify-pstack-port feature map drift"
+import pathlib, re, sys
+skill_md = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+fdir = pathlib.Path(sys.argv[2])
+actual = sorted(p.name for p in fdir.glob("*.md") if p.name != "README.md")
+readme = (fdir / "README.md").read_text(encoding="utf-8")
+linked = sorted(set(re.findall(r"\]\(\./([a-z0-9_-]+\.md)\)", readme)))
+if actual != linked:
+    print(f"feature map mismatch: files={actual} vs README={linked}", file=sys.stderr)
+    sys.exit(1)
+PY
   tmux has-session -t "$(session_of)" 2>/dev/null || die "tmux session $(session_of) is gone"
   pid="$(pane_pid)"
   [ -n "$pid" ] || die "pane has no pid"
@@ -120,7 +133,12 @@ doctor() {
   screen="$(capture -40)"
   printf '%s\n' "$screen" | grep -q "$READY" || die "ready footer is missing"
   printf '%s\n' "$screen" | grep -q "This project is not trusted" && die "project is not trusted; packages are ignored"
-  ( cd "$run/project" && PI_CODING_AGENT_DIR="$run/agent" pi --version )
+  live_pi="$(cd "$run/project" && PI_CODING_AGENT_DIR="$run/agent" pi --version | tr -d '[:space:]')"
+  expected_pi="$(sed -n 's/^Verified Pi baseline: *\([0-9][0-9.]*\).*/\1/p' "$skill_md" | head -1)"
+  echo "$live_pi"
+  if [ -z "$expected_pi" ] || [ "$live_pi" != "$expected_pi" ]; then
+    echo "WARN: pi version drift: live=${live_pi} vs SKILL.md baseline=${expected_pi:-unset}; re-verify TUI keystrokes and update SKILL.md"
+  fi
   echo "run=$run"
   echo "session=$(session_of)"
   echo "pid=$pid"
@@ -188,7 +206,7 @@ drive_load() {
   local run session skill question answer
   run="$(run_of)"
   session="$(session_of)"
-  for skill in interrogate statechart; do
+  for skill in interrogate statechart lean; do
     case "$skill" in
       interrogate)
         question="不要执行审查，不调用工具。仅根据本技能 Fan out 段落回答：每个对手启动时使用的代理类型是什么？只回复该英文类型名。"
@@ -197,6 +215,10 @@ drive_load() {
       statechart)
         question="不要执行模型检查，不调用工具。仅根据本技能 Read the report 段落回答：按原配置运行 TLC 的原始输出保存在哪个文件？只回复文件名。"
         answer="tlc.out"
+        ;;
+      lean)
+        question="不要执行审查，不调用工具。仅根据本技能 Step 0 段落回答：静态结构探针脚本的文件名是什么？只回复文件名。"
+        answer="lean-probe.py"
         ;;
     esac
     tmux send-keys -t "$session" '/'
@@ -214,6 +236,18 @@ drive_load() {
     wait_for "^ *$answer *$" 60 || die "the model did not answer $answer, so the $skill body did not reach it"
     save_proof "$run" "skill-$skill-run"
   done
+}
+
+drive_adapters() {
+  local run out
+  run="$(run_of)"
+  out="$run/evidence/adapters.txt"
+  (
+    cd "$REPO" &&
+    node --test tests/adapter.test.js tests/install.test.js tests/install-agy.test.js tests/install-codex.test.js tests/local-skills.test.js &&
+    python3 local-skills/pstack-lean/scripts/lean-probe.py --self-test
+  ) >"$out" 2>&1 || { cat "$out" >&2; die "adapter / local-skills verification failed"; }
+  echo "$out"
 }
 
 drive_plan() {
@@ -285,7 +319,8 @@ case "${1:-}" in
       skill-load) drive_load ;;
       plan-widget) drive_plan ;;
       slash-menu) drive_menu ;;
-      *) die "unknown feature '${2:-}'. Use pstack-status, pstack-task, pstack-skill, skill-load, plan-widget, or slash-menu" ;;
+      adapters) drive_adapters ;;
+      *) die "unknown feature '${2:-}'. Use pstack-status, pstack-task, pstack-skill, skill-load, plan-widget, slash-menu, or adapters" ;;
     esac
     ;;
   cleanup) cleanup ;;

@@ -17,11 +17,11 @@ Install the package, start Pi, type `/`, then `skill:pstack-interrogate` or `ski
 .agents/skills/verify-pstack-port/scripts/drive.sh drive skill-load
 ```
 
-It checks interrogate, then statechart. For each skill, it types `/skill:pstack-<name>` and captures the menu. Then it closes the menu with Escape, appends a read-only question to the text left in the editor, and runs it.
+It checks interrogate, statechart, and local skill `pstack-lean`. For each skill, it types `/skill:pstack-<name>` and captures the menu. Then it closes the menu with Escape, appends a read-only question to the text left in the editor, and runs it.
 
-The interrogate question asks for the adversary's agent type in the Fan out section. The answer is `generalPurpose`. The statechart question asks for the raw TLC output file in the Read the report section. The answer is `tlc.out`. Neither answer appears in the command or the skill's description. Every skill except `/skill:pstack-setup` is hidden from the system prompt listing. The questions forbid tool calls, reviews, model checks, and downloads.
+The interrogate question asks for the adversary's agent type in the Fan out section (`generalPurpose`). The statechart question asks for the raw TLC output file in the Read the report section (`tlc.out`). The lean question asks for the static structural probe script filename in Step 0 (`lean-probe.py`). None of those answers appear in the command or the skill's description. Every skill except `/skill:pstack-setup` is hidden from the system prompt listing. The questions forbid tool calls, reviews, model checks, and downloads.
 
-The captures are `skill-interrogate-menu.txt`, `skill-interrogate-run.txt`, `skill-statechart-menu.txt`, and `skill-statechart-run.txt` under the run's `evidence/` directory.
+The captures are `skill-interrogate-menu.txt`, `skill-interrogate-run.txt`, `skill-statechart-menu.txt`, `skill-statechart-run.txt`, `skill-lean-menu.txt`, and `skill-lean-run.txt` under the run's `evidence/` directory.
 
 ## Gotchas
 

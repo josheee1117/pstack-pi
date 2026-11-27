@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { test } from "node:test";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -16,7 +17,7 @@ test("Pi loads every local skill under its directory name and keeps it out of th
   assert.equal(pi.formatSkillsForPrompt(result.skills, "read"), "");
 });
 
-test("/skill:pstack-report expands through Pi's real command expansion", async (t) => {
+test("/skill:pstack-report and /skill:pstack-lean expand through Pi's real command expansion", async (t) => {
   const pi = await loadPi();
   if (!pi) return t.skip("the Pi package is not installed on this machine");
   const result = pi.loadSkillsFromDir({ dir: localSkillsDir, source: "pstack-port" });
@@ -24,13 +25,21 @@ test("/skill:pstack-report expands through Pi's real command expansion", async (
     resourceLoader: { getSkills: () => result },
     _extensionRunner: { emitError: (event) => { throw new Error(event.error); } },
   };
-  const report = result.skills.find((skill) => skill.name === "pstack-report");
-  assert.ok(report);
-  const body = pi.stripFrontmatter(readFileSync(report.filePath, "utf8")).trim();
-  for (const args of ["", " summarize this run"]) {
-    const expanded = pi.AgentSession.prototype._expandSkillCommand.call(context, `/skill:pstack-report${args}`);
-    assert.ok(expanded.startsWith(`<skill name="pstack-report" location="${report.filePath}">`));
-    assert.ok(expanded.includes(body));
-    assert.ok(expanded.endsWith(args ? `</skill>\n\n${args.trim()}` : "</skill>"));
+  for (const name of ["pstack-report", "pstack-lean"]) {
+    const skill = result.skills.find((item) => item.name === name);
+    assert.ok(skill, `missing ${name}`);
+    const body = pi.stripFrontmatter(readFileSync(skill.filePath, "utf8")).trim();
+    for (const args of ["", " summarize this run"]) {
+      const expanded = pi.AgentSession.prototype._expandSkillCommand.call(context, `/skill:${name}${args}`);
+      assert.ok(expanded.startsWith(`<skill name="${name}" location="${skill.filePath}">`));
+      assert.ok(expanded.includes(body));
+      assert.ok(expanded.endsWith(args ? `</skill>\n\n${args.trim()}` : "</skill>"));
+    }
   }
+});
+
+test("pstack-lean structural probe passes self-test", () => {
+  const probe = join(localSkillsDir, "pstack-lean", "scripts", "lean-probe.py");
+  const out = execFileSync("python3", [probe, "--self-test"], { encoding: "utf8" });
+  assert.match(out, /lean-probe self-test: ok/);
 });

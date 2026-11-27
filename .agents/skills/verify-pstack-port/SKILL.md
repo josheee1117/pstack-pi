@@ -7,9 +7,10 @@ description: "Drive pstack-port in a real Pi TUI the way a user does, and keep t
 
 pstack-port is a Pi package. The user installs it with `pi install -l`, starts `pi` in a project, and types `/pstack`, `/pstack status`, `/pstack off`, and `/skill:pstack-*`. This skill launches that TUI in tmux, types those commands, and saves the screen.
 
-The surface is the Pi TUI. `pi -p` and `pi --mode rpc` are not a substitute: they do not render the status bar or the plan widget. The package also ships a Node CLI, `node adapter/worktree-audit.mjs`, which this skill does not drive. The mode and plan state machine has its own check in `.agents/skills/verify-pstack-mode-state/`; run it when a change touches mode persistence, plan restore, or the step reminder.
+The surface is the Pi TUI. `pi -p` and `pi --mode rpc` are not a substitute: they do not render the status bar or the plan widget. Non-Pi portable installers (`agy`, `codex`, `opencode`) and `local-skills/pstack-lean` (`scripts/lean-probe.py`) are verified in isolated temp directories via `drive.sh drive adapters` (interactive `agy` IDE / `codex` / `opencode` host UIs are outside this skill's tmux harness; `node adapter/worktree-audit.mjs` is covered by `npm test`). The mode and plan state machine has its own check in `.agents/skills/verify-pstack-mode-state/`; run it when a change touches mode persistence, plan restore, or the step reminder.
 
-Verified against Pi 1.3.0 (`/opt/homebrew/bin/pi`), tmux 3.7b, on macOS. Mode status and skill loading were rechecked on Pi 1.4.0, and `pstack-status`, `pstack-skill`, `skill-load` and `slash-menu` on Pi 1.5.2 (2026-11-16, upstream 0.15.42; again 2026-11-17, upstream 0.15.43, through the magpie gateway). The README names Pi 1.1.0. `pi --version` reported 1.2.0 earlier in the same session and 1.3.0 by the time the proof run started, so record the version doctor prints. Re-run this skill after a Pi upgrade. A user's `~/.agents/skills/` can print a `[Skill conflicts]` banner at startup. That banner is not a failure.
+Verified Pi baseline: 1.6.1
+Verified against Pi 1.3.0–1.6.1 (`/opt/homebrew/bin/pi`), tmux 3.7b, on macOS (`pstack-status`, `pstack-skill`, `skill-load` including `local-skills/pstack-lean`, `slash-menu`, and `adapters` re-verified on Pi 1.6.1 on 2026-11-27 through the magpie gateway). `drive.sh doctor` compares live `pi --version` against `Verified Pi baseline:` above and prints an explicit `WARN: pi version drift:` line whenever they differ, plus checks bidirectional sync between `features/README.md` and `features/*.md`. Re-run this skill and update the baseline after a Pi upgrade. A user's `~/.agents/skills/` can print a `[Skill conflicts]` banner at startup. That banner is not a failure.
 
 ## Launch
 
@@ -47,7 +48,7 @@ Doctor checks four things and prints `doctor: ok`.
 - The live screen shows `deepseek-v4.1-flash`.
 - The live screen does not say `This project is not trusted`.
 
-It also prints `pi --version`. The keystrokes below were checked on 1.3.0, and again on 1.4.0 for `pstack-status` and `skill-load`. A different version means they are unverified. Stop and re-check them against that version.
+It also checks `features/README.md` against `features/*.md`, prints `pi --version`, and emits `WARN: pi version drift:` whenever live `pi --version` differs from `Verified Pi baseline:` in this file (last verified on Pi 1.6.1). A version drift warning means TUI keystrokes must be re-checked and the baseline updated.
 
 ## Drive
 
@@ -77,9 +78,10 @@ The helper wraps these steps. Drive one feature:
 .agents/skills/verify-pstack-port/scripts/drive.sh drive skill-load
 .agents/skills/verify-pstack-port/scripts/drive.sh drive plan-widget
 .agents/skills/verify-pstack-port/scripts/drive.sh drive slash-menu
+.agents/skills/verify-pstack-port/scripts/drive.sh drive adapters
 ```
 
-`pstack-status` needs no model call. `pstack-task` calls `magpie/workbuddy/deepseek-v4.1-flash` with `/pstack 只回复 pstack-task-ok` and expects a reply line that is exactly `pstack-task-ok`. `pstack-skill` makes the same check through `/skill:pstack`, which turns the mode on without the `/pstack` command. `skill-load` finds `/skill:pstack-interrogate` and `/skill:pstack-statechart` in the `/` menu with their descriptions, then runs each with a read-only question about its body. It expects `generalPurpose` for interrogate and `tlc.out` for statechart. It does not run a review, model check, or download. `plan-widget` asks the model to call `pstack_plan` with a two-step demo plan and checks the widget above the editor, then clears it with `/pstack off`. `slash-menu` proves the command is registered in the menu, then runs it.
+`pstack-status` needs no model call. `pstack-task` calls `magpie/workbuddy/deepseek-v4.1-flash` with `/pstack 只回复 pstack-task-ok` and expects a reply line that is exactly `pstack-task-ok`. `pstack-skill` makes the same check through `/skill:pstack`, which turns the mode on without the `/pstack` command. `skill-load` finds `/skill:pstack-interrogate`, `/skill:pstack-statechart`, and `/skill:pstack-lean` in the `/` menu with their descriptions, then runs each with a read-only question about its body (`generalPurpose`, `tlc.out`, and `lean-probe.py`). It does not run a review, model check, or download. `plan-widget` asks the model to call `pstack_plan` with a two-step demo plan and checks the widget above the editor, then clears it with `/pstack off`. `slash-menu` proves the command is registered in the menu, then runs it. `adapters` runs isolated non-Pi installer tests (`agy`, `codex`, `opencode`) and `lean-probe.py --self-test`, writing `adapters.txt`.
 
 Notifications print as a line in the transcript, indented one column in the capture (` pstack mode on.`). The status bar is the footer line `pstack: mode on`. It disappears when the mode is off. There is no `pstack: mode off` line.
 
